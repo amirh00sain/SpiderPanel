@@ -4,31 +4,6 @@ set -Eeuo pipefail
 # ============================================================
 # SpiderPanel Universal Installer / Manager
 # ============================================================
-#
-# INSTALL:
-#   curl -fsSL https://raw.githubusercontent.com/amirh00sain/SpiderPanel/main/start.sh | bash
-#
-# OR:
-#   wget -qO- https://raw.githubusercontent.com/amirh00sain/SpiderPanel/main/start.sh | bash
-#
-# AFTER INSTALL:
-#   spiderpanel
-#
-# COMMANDS:
-#   spiderpanel
-#   spiderpanel install
-#   spiderpanel info
-#   spiderpanel status
-#   spiderpanel start
-#   spiderpanel stop
-#   spiderpanel restart
-#   spiderpanel update
-#   spiderpanel logs
-#   spiderpanel uninstall
-#
-# ============================================================
-
-set +H
 
 APP_DIR="${SPIDER_APP_DIR:-/opt/SpiderPanel}"
 REPO="${SPIDER_REPO:-https://github.com/amirh00sain/SpiderPanel.git}"
@@ -51,6 +26,12 @@ XRAY="$APP_DIR/xray/xray"
 MTPROXY="/usr/local/bin/mtproto-proxy"
 
 UV="/usr/local/bin/uv"
+
+# Pin uv to a known release.
+UV_VERSION="${SPIDER_UV_VERSION:-0.12.9}"
+
+# Xray version.
+XRAY_VERSION="${SPIDER_XRAY_VERSION:-26.3.27}"
 
 TMP_ROOT=""
 
@@ -97,7 +78,7 @@ trap cleanup EXIT
 
 
 # ============================================================
-# ROOT / SUDO
+# ROOT
 # ============================================================
 
 root() {
@@ -111,7 +92,7 @@ root() {
 
     local f
 
-    f=$(mktemp /tmp/spiderpanel-root.XXXXXX)
+    f="$(mktemp /tmp/spiderpanel-root.XXXXXX)"
 
     curl -fsSL \
         --retry 5 \
@@ -165,12 +146,7 @@ detect() {
 # ============================================================
 
 systemd_ok() {
-
-    if [[ "$HAS_SYSTEMD" == "1" ]]; then
-        return 0
-    fi
-
-    return 1
+    [[ "$HAS_SYSTEMD" == "1" ]]
 }
 
 
@@ -409,7 +385,7 @@ packages() {
 
 download_repo() {
 
-    TMP_ROOT=$(mktemp -d /tmp/spiderpanel.XXXXXX)
+    TMP_ROOT="$(mktemp -d /tmp/spiderpanel.XXXXXX)"
 
     log "Downloading SpiderPanel..."
 
@@ -484,161 +460,248 @@ deploy() {
 
 
 # ============================================================
+# UV ARCH DETECTION
+# ============================================================
+
+detect_uv_arch() {
+
+    case "$(uname -m)" in
+
+        x86_64|amd64)
+            echo "x86_64"
+            ;;
+
+        aarch64|arm64)
+            echo "aarch64"
+            ;;
+
+        armv7l)
+            echo "armv7"
+            ;;
+
+        *)
+            fail "Unsupported CPU architecture for uv: $(uname -m)"
+            ;;
+
+    esac
+}
+
+
+# ============================================================
 # INSTALL UV
+#
+# IMPORTANT:
+# We intentionally DO NOT use astral.sh/install.sh here.
+#
+# We download the official uv release archive directly.
+#
+# This completely avoids the:
+#
+#   installing to /usr/local
+#   uv was not found
+#
+# problem.
 # ============================================================
 
 install_uv() {
 
-    local uv_dir="/usr/local/bin"
-    local installer="/tmp/uv-install.sh"
-    local candidate=""
-    local version=""
+    local arch=""
+    local uv_target="$UV"
+    local tmp=""
+    local archive=""
+    local url=""
 
     export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 
+
     # --------------------------------------------------------
-    # Existing /usr/local/bin/uv
+    # Existing working uv
     # --------------------------------------------------------
 
-    if [[ -x "$uv_dir/uv" ]]; then
+    if [[ -x "$uv_target" ]] \
+        && "$uv_target" --version >/dev/null 2>&1
+    then
 
-        if "$uv_dir/uv" --version >/dev/null 2>&1; then
+        ok "uv ready: $("$uv_target" --version)"
 
-            UV="$uv_dir/uv"
-
-            version="$("$UV" --version 2>/dev/null || true)"
-
-            ok "uv ready: $version"
-
-            return 0
-        fi
-
+        return 0
     fi
 
 
     # --------------------------------------------------------
-    # Search existing uv
+    # Search system
     # --------------------------------------------------------
+
+    local found=""
 
     for candidate in \
         /usr/local/bin/uv \
         /usr/bin/uv \
-        /usr/local/uv/uv \
         /root/.local/bin/uv \
-        /root/.cargo/bin/uv
+        /root/.cargo/bin/uv \
+        /usr/local/uv/uv
     do
 
         if [[ -x "$candidate" ]] \
             && "$candidate" --version >/dev/null 2>&1
         then
 
-            if [[ "$candidate" != "$uv_dir/uv" ]]; then
+            found="$candidate"
 
-                ln -sf "$candidate" "$uv_dir/uv"
-
-            fi
-
-            UV="$uv_dir/uv"
-
-            version="$("$UV" --version 2>/dev/null || true)"
-
-            ok "uv ready: $version"
-
-            return 0
+            break
         fi
 
     done
 
 
+    if [[ -n "$found" ]]; then
+
+        if [[ "$found" != "$uv_target" ]]; then
+
+            ln -sf "$found" "$uv_target"
+
+        fi
+
+        ok "uv ready: $("$uv_target" --version)"
+
+        return 0
+    fi
+
+
     # --------------------------------------------------------
-    # Download official installer
+    # Determine architecture
     # --------------------------------------------------------
 
-    log "Installing uv..."
+    arch="$(detect_uv_arch)"
 
-    rm -f "$installer"
 
-    curl -fL \
+    case "$arch" in
+
+        x86_64)
+            archive="uv-x86_64-unknown-linux-gnu.tar.gz"
+            ;;
+
+        aarch64)
+            archive="uv-aarch64-unknown-linux-gnu.tar.gz"
+            ;;
+
+        armv7)
+            archive="uv-armv7-unknown-linux-gnueabihf.tar.gz"
+            ;;
+
+        *)
+            fail "Unsupported uv architecture: $arch"
+
+            ;;
+
+    esac
+
+
+    url="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/${archive}"
+
+
+    log "Installing uv ${UV_VERSION}..."
+
+    log "Architecture: $arch"
+
+    log "Downloading official uv binary..."
+
+
+    tmp="$(mktemp -d /tmp/spiderpanel-uv.XXXXXX)"
+
+    archive_path="$tmp/$archive"
+
+
+    curl \
+        -fL \
         --retry 5 \
         --retry-delay 2 \
         --connect-timeout 15 \
         --max-time 300 \
-        https://astral.sh/uv/install.sh \
-        -o "$installer" \
-        || fail "uv installer download failed."
-
-    [[ -s "$installer" ]] \
-        || fail "uv installer is empty."
-
-    chmod 755 "$installer"
+        "$url" \
+        -o "$archive_path" \
+        || {
+            rm -rf "$tmp"
+            fail "uv download failed."
+        }
 
 
-    # --------------------------------------------------------
-    # Official unmanaged installation
-    #
-    # UV_UNMANAGED_INSTALL tells uv installer exactly where
-    # to place the binary.
-    # --------------------------------------------------------
-
-    if ! env \
-        UV_UNMANAGED_INSTALL="$uv_dir" \
-        UV_NO_MODIFY_PATH=1 \
-        sh "$installer"
-    then
-
-        rm -f "$installer"
-
-        fail "uv installation failed."
-
-    fi
-
-    rm -f "$installer"
+    [[ -s "$archive_path" ]] \
+        || {
+            rm -rf "$tmp"
+            fail "Downloaded uv archive is empty."
+        }
 
 
     # --------------------------------------------------------
-    # Locate installed binary
+    # Extract
     # --------------------------------------------------------
 
-    if [[ ! -x "$uv_dir/uv" ]]; then
+    tar \
+        -xzf "$archive_path" \
+        -C "$tmp" \
+        || {
+            rm -rf "$tmp"
+            fail "uv archive extraction failed."
+        }
 
-        for candidate in \
-            /usr/local/uv/uv \
-            /root/.local/bin/uv \
-            /root/.cargo/bin/uv
-        do
 
-            if [[ -x "$candidate" ]] \
-                && "$candidate" --version >/dev/null 2>&1
-            then
+    local binary=""
 
-                ln -sf "$candidate" "$uv_dir/uv"
+    binary="$(
+        find "$tmp" \
+            -type f \
+            -name uv \
+            -perm -u+x \
+            -print \
+            -quit
+    )"
 
-                break
-            fi
 
-        done
-
-    fi
+    [[ -n "$binary" ]] \
+        || {
+            rm -rf "$tmp"
+            fail "uv binary was not found inside archive."
+        }
 
 
     # --------------------------------------------------------
-    # Final verification
+    # Install
     # --------------------------------------------------------
 
-    [[ -x "$uv_dir/uv" ]] \
-        || fail "uv was installed but binary could not be located."
+    install \
+        -Dm755 \
+        "$binary" \
+        "$uv_target" \
+        || {
+            rm -rf "$tmp"
+            fail "Cannot install uv to $uv_target."
+        }
 
-    "$uv_dir/uv" --version >/dev/null 2>&1 \
+
+    rm -rf "$tmp"
+
+
+    # --------------------------------------------------------
+    # Verify
+    # --------------------------------------------------------
+
+    [[ -x "$uv_target" ]] \
+        || fail "uv installation completed but binary is missing."
+
+
+    "$uv_target" --version >/dev/null 2>&1 \
         || fail "uv binary exists but cannot execute."
 
-    UV="$uv_dir/uv"
 
-    version="$("$UV" --version 2>/dev/null || true)"
+    local installed_version=""
 
-    [[ -n "$version" ]] \
-        || fail "Cannot determine uv version."
+    installed_version="$(
+        "$uv_target" --version 2>/dev/null
+    )"
 
-    ok "uv ready: $version"
+
+    ok "uv ready: $installed_version"
 }
 
 
@@ -656,7 +719,7 @@ setup_python() {
 
 
     # --------------------------------------------------------
-    # Install Python 3.12 through uv
+    # uv Python
     # --------------------------------------------------------
 
     "$UV" python install 3.12 \
@@ -675,15 +738,17 @@ setup_python() {
         || true
     )"
 
+
     [[ -n "$py" ]] \
         || fail "Python 3.12 binary not found."
+
 
     [[ -x "$py" ]] \
         || fail "Python 3.12 binary is not executable."
 
 
     # --------------------------------------------------------
-    # Verify Python
+    # Verify
     # --------------------------------------------------------
 
     local version=""
@@ -693,17 +758,19 @@ setup_python() {
         'import sys; print(".".join(map(str, sys.version_info[:2])))'
     )"
 
+
     [[ "$version" == "3.12" ]] \
         || fail "Wrong Python selected: $version"
 
 
     # --------------------------------------------------------
-    # Create venv
+    # venv
     # --------------------------------------------------------
 
     rm -rf "$VENV"
 
     log "Creating Python 3.12 virtual environment..."
+
 
     "$UV" venv \
         --python "$py" \
@@ -713,6 +780,7 @@ setup_python() {
 
     local p="$VENV/bin/python"
 
+
     [[ -x "$p" ]] \
         || fail "venv Python missing."
 
@@ -721,6 +789,7 @@ setup_python() {
         "$p" -c \
         'import sys; print(".".join(map(str, sys.version_info[:2])))'
     )"
+
 
     [[ "$version" == "3.12" ]] \
         || fail "venv is not Python 3.12."
@@ -732,7 +801,12 @@ setup_python() {
 
     log "Preparing pip..."
 
-    "$p" -m ensurepip --upgrade >/dev/null 2>&1 || true
+
+    "$p" -m ensurepip \
+        --upgrade \
+        >/dev/null 2>&1 \
+        || true
+
 
     "$p" -m pip install \
         --upgrade \
@@ -744,10 +818,11 @@ setup_python() {
 
 
     # --------------------------------------------------------
-    # Requirements
+    # Dependencies
     # --------------------------------------------------------
 
     log "Installing Python dependencies..."
+
 
     if ! "$p" -m pip install \
         --no-cache-dir \
@@ -755,9 +830,10 @@ setup_python() {
         -r "$APP_DIR/requirements.txt"
     then
 
-        warn "Binary-only installation failed."
+        warn "Binary-only dependency installation failed."
 
-        log "Retrying dependency installation with source packages..."
+        log "Retrying with source packages..."
+
 
         "$p" -m pip install \
             --no-cache-dir \
@@ -768,7 +844,7 @@ setup_python() {
 
 
     # --------------------------------------------------------
-    # Dependency test
+    # Test
     # --------------------------------------------------------
 
     "$p" - <<'PY'
@@ -795,12 +871,13 @@ for module in required:
 print("Python dependency test: OK")
 PY
 
+
     ok "Python runtime ready: $("$p" --version)"
 }
 
 
 # ============================================================
-# SECRETS
+# PASSWORD / SECRET
 # ============================================================
 
 generate_secret() {
@@ -816,7 +893,7 @@ generate_password() {
 
 
 # ============================================================
-# CONFIGURATION
+# CONFIG
 # ============================================================
 
 config() {
@@ -826,6 +903,7 @@ config() {
     local secret=""
     local password=""
 
+
     if [[ -f "$ENV_FILE" ]]; then
 
         secret="$(
@@ -834,6 +912,7 @@ config() {
             | cut -d= -f2- \
             || true
         )"
+
 
         password="$(
             grep '^ADMIN_PASSWORD=' "$ENV_FILE" \
@@ -847,6 +926,7 @@ config() {
 
     [[ -n "$secret" ]] \
         || secret="$(generate_secret)"
+
 
     [[ -n "$password" ]] \
         || password="$(generate_password)"
@@ -867,6 +947,7 @@ PYTHONUNBUFFERED=1
 PYTHONDONTWRITEBYTECODE=1
 PIP_NO_CACHE_DIR=1
 EOF
+
 
     chmod 600 "$ENV_FILE"
 
@@ -900,7 +981,9 @@ MTProto:
 $MTPROXY
 EOF
 
+
     chmod 600 "$APP_DIR/INSTALL-CREDENTIALS.txt"
+
 
     ok "Configuration completed."
 }
@@ -947,10 +1030,6 @@ install_xray() {
             xray_arch="arm32-v7a"
             ;;
 
-        armv6l)
-            xray_arch="arm32-v6a"
-            ;;
-
         i686|i386)
             xray_arch="32"
             ;;
@@ -963,14 +1042,16 @@ install_xray() {
     esac
 
 
-    url="https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-${xray_arch}.zip"
+    url="https://github.com/XTLS/Xray-core/releases/download/v${XRAY_VERSION}/Xray-linux-${xray_arch}.zip"
 
     zip="$APP_DIR/xray.zip"
 
 
-    log "Installing Xray..."
+    log "Installing Xray ${XRAY_VERSION}..."
 
-    if curl -fL \
+
+    if curl \
+        -fL \
         --retry 5 \
         --retry-delay 2 \
         "$url" \
@@ -981,13 +1062,19 @@ install_xray() {
 
         mkdir -p "$APP_DIR/xray"
 
-        if unzip -o "$zip" \
-            -d "$APP_DIR/xray" >/dev/null
+
+        if unzip -o \
+            "$zip" \
+            -d "$APP_DIR/xray" \
+            >/dev/null
         then
 
             rm -f "$zip"
 
-            chmod +x "$XRAY" 2>/dev/null || true
+            chmod +x "$XRAY" \
+                2>/dev/null \
+                || true
+
 
             if [[ -x "$XRAY" ]] \
                 && "$XRAY" version >/dev/null 2>&1
@@ -997,7 +1084,7 @@ install_xray() {
 
             else
 
-                warn "Xray binary was extracted but verification failed."
+                warn "Xray extracted but verification failed."
 
             fi
 
@@ -1020,7 +1107,7 @@ install_xray() {
 
 
 # ============================================================
-# MTPROTO
+# MTPROXY
 # ============================================================
 
 install_mtproxy() {
@@ -1036,7 +1123,9 @@ install_mtproxy() {
     local t=""
     local b=""
 
+
     t="$(mktemp -d /tmp/mtproxy.XXXXXX)"
+
 
     log "Building MTProxy..."
 
@@ -1145,7 +1234,8 @@ EOF
 
     systemctl daemon-reload
 
-    systemctl enable "$SERVICE.service" \
+    systemctl enable \
+        "$SERVICE.service" \
         >/dev/null 2>&1 \
         || true
 }
@@ -1254,7 +1344,11 @@ start_panel() {
 
     else
 
-        tail -n 80 "$LOGFILE" 2>/dev/null || true
+        tail \
+            -n 80 \
+            "$LOGFILE" \
+            2>/dev/null \
+            || true
 
     fi
 
@@ -1271,7 +1365,8 @@ stop_panel() {
 
     if systemd_ok; then
 
-        systemctl stop "$SERVICE.service" \
+        systemctl stop \
+            "$SERVICE.service" \
             >/dev/null 2>&1 \
             || true
 
@@ -1283,15 +1378,21 @@ stop_panel() {
 
             p="$(cat "$PIDFILE" 2>/dev/null || echo 0)"
 
+
             if [[ "$p" =~ ^[0-9]+$ ]]; then
 
-                kill "$p" 2>/dev/null || true
+                kill "$p" \
+                    2>/dev/null \
+                    || true
 
                 sleep 1
 
-                kill -9 "$p" 2>/dev/null || true
+                kill -9 "$p" \
+                    2>/dev/null \
+                    || true
 
             fi
+
 
             rm -f "$PIDFILE"
 
@@ -1318,6 +1419,7 @@ status_panel() {
     echo "OS: $OS_NAME"
 
     echo "Port: 8080"
+
 
     if [[ -x "$VENV/bin/python" ]]; then
 
@@ -1346,25 +1448,30 @@ status_panel() {
     fi
 
 
-    if [[ -x "$XRAY" ]]; then
+    if [[ -x "$UV" ]] \
+        && "$UV" --version >/dev/null 2>&1
+    then
 
-        echo "Xray: installed"
+        echo "uv: $("$UV" --version)"
 
     else
 
-        echo "Xray: missing"
+        echo "uv: missing"
 
     fi
 
 
-    if [[ -x "$MTPROXY" ]]; then
-
-        echo "MTProto: installed"
-
+    if [[ -x "$XRAY" ]]; then
+        echo "Xray: installed"
     else
+        echo "Xray: missing"
+    fi
 
+
+    if [[ -x "$MTPROXY" ]]; then
+        echo "MTProto: installed"
+    else
         echo "MTProto: missing"
-
     fi
 
 
@@ -1407,6 +1514,7 @@ info_panel() {
     local ip=""
     local local_ip=""
 
+
     password="$(
         grep '^ADMIN_PASSWORD=' "$ENV_FILE" \
         2>/dev/null \
@@ -1426,6 +1534,7 @@ info_panel() {
     echo "================================================"
     echo "                 SPIDERPANEL"
     echo "================================================"
+
 
     echo "URL: http://127.0.0.1:8080/spider"
 
@@ -1458,6 +1567,7 @@ info_panel() {
 
 
     echo
+
     echo "Admin Password: ${password:-NOT FOUND}"
 
     echo "Application: $APP_DIR"
@@ -1466,11 +1576,14 @@ info_panel() {
 
     echo "Python: $VENV/bin/python"
 
+    echo "uv: $UV"
+
     echo "Xray: $XRAY"
 
     echo "MTProto: $MTPROXY"
 
     echo
+
     echo "Commands:"
 
     echo "  spiderpanel"
@@ -1482,6 +1595,8 @@ info_panel() {
     echo "  spiderpanel update"
     echo "  spiderpanel logs"
     echo "  spiderpanel uninstall"
+
+    echo
 
     echo "================================================"
 
@@ -1579,8 +1694,10 @@ uninstall_panel() {
             >/dev/null 2>&1 \
             || true
 
+
         rm -f \
             "/etc/systemd/system/$SERVICE.service"
+
 
         systemctl daemon-reload \
             >/dev/null 2>&1 \
@@ -1764,11 +1881,8 @@ install_panel() {
     config
 
 
-    # --------------------------------------------------------
-    # Python compile check
-    # --------------------------------------------------------
-
     log "Checking Python source files..."
+
 
     "$VENV/bin/python" \
         -m compileall \
@@ -1778,7 +1892,7 @@ install_panel() {
 
 
     # --------------------------------------------------------
-    # Keep installer inside app
+    # Preserve installer
     # --------------------------------------------------------
 
     if [[ -f "$TMP_ROOT/app/start.sh" ]]; then
@@ -1789,44 +1903,14 @@ install_panel() {
 
         chmod 755 "$APP_DIR/start.sh"
 
-    else
-
-        # If repository does not contain start.sh,
-        # preserve current running installer.
-
-        if [[ ! -f "$APP_DIR/start.sh" ]]; then
-
-            warn "Repository does not contain start.sh."
-
-        fi
-
     fi
 
 
-    # --------------------------------------------------------
-    # CLI
-    # --------------------------------------------------------
-
     create_cli
-
-
-    # --------------------------------------------------------
-    # Service
-    # --------------------------------------------------------
 
     create_service
 
-
-    # --------------------------------------------------------
-    # Start
-    # --------------------------------------------------------
-
     start_panel
-
-
-    # --------------------------------------------------------
-    # Information
-    # --------------------------------------------------------
 
     info_panel
 
