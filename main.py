@@ -716,7 +716,7 @@ def _xray_x25519_privkey_norm(private_key: str) -> str:
 
 # ── WireGuard / AmneziaWG helpers ────────────────────────────────────────────
 def _wg_gen_keypair() -> tuple:
-    """Generate a WireGuard key pair (private, public) using Python crypto."""
+    """Generate a WireGuard-compatible X25519 key pair as standard base64."""
     try:
         from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
         import base64 as b64
@@ -727,222 +727,93 @@ def _wg_gen_keypair() -> tuple:
             b64.b64encode(priv_bytes).decode(),
             b64.b64encode(pub_bytes).decode(),
         )
-    except ImportError:
+    except Exception as exc:
+        logger.warning("WireGuard key generation failed: %s", exc)
         return "", ""
 
 
-def _wg_read_endpoints() -> list:
-    """Read available endpoints from data/endpoint.txt."""
-    ep_file = Path(os.path.dirname(os.path.abspath(__file__))) / "data" / "endpoint.txt"
-    if not ep_file.is_file():
-        ep_file = DATA_DIR / "endpoint.txt"
-    if not ep_file.is_file():
-        return []
-    out = []
-    for line in ep_file.read_text(errors="ignore").splitlines():
-        line = line.strip()
-        if line and ":" in line and not line.startswith("#"):
-            out.append(line)
-    return out
+def _normalize_reality_destination(value: str, default_port: int = 443) -> str:
+    """Normalize Reality Destination/Target to a bare host:port value.
 
-
-def generate_wg_config(user_id: str, user: dict, inbound: dict, remark_tag: str = None) -> str:
-    """Generate an AmneziaWG config for a user based on the inbound settings.
-
-    Supports two modes:
-    - WARP mode (warp_mode=True): Uses Cloudflare WARP infrastructure with
-      proper WARP PublicKey, Address (IPv4+IPv6), DNS, and endpoints.
-    - Custom mode (warp_mode=False): Uses user-defined server settings.
+    Accepts host, host:port and https://host[:port], but rejects paths,
+    credentials and whitespace. This keeps Xray's realitySettings.dest valid
+    even when the UI receives a custom target.
     """
-    username = user.get("username", user_id)
-    wg = inbound.get("wireguard_settings") or {}
-    warp_mode = bool(wg.get("warp_mode"))
+    import ipaddress
+    from urllib.parse import urlsplit
 
-    # Generate per-user WireGuard private key
-    priv_key, _ = _wg_gen_keypair()
-    if not priv_key:
-        return ""
+    raw = str(value or "").strip()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Reality Target cannot be empty")
+    if any(ch.isspace() for ch in raw):
+        raise HTTPException(status_code=400, detail="Reality Target must not contain whitespace")
 
-    # AmneziaWG obfuscation parameters
-    jc = wg.get("jc") or "3"
-    jmin = wg.get("jmin") or "1"
-    jmax = wg.get("jmax") or "3"
-    s1 = wg.get("s1") or "0"
-    s2 = wg.get("s2") or "0"
-    h1 = wg.get("h1") or "1"
-    h2 = wg.get("h2") or "2"
-    h3 = wg.get("h3") or "3"
-    h4 = wg.get("h4") or "4"
-    i1 = wg.get("i1") or ""
+    candidate = raw
+    if "://" in candidate:
+        parsed = urlsplit(candidate)
+        if parsed.scheme.lower() not in ("http", "https", "tls") or not parsed.hostname:
+            raise HTTPException(status_code=400, detail="Invalid Reality Target")
+        if parsed.path not in ("", "/") or parsed.query or parsed.fragment or parsed.username or parsed.password:
+            raise HTTPException(status_code=400, detail="Reality Target must be host[:port] only")
+        candidate = parsed.netloc
 
-    if warp_mode:
-        # ── WARP mode: use Cloudflare WARP infrastructure ──
-        # Fixed WARP PublicKey (same for all WARP users)
-        server_pub = "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo="
-        # WARP address: 172.16.0.x/32 + IPv6
-        address = wg.get("address") or "172.16.0.2/32, 2606:4700:110::2/128"
-        # WARP DNS: Cloudflare DNS with IPv6
-        dns = wg.get("dns") or "1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001"
-        mtu = wg.get("mtu") or "1280"
-        # Endpoint from the configured endpoint (should be a Cloudflare WARP IP)
-        endpoint = wg.get("endpoint") or "8.6.112.4:443"
-    else:
-        # ── Custom WireGuard server mode ──
-        server_pub = wg.get("server_public_key") or ""
-        if not server_pub:
-            _, server_pub = _wg_gen_keypair()
-        endpoint = wg.get("endpoint") or "8.6.112.4:443"
-        mtu = wg.get("mtu") or "1280"
-        address = wg.get("address") or "172.16.0.2/32"
-        dns = wg.get("dns") or "1.1.1.1, 1.0.0.1"
+    try:
+        if candidate.startswith("["):
+            end = candidate.find("]")
+            if end < 0:
+                raise ValueError
+            host = candidate[1:end]
+            tail = candidate[end + 1:]
+            port = int(tail[1:]) if tail.startswith(":") else default_port
+            ipaddress.IPv6Address(host)
+            if not 1 <= port <= 65535:
+                raise ValueError
+            return f"[{host}]:{port}"
 
-    # AmneziaWG parameters
-    jc = wg.get("jc") or "3"
-    jmin = wg.get("jmin") or "1"
-    jmax = wg.get("jmax") or "3"
-    s1 = wg.get("s1") or "0"
-    s2 = wg.get("s2") or "0"
-    h1 = wg.get("h1") or "1"
-    h2 = wg.get("h2") or "2"
-    h3 = wg.get("h3") or "3"
-    h4 = wg.get("h4") or "4"
-    i1 = wg.get("i1") or ""
+        if candidate.count(":") == 1:
+            host, port_s = candidate.rsplit(":", 1)
+            port = int(port_s)
+        elif candidate.count(":") > 1:
+            ipaddress.IPv6Address(candidate)
+            host, port = candidate, default_port
+        else:
+            host, port = candidate, default_port
 
-    rem = f"Spider-{username}-WG"
-    if remark_tag:
-        rem = f"{rem} {remark_tag}"
-
-    config = f"""# AmneziaWG Config
-
-[Interface]
-PrivateKey = {priv_key}
-Address = {address}
-DNS = {dns}
-MTU = {mtu}
-Jc = {jc}
-Jmin = {jmin}
-Jmax = {jmax}
-S1 = {s1}
-S2 = {s2}
-H1 = {h1}
-H2 = {h2}
-H3 = {h3}
-H4 = {h4}
-I1 = {i1}
-
-[Peer]
-PublicKey = {server_pub}
-AllowedIPs = 0.0.0.0/0, ::/0
-Endpoint = {endpoint}
-"""
-    return config.strip()
+        host = host.rstrip(".").lower()
+        if not host or len(host) > 253 or not 1 <= int(port) <= 65535:
+            raise ValueError
+        if any(ch in host for ch in "/\\@?#"):
+            raise ValueError
+        # Hostnames may contain letters, digits, dots, hyphens, underscore for
+        # compatibility with some SNI test entries. IP literals are allowed.
+        return f"{host}:{int(port)}"
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid Reality Target; use host[:port]")
 
 
-def _wg_read_endpoints() -> list:
-    """Read available endpoints from data/endpoint.txt."""
-    ep_file = Path(os.path.dirname(os.path.abspath(__file__))) / "data" / "endpoint.txt"
-    if not ep_file.is_file():
-        ep_file = DATA_DIR / "endpoint.txt"
-    if not ep_file.is_file():
-        return []
-    out = []
-    for line in ep_file.read_text(errors="ignore").splitlines():
-        line = line.strip()
-        if line and ":" in line and not line.startswith("#"):
-            out.append(line)
-    return out
+def _normalize_reality_sni(value: str) -> str:
+    """Normalize/validate a Reality Server Name (SNI) host."""
+    raw = str(value or "").strip().lower()
+    if not raw or len(raw) > 253 or any(ch.isspace() for ch in raw):
+        raise HTTPException(status_code=400, detail="Invalid Reality SNI")
+    if "://" in raw or any(ch in raw for ch in "/\\@?#"):
+        raise HTTPException(status_code=400, detail="Reality SNI must be a hostname only")
+    if raw.startswith("[") or raw.count(":"):
+        raise HTTPException(status_code=400, detail="Reality SNI must not contain a port")
+    return raw.rstrip(".")
 
 
-def generate_wg_config(user_id: str, user: dict, inbound: dict, remark_tag: str = None) -> str:
-    """Generate an AmneziaWG config for a user based on the inbound settings.
-
-    Supports two modes:
-    - WARP mode (warp_mode=True): Uses Cloudflare WARP infrastructure with
-      proper WARP PublicKey, Address (IPv4+IPv6), DNS, and endpoints.
-    - Custom mode (warp_mode=False): Uses user-defined server settings.
-    """
-    username = user.get("username", user_id)
-    wg = inbound.get("wireguard_settings") or {}
-    warp_mode = bool(wg.get("warp_mode"))
-
-    # Generate per-user WireGuard private key
-    priv_key, _ = _wg_gen_keypair()
-    if not priv_key:
-        return ""
-
-    # AmneziaWG obfuscation parameters
-    jc = wg.get("jc") or "3"
-    jmin = wg.get("jmin") or "1"
-    jmax = wg.get("jmax") or "3"
-    s1 = wg.get("s1") or "0"
-    s2 = wg.get("s2") or "0"
-    h1 = wg.get("h1") or "1"
-    h2 = wg.get("h2") or "2"
-    h3 = wg.get("h3") or "3"
-    h4 = wg.get("h4") or "4"
-    i1 = wg.get("i1") or ""
-
-    if warp_mode:
-        # ── WARP mode: use Cloudflare WARP infrastructure ──
-        # Fixed WARP PublicKey (same for all WARP users)
-        server_pub = "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo="
-        # WARP address: 172.16.0.x/32 + IPv6
-        address = wg.get("address") or "172.16.0.2/32, 2606:4700:110::2/128"
-        # WARP DNS: Cloudflare DNS with IPv6
-        dns = wg.get("dns") or "1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001"
-        mtu = wg.get("mtu") or "1280"
-        # Endpoint from the configured endpoint (should be a Cloudflare WARP IP)
-        endpoint = wg.get("endpoint") or "8.6.112.4:443"
-    else:
-        # ── Custom WireGuard server mode ──
-        server_pub = wg.get("server_public_key") or ""
-        if not server_pub:
-            _, server_pub = _wg_gen_keypair()
-        endpoint = wg.get("endpoint") or "8.6.112.4:443"
-        mtu = wg.get("mtu") or "1280"
-        address = wg.get("address") or "172.16.0.2/32"
-        dns = wg.get("dns") or "1.1.1.1, 1.0.0.1"
-
-    # AmneziaWG parameters
-    jc = wg.get("jc") or "3"
-    jmin = wg.get("jmin") or "1"
-    jmax = wg.get("jmax") or "3"
-    s1 = wg.get("s1") or "0"
-    s2 = wg.get("s2") or "0"
-    h1 = wg.get("h1") or "1"
-    h2 = wg.get("h2") or "2"
-    h3 = wg.get("h3") or "3"
-    h4 = wg.get("h4") or "4"
-    i1 = wg.get("i1") or ""
-
-    rem = f"Spider-{username}-WG"
-    if remark_tag:
-        rem = f"{rem} {remark_tag}"
-
-    config = f"""# AmneziaWG Config
-
-[Interface]
-PrivateKey = {priv_key}
-Address = {address}
-DNS = {dns}
-MTU = {mtu}
-Jc = {jc}
-Jmin = {jmin}
-Jmax = {jmax}
-S1 = {s1}
-S2 = {s2}
-H1 = {h1}
-H2 = {h2}
-H3 = {h3}
-H4 = {h4}
-I1 = {i1}
-
-[Peer]
-PublicKey = {server_pub}
-AllowedIPs = 0.0.0.0/0, ::/0
-Endpoint = {endpoint}
-"""
-    return config.strip()
+def _parse_port(value, default=None, field="port") -> int | None:
+    """Parse and validate a TCP/UDP port without leaking ValueError as HTTP 500."""
+    if value in (None, ""):
+        return default
+    try:
+        port = int(value)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail=f"{field} must be a valid integer port")
+    if not 1 <= port <= 65535:
+        raise HTTPException(status_code=400, detail=f"{field} must be between 1 and 65535")
+    return port
 
 
 def _wg_read_endpoints() -> list:
@@ -1249,6 +1120,28 @@ async def startup():
             _tg_ib.pop("sni", None)
             _tg_ib.pop("destination", None)
             _tg_ib.pop("server_name", None)
+
+    # Normalize existing WireGuard inbounds so legacy entries always have a real
+    # UDP listen port and a stable server keypair.
+    _wg_changed = False
+    for _wg_ib in INBOUNDS.values():
+        if (_wg_ib.get("protocol") or "").lower() != "wireguard":
+            continue
+        _wg = _wg_ib.setdefault("wireguard_settings", {})
+        if not _wg.get("listen_port"):
+            _wg["listen_port"] = _wg_ib.get("port") or 51820
+            _wg_changed = True
+        if not _wg_ib.get("port"):
+            _wg_ib["port"] = _wg.get("listen_port") or 51820
+            _wg_changed = True
+        if not _wg.get("server_private_key") or not _wg.get("server_public_key"):
+            _wk, _wp = _wg_gen_keypair()
+            if _wk and _wp:
+                _wg["server_private_key"] = _wk
+                _wg["server_public_key"] = _wp
+                _wg_changed = True
+    if _wg_changed:
+        asyncio.create_task(save_state())
 
     # Backfill placeholder domains on any pre-existing inbounds so configs never
     # carry localhost/SERVER_IP when a real domain is available.
@@ -3142,7 +3035,7 @@ async def list_inbounds(_=Depends(require_auth)):
         result.append({
             "inbound_id": iid,
             **ib,
-            "users_count": sum(1 for u in USERS.values() if u.get("inbound_id") == iid),
+            "users_count": sum(1 for u in USERS.values() if iid in (u.get("inbound_ids") or ([u.get("inbound_id")] if u.get("inbound_id") else []))),
         })
     result.sort(key=lambda x: x.get("created_at") or "", reverse=True)
     return {"inbounds": result}
@@ -3177,15 +3070,16 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
         sni = wdom
 
     # Telegram uses the explicit internal listener from telegram_settings.
+    # WireGuard is UDP-based, so it also needs a real listen port.
     if protocol == "telegram":
-        port = int(body.get("port") or 0)
-        external_port = int(body.get("external_port") or 443)
+        port = _parse_port(body.get("port"), 44344, "internal_port")
+        external_port = _parse_port(body.get("external_port"), 443, "external_port")
     elif protocol == "wireguard":
-        port = 0
+        port = _parse_port(body.get("port"), 51820, "listen_port")
         external_port = 0
     else:
-        port = int(body.get("port") or 443)
-        external_port = int(body.get("external_port") or 443)
+        port = _parse_port(body.get("port"), 443, "port")
+        external_port = _parse_port(body.get("external_port"), 443, "external_port")
 
     fingerprint = str(body.get("fingerprint") or "chrome").strip()
     spoof_ip = str(body.get("spoof_ip") or "").strip()
@@ -3195,6 +3089,22 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
     grpc_settings = body.get("grpc_settings", {}) if isinstance(body.get("grpc_settings"), dict) else {}
     wireguard_settings = body.get("wireguard_settings", {}) if isinstance(body.get("wireguard_settings"), dict) else {}
     telegram_settings = body.get("telegram_settings", {}) if isinstance(body.get("telegram_settings"), dict) else {}
+    if protocol == "wireguard":
+        wireguard_settings = dict(wireguard_settings)
+        wireguard_settings["listen_port"] = port
+        if not wireguard_settings.get("endpoint"):
+            endpoints = _wg_read_endpoints()
+            if endpoints:
+                wireguard_settings["endpoint"] = endpoints[0]
+        # Persist a server keypair so custom WireGuard configs do not silently
+        # change their peer key every time a user config is regenerated.
+        if not wireguard_settings.get("server_private_key") or not wireguard_settings.get("server_public_key"):
+            wg_priv, wg_pub = _wg_gen_keypair()
+            if wg_priv and wg_pub:
+                wireguard_settings["server_private_key"] = wg_priv
+                wireguard_settings["server_public_key"] = wg_pub
+        if not wireguard_settings.get("warp_mode"):
+            wireguard_settings["warp_mode"] = False
     if protocol == "telegram":
         # Telegram Proxy does not use Xray Reality fields.
         sni = ""
@@ -3224,9 +3134,13 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
         reality_settings.setdefault("spiderx", "/")
         reality_settings.setdefault("mldsa65_seed", fresh["mldsa65_seed"])
         reality_settings.setdefault("mldsa65_verify", fresh["mldsa65_verify"])
+        # Always derive the public key from the private key when possible so a
+        # hand-edited/stale public key can never desynchronize the Reality pair.
+        derived_pub = _xray_x25519_public_key(reality_settings.get("private_key", ""))
+        if derived_pub:
+            reality_settings["public_key"] = derived_pub
         # Reality keeps Destination/Target and Server Name/SNI as independent fields.
         # Accept both the current API names and legacy aliases from older panels.
-        legacy_sni = str(reality_settings.get("sni") or sni or "").strip()
         dest_value = str(
             reality_settings.get("dest")
             or reality_settings.get("target")
@@ -3241,18 +3155,13 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
             or sni
             or "is1-ssl.mzstatic.com"
         ).strip()
-        if not dest_value:
-            dest_value = server_name_value + ("" if ":" in server_name_value.rsplit("/", 1)[-1] else ":443")
-        if "://" in dest_value:
-            dest_value = dest_value.split("://", 1)[1]
+        server_name_value = _normalize_reality_sni(server_name_value)
+        dest_value = _normalize_reality_destination(dest_value or (server_name_value + ":443"))
         reality_settings["dest"] = dest_value
         reality_settings["target"] = dest_value
         reality_settings["sni"] = server_name_value
         reality_settings["server_name"] = server_name_value
-        names = reality_settings.get("server_names") or reality_settings.get("serverNames")
-        if isinstance(names, str):
-            names = [x.strip() for x in names.split(",") if x.strip()]
-        reality_settings["server_names"] = names or [server_name_value]
+        reality_settings["server_names"] = [server_name_value]
         # Keep top-level compatibility fields synchronized.
         destination = dest_value
         server_name = server_name_value
@@ -3263,14 +3172,12 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
         if network not in ("tcp", "xhttp", "grpc"):
             network = "tcp"
     else:
-        # For TLS WS/XHTTP (non-reality, non-worker): external_domain and external_port should be empty
-        # The panel domain is used via SETTINGS["domain"] in generate_user_config
-        external_domain = ""
-        external_port = ""
-    # WireGuard has no TCP listener here; Telegram keeps its real internal listener port.
-    if protocol == "wireguard":
-        port = 0
-        external_port = 0
+        # For TLS WS/XHTTP (non-reality, non-worker): external_domain and external_port
+        # are derived from the panel domain and must not leak Reality/TG-only values.
+        if protocol not in ("telegram", "wireguard"):
+            external_domain = ""
+            external_port = ""
+    # WireGuard uses the validated UDP listen port above.
 
     inbound_id = generate_short_id()
     async with INBOUNDS_LOCK:
@@ -3337,8 +3244,9 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
                 ib["external_domain"] = wdom
                 ib["sni"] = ib.get("sni") or "www.hcaptcha.com"
         if "port" in body:
-            _pv = str(body["port"] or "").strip()
-            ib["port"] = int(_pv) if _pv else ""  # "" = unconfigured (reality)
+            default_port = 51820 if (ib.get("protocol") or "").lower() == "wireguard" else (44344 if (ib.get("protocol") or "").lower() == "telegram" else None)
+            parsed = _parse_port(body["port"], default_port, "port")
+            ib["port"] = parsed if parsed is not None else ""  # "" = unconfigured (reality)
         if "network" in body:
             ib["network"] = str(body["network"]).lower()
         if "security" in body:
@@ -3361,10 +3269,8 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             # Keep target/destination and server-name/SNI independent.
             legacy_dest = str(rs.get("dest") or rs.get("target") or ib.get("destination") or "").strip()
             legacy_sni = str(rs.get("sni") or rs.get("server_name") or ib.get("server_name") or ib.get("sni") or "is1-ssl.mzstatic.com").strip()
-            if not legacy_dest:
-                legacy_dest = legacy_sni + ":443"
-            if "://" in legacy_dest:
-                legacy_dest = legacy_dest.split("://", 1)[1]
+            legacy_sni = _normalize_reality_sni(legacy_sni)
+            legacy_dest = _normalize_reality_destination(legacy_dest or (legacy_sni + ":443"))
             rs["dest"] = legacy_dest
             rs["target"] = legacy_dest
             rs["sni"] = legacy_sni
@@ -3412,10 +3318,8 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
                 or ib.get("sni")
                 or "is1-ssl.mzstatic.com"
             ).strip()
-            if not dest_v:
-                dest_v = sni_v + ":443"
-            if "://" in dest_v:
-                dest_v = dest_v.split("://", 1)[1]
+            sni_v = _normalize_reality_sni(sni_v)
+            dest_v = _normalize_reality_destination(dest_v or (sni_v + ":443"))
             incoming_rs["dest"] = dest_v
             incoming_rs["target"] = dest_v
             incoming_rs["sni"] = sni_v
@@ -3423,6 +3327,9 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             incoming_rs["server_names"] = [sni_v]
             if not incoming_rs.get("short_id"):
                 incoming_rs["short_id"] = secrets.token_hex(5)[:10]
+            derived_pub = _xray_x25519_public_key(incoming_rs.get("private_key", ""))
+            if derived_pub:
+                incoming_rs["public_key"] = derived_pub
             ib["reality_settings"] = incoming_rs
             ib["destination"] = dest_v
             ib["server_name"] = sni_v
@@ -3434,7 +3341,20 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         if "grpc_settings" in body and isinstance(body["grpc_settings"], dict):
             ib["grpc_settings"] = body["grpc_settings"]
         if "wireguard_settings" in body and isinstance(body["wireguard_settings"], dict):
-            ib["wireguard_settings"] = body["wireguard_settings"]
+            wg_update = dict(body["wireguard_settings"])
+            wg_update["listen_port"] = _parse_port(wg_update.get("listen_port") or body.get("port") or ib.get("port"), 51820, "listen_port")
+            if not wg_update.get("server_private_key") or not wg_update.get("server_public_key"):
+                existing = ib.get("wireguard_settings") or {}
+                wg_update.setdefault("server_private_key", existing.get("server_private_key") or "")
+                wg_update.setdefault("server_public_key", existing.get("server_public_key") or "")
+            if not wg_update.get("warp_mode") and (not wg_update.get("server_private_key") or not wg_update.get("server_public_key")):
+                wg_priv, wg_pub = _wg_gen_keypair()
+                if wg_priv and wg_pub:
+                    wg_update["server_private_key"] = wg_priv
+                    wg_update["server_public_key"] = wg_pub
+            ib["wireguard_settings"] = wg_update
+            ib["port"] = wg_update["listen_port"]
+            ib["external_port"] = 0
         if "telegram_settings" in body and isinstance(body["telegram_settings"], dict):
             ib["telegram_settings"] = body["telegram_settings"]
 
@@ -3477,6 +3397,15 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
     if (ib.get("protocol") or "").lower() == "telegram":
         asyncio.create_task(_restart_telegram_proxy(inbound_id))
     return {"ok": True}
+
+
+@app.post("/api/tools/generate-wireguard-keys")
+async def generate_wireguard_keys(_=Depends(require_auth)):
+    """Generate a persistent-ready WireGuard server keypair for the inbound form."""
+    private_key, public_key = _wg_gen_keypair()
+    if not private_key or not public_key:
+        raise HTTPException(status_code=500, detail="WireGuard key generation is unavailable")
+    return {"ok": True, "private_key": private_key, "public_key": public_key}
 
 
 @app.get("/api/wg/endpoints")
@@ -6162,10 +6091,8 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
         # SNI/Destination/Server Names. Do not silently replace it with a
         # hard-coded target, otherwise the client SNI and Xray destination can
         # describe different TLS targets.
-        rs_sni = str(rs.get("sni") or ib.get("sni") or "is1-ssl.mzstatic.com").strip()
-        rs_dest = str(rs.get("dest") or (rs_sni + ":443")).strip()
-        if "://" in rs_dest:
-            rs_dest = rs_dest.split("://", 1)[1]
+        rs_sni = _normalize_reality_sni(str(rs.get("sni") or ib.get("sni") or "is1-ssl.mzstatic.com").strip())
+        rs_dest = _normalize_reality_destination(str(rs.get("dest") or rs.get("target") or (rs_sni + ":443")).strip())
         rs_server_names = rs.get("server_names") or rs.get("serverNames") or [rs_sni]
         if isinstance(rs_server_names, str):
             rs_server_names = [x.strip() for x in rs_server_names.split(",") if x.strip()]
@@ -8122,31 +8049,35 @@ def _read_sni_results() -> list:
 
 
 @app.get("/api/scanner/sni-check")
-async def scanner_sni_check(host: str, port: int = 443, _=Depends(require_auth)):
-    """Perform a real TLS handshake using the supplied hostname as SNI."""
+async def scanner_sni_check(host: str, port: int = 443, connect_host: str = "", connect_port: int = 0, _=Depends(require_auth)):
+    """Perform a TLS handshake with SNI=host against an explicit endpoint.
+
+    This is important for Reality/SNI scanning: measuring each SNI against its
+    own DNS target does not tell us which SNI is fastest for the selected server.
+    When connect_host is omitted, host remains the connection target for backward
+    compatibility.
+    """
     import ssl
-    host = str(host or "").strip().lower()
-    if not host or len(host) > 253 or any(ch.isspace() for ch in host) or "/" in host:
-        raise HTTPException(status_code=400, detail="invalid SNI host")
-    port = int(port or 443)
-    if port < 1 or port > 65535:
-        raise HTTPException(status_code=400, detail="invalid port")
+    target_sni = _normalize_reality_sni(host)
+    target_port = _parse_port(port, 443, "port")
+    endpoint_host = str(connect_host or "").strip().lower() or str(SETTINGS.get("domain") or get_host()).strip().lower() or target_sni
+    endpoint_port = _parse_port(connect_port, target_port, "connect_port")
     started = time.perf_counter()
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
     try:
         reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(host, port, ssl=ctx, server_hostname=host), timeout=3.0
+            asyncio.open_connection(endpoint_host, endpoint_port, ssl=ctx, server_hostname=target_sni), timeout=3.0
         )
         ms = round((time.perf_counter() - started) * 1000, 2)
         try:
             writer.close(); await writer.wait_closed()
         except Exception:
             pass
-        return {"ok": True, "sni": host, "latency_ms": ms, "port": port}
+        return {"ok": True, "sni": target_sni, "latency_ms": ms, "port": endpoint_port, "connect_host": endpoint_host}
     except Exception as e:
-        return {"ok": False, "sni": host, "latency_ms": round((time.perf_counter()-started)*1000,2), "port": port, "error": str(e)[:180]}
+        return {"ok": False, "sni": target_sni, "latency_ms": round((time.perf_counter()-started)*1000,2), "port": endpoint_port, "connect_host": endpoint_host, "error": str(e)[:180]}
 
 
 @app.get("/api/scanner/sni-scan-list")
@@ -8197,12 +8128,34 @@ async def scanner_sni_save_results(request: Request, _=Depends(require_auth)):
 
 
 @app.get("/api/scanner/sni-fastest")
-async def scanner_sni_fastest(_=Depends(require_auth)):
-    """Return the single fastest SNI from results (for the lightning button)."""
+async def scanner_sni_fastest(connect_host: str = "", connect_port: int = 443, refresh: int = 0, _=Depends(require_auth)):
+    """Return the fastest saved SNI, or optionally refresh by scanning the source list.
+
+    refresh=1 is used by the lightning action when there are no saved results.
+    The scan is bounded and concurrent so the button never depends on a stale file.
+    """
     results = _read_sni_results()
+    if results and not int(refresh or 0):
+        return {"ok": True, "sni": results[0]["sni"], "latency_ms": results[0].get("latency_ms", 0), "results": results}
+    if int(refresh or 0):
+        snis = _read_sni_list()[:100]
+        endpoint = str(connect_host or "").strip().lower()
+        p = _parse_port(connect_port, 443, "connect_port")
+        sem = asyncio.Semaphore(8)
+        async def one(s):
+            async with sem:
+                return await scanner_sni_check(s, p, endpoint, p)
+        checked = await asyncio.gather(*(one(s) for s in snis), return_exceptions=True)
+        fresh = [{"sni": r["sni"], "latency_ms": r["latency_ms"]} for r in checked if isinstance(r, dict) and r.get("ok")]
+        fresh.sort(key=lambda x: x["latency_ms"])
+        if fresh:
+            fresh = fresh[:10]
+            f = _sni_result_file(); f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text("# Fastest SNIs\n# Format: sni|latency_ms\n" + "\n".join(f"{r['sni']}|{round(r['latency_ms'],2)}" for r in fresh) + "\n", encoding="utf-8")
+            return {"ok": True, "sni": fresh[0]["sni"], "latency_ms": fresh[0]["latency_ms"], "results": fresh}
     if results:
-        return {"ok": True, "sni": results[0]["sni"], "latency_ms": results[0].get("latency_ms", 0)}
-    return {"ok": False, "sni": "", "latency_ms": 0}
+        return {"ok": True, "sni": results[0]["sni"], "latency_ms": results[0].get("latency_ms", 0), "results": results}
+    return {"ok": False, "sni": "", "latency_ms": 0, "results": []}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
