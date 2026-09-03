@@ -8,6 +8,9 @@ set -Eeuo pipefail
 # INSTALL:
 #   curl -fsSL https://raw.githubusercontent.com/amirh00sain/SpiderPanel/main/start.sh | bash
 #
+# OR:
+#   wget -qO- https://raw.githubusercontent.com/amirh00sain/SpiderPanel/main/start.sh | bash
+#
 # AFTER INSTALL:
 #   spiderpanel
 #
@@ -23,470 +26,390 @@ set -Eeuo pipefail
 #   spiderpanel logs
 #   spiderpanel uninstall
 #
-# FEATURES:
-#   - curl | bash safe
-#   - automatic sudo
-#   - Python 3.12 isolated runtime
-#   - destroys incompatible Python 3.14 venv automatically
-#   - Arch / Omarchy / CachyOS
-#   - Ubuntu / Debian
-#   - Fedora / RHEL
-#   - GitHub Codespaces
-#   - VPS + systemd
-#   - non-systemd standalone mode
-#   - fixed port 8080
-#   - persistent data
-#   - persistent admin password
-#   - Xray
-#   - MTProxy
-#   - global spiderpanel command
-#   - update
-#   - uninstall
 # ============================================================
 
-set +e
-
-APP_NAME="SpiderPanel"
+set +H
 
 APP_DIR="${SPIDER_APP_DIR:-/opt/SpiderPanel}"
-ENV_FILE="/etc/spider-panel.env"
-
 REPO="${SPIDER_REPO:-https://github.com/amirh00sain/SpiderPanel.git}"
 BRANCH="${SPIDER_BRANCH:-main}"
 
 INSTALLER_URL="${SPIDER_INSTALLER_URL:-https://raw.githubusercontent.com/amirh00sain/SpiderPanel/main/start.sh}"
 
-SERVICE_NAME="spider-panel"
+ENV_FILE="/etc/spider-panel.env"
+SERVICE="spider-panel"
 
-PORT="${SPIDER_PORT:-8080}"
+PORT="8080"
 
-VENV_DIR="$APP_DIR/.venv"
+VENV="$APP_DIR/.venv"
+PIDFILE="$APP_DIR/spiderpanel.pid"
+LOGFILE="$APP_DIR/spiderpanel.log"
 
-PID_FILE="$APP_DIR/spiderpanel.pid"
-LOG_FILE="$APP_DIR/spiderpanel.log"
+CLI="/usr/local/bin/spiderpanel"
 
-XRAY_VERSION="${XRAY_VERSION:-26.3.27}"
-XRAY_DIR="$APP_DIR/xray"
-XRAY_BIN="$XRAY_DIR/xray"
+XRAY="$APP_DIR/xray/xray"
+MTPROXY="/usr/local/bin/mtproto-proxy"
 
-MTPROXY_BIN="/usr/local/bin/mtproto-proxy"
-
-CLI_PATH="/usr/local/bin/spiderpanel"
+UV="/usr/local/bin/uv"
 
 TMP_ROOT=""
-TMP_INSTALLER=""
+
+OS_ID=""
+OS_NAME=""
+PID1=""
+HAS_SYSTEMD=0
+IS_CODESPACE=0
+
 
 # ============================================================
-# LOGGING
+# OUTPUT
 # ============================================================
 
 log() {
-    printf '\033[1;36m[SpiderPanel]\033[0m %s\n' "$*"
+    printf '[SpiderPanel] %s\n' "$*"
 }
 
 ok() {
-    printf '\033[1;32m[OK]\033[0m %s\n' "$*"
+    printf '[OK] %s\n' "$*"
 }
 
 warn() {
-    printf '\033[1;33m[WARN]\033[0m %s\n' "$*" >&2
-}
-
-error() {
-    printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2
+    printf '[WARN] %s\n' "$*" >&2
 }
 
 fail() {
-    error "$*"
+    printf '[ERROR] %s\n' "$*" >&2
     exit 1
 }
+
 
 # ============================================================
 # CLEANUP
 # ============================================================
 
 cleanup() {
-    if [[ -n "${TMP_ROOT:-}" && -d "${TMP_ROOT:-}" ]]; then
+    if [[ -n "${TMP_ROOT:-}" ]]; then
         rm -rf "$TMP_ROOT" 2>/dev/null || true
-    fi
-
-    if [[ -n "${TMP_INSTALLER:-}" && -f "${TMP_INSTALLER:-}" ]]; then
-        rm -f "$TMP_INSTALLER" 2>/dev/null || true
     fi
 }
 
 trap cleanup EXIT
 
+
 # ============================================================
-# ROOT
+# ROOT / SUDO
 # ============================================================
 
-become_root() {
+root() {
 
-    if [[ "$(id -u)" -eq 0 ]]; then
-        export HOME=/root
-        export XDG_CONFIG_HOME=/root/.config
-        export XDG_CACHE_HOME=/root/.cache
+    if (( EUID == 0 )); then
         return 0
     fi
 
-    command -v sudo >/dev/null 2>&1 || \
-        fail "sudo is not installed."
+    command -v sudo >/dev/null 2>&1 \
+        || fail "sudo is required."
 
-    TMP_INSTALLER="$(mktemp /tmp/spiderpanel-start.XXXXXX.sh)" || \
-        fail "Could not create temporary installer."
+    local f
 
-    log "Downloading installer for automatic sudo execution..."
+    f=$(mktemp /tmp/spiderpanel-root.XXXXXX)
 
     curl -fsSL \
-        --retry 3 \
-        --connect-timeout 10 \
-        --max-time 180 \
+        --retry 5 \
+        --retry-delay 2 \
         "$INSTALLER_URL" \
-        -o "$TMP_INSTALLER" || \
-        fail "Could not download installer."
+        -o "$f" \
+        || fail "Cannot download installer."
 
-    chmod 700 "$TMP_INSTALLER"
+    chmod 700 "$f"
 
-    export SPIDER_REPO="$REPO"
-    export SPIDER_BRANCH="$BRANCH"
-    export SPIDER_APP_DIR="$APP_DIR"
-    export SPIDER_PORT="$PORT"
-    export XRAY_VERSION="$XRAY_VERSION"
-    export SPIDER_INSTALLER_URL="$INSTALLER_URL"
-
-    exec sudo -E env \
-        HOME=/root \
-        XDG_CONFIG_HOME=/root/.config \
-        XDG_CACHE_HOME=/root/.cache \
-        SPIDER_REPO="$REPO" \
-        SPIDER_BRANCH="$BRANCH" \
-        SPIDER_APP_DIR="$APP_DIR" \
-        SPIDER_PORT="$PORT" \
-        XRAY_VERSION="$XRAY_VERSION" \
-        SPIDER_INSTALLER_URL="$INSTALLER_URL" \
-        bash "$TMP_INSTALLER" "$@"
+    exec sudo -E bash "$f" "$@"
 }
+
 
 # ============================================================
 # OS DETECTION
 # ============================================================
 
-detect_os() {
+detect() {
 
-    [[ -f /etc/os-release ]] || \
-        fail "/etc/os-release not found."
+    [[ -r /etc/os-release ]] \
+        || fail "Cannot detect operating system."
 
-    # shellcheck disable=SC1091
-    source /etc/os-release
+    . /etc/os-release
 
     OS_ID="${ID:-unknown}"
-    PRETTY_NAME="${PRETTY_NAME:-$OS_ID}"
-}
+    OS_NAME="${PRETTY_NAME:-$ID}"
 
-# ============================================================
-# ENVIRONMENT DETECTION
-# ============================================================
+    PID1="$(
+        ps -p 1 -o comm= 2>/dev/null \
+        | tr -d '[:space:]' \
+        || true
+    )"
 
-detect_environment() {
-
-    IS_CODESPACE=0
-    HAS_SYSTEMD=0
+    if [[ "$PID1" == "systemd" ]]; then
+        HAS_SYSTEMD=1
+    else
+        HAS_SYSTEMD=0
+    fi
 
     if [[ "${CODESPACES:-}" == "true" || -n "${CODESPACE_NAME:-}" ]]; then
         IS_CODESPACE=1
-    fi
-
-    if command -v systemctl >/dev/null 2>&1; then
-
-        PID1="$(ps -p 1 -o comm= 2>/dev/null | tr -d '[:space:]' || true)"
-
-        if [[ "$PID1" == "systemd" ]]; then
-            HAS_SYSTEMD=1
-        fi
+    else
+        IS_CODESPACE=0
     fi
 }
 
+
 # ============================================================
-# PACKAGE INSTALLERS
+# SYSTEMD
 # ============================================================
 
-install_apt() {
+systemd_ok() {
 
-    export DEBIAN_FRONTEND=noninteractive
+    if [[ "$HAS_SYSTEMD" == "1" ]]; then
+        return 0
+    fi
 
-    apt-get update -y
-
-    apt-get install -y \
-        ca-certificates \
-        curl \
-        git \
-        unzip \
-        xz-utils \
-        tar \
-        gzip \
-        rsync \
-        python3 \
-        python3-venv \
-        python3-pip \
-        build-essential \
-        gcc \
-        g++ \
-        make \
-        pkg-config \
-        openssl \
-        libssl-dev \
-        zlib1g-dev \
-        procps \
-        iproute2 \
-        iputils-ping \
-        net-tools \
-        lsof \
-        jq \
-        gnupg \
-        lsb-release
+    return 1
 }
 
-install_dnf() {
 
-    dnf install -y \
-        ca-certificates \
-        curl \
-        git \
-        unzip \
-        xz \
-        tar \
-        gzip \
-        rsync \
-        python3 \
-        python3-pip \
-        gcc \
-        gcc-c++ \
-        make \
-        pkgconf-pkg-config \
-        openssl \
-        openssl-devel \
-        zlib-devel \
-        procps-ng \
-        iproute \
-        iputils \
-        net-tools \
-        lsof \
-        jq
-}
+# ============================================================
+# PACKAGE INSTALL
+# ============================================================
 
-install_yum() {
-
-    yum install -y \
-        ca-certificates \
-        curl \
-        git \
-        unzip \
-        xz \
-        tar \
-        gzip \
-        rsync \
-        python3 \
-        python3-pip \
-        gcc \
-        gcc-c++ \
-        make \
-        pkgconfig \
-        openssl \
-        openssl-devel \
-        zlib-devel \
-        procps \
-        iproute \
-        iputils \
-        net-tools \
-        lsof \
-        jq
-}
-
-install_pacman() {
-
-    pacman -Sy --noconfirm --needed \
-        ca-certificates \
-        curl \
-        git \
-        unzip \
-        xz \
-        tar \
-        gzip \
-        rsync \
-        python \
-        python-pip \
-        base-devel \
-        openssl \
-        zlib \
-        procps-ng \
-        iproute2 \
-        iputils \
-        net-tools \
-        lsof \
-        jq
-}
-
-install_packages() {
+packages() {
 
     log "Installing system dependencies..."
 
     case "$OS_ID" in
 
-        ubuntu|debian|linuxmint|pop|elementary)
-            install_apt
+        arch|omarchy|cachyos|endeavouros|manjaro)
+
+            pacman -Sy --noconfirm --needed \
+                ca-certificates \
+                curl \
+                git \
+                unzip \
+                xz \
+                tar \
+                gzip \
+                rsync \
+                base-devel \
+                openssl \
+                zlib \
+                procps-ng \
+                iproute2 \
+                iputils \
+                net-tools \
+                lsof \
+                jq \
+                python \
+                python-pip \
+                python-virtualenv \
+                || fail "System package installation failed."
+
+            ;;
+
+        ubuntu|debian|linuxmint|pop)
+
+            export DEBIAN_FRONTEND=noninteractive
+
+            apt-get update -y \
+                || fail "apt update failed."
+
+            apt-get install -y \
+                ca-certificates \
+                curl \
+                git \
+                unzip \
+                xz-utils \
+                tar \
+                gzip \
+                rsync \
+                build-essential \
+                openssl \
+                libssl-dev \
+                zlib1g-dev \
+                procps \
+                iproute2 \
+                iputils-ping \
+                net-tools \
+                lsof \
+                jq \
+                python3 \
+                python3-pip \
+                python3-venv \
+                || fail "System package installation failed."
+
             ;;
 
         fedora|rhel|rocky|almalinux|centos)
-            if command -v dnf >/dev/null 2>&1; then
-                install_dnf
-            else
-                install_yum
-            fi
-            ;;
 
-        arch|cachyos|endeavouros|manjaro|omarchy)
-            install_pacman
+            if command -v dnf >/dev/null 2>&1; then
+
+                dnf install -y \
+                    ca-certificates \
+                    curl \
+                    git \
+                    unzip \
+                    xz \
+                    tar \
+                    gzip \
+                    rsync \
+                    gcc \
+                    gcc-c++ \
+                    make \
+                    openssl \
+                    openssl-devel \
+                    zlib-devel \
+                    procps \
+                    iproute \
+                    iputils \
+                    net-tools \
+                    lsof \
+                    jq \
+                    python3 \
+                    python3-pip \
+                    || fail "System package installation failed."
+
+            else
+
+                yum install -y \
+                    ca-certificates \
+                    curl \
+                    git \
+                    unzip \
+                    xz \
+                    tar \
+                    gzip \
+                    rsync \
+                    gcc \
+                    gcc-c++ \
+                    make \
+                    openssl \
+                    openssl-devel \
+                    zlib-devel \
+                    procps \
+                    iproute \
+                    iputils \
+                    net-tools \
+                    lsof \
+                    jq \
+                    python3 \
+                    python3-pip \
+                    || fail "System package installation failed."
+
+            fi
+
             ;;
 
         *)
-            if command -v apt-get >/dev/null 2>&1; then
-                install_apt
+
+            if command -v pacman >/dev/null 2>&1; then
+
+                pacman -Sy --noconfirm --needed \
+                    ca-certificates \
+                    curl \
+                    git \
+                    unzip \
+                    xz \
+                    tar \
+                    gzip \
+                    rsync \
+                    base-devel \
+                    openssl \
+                    zlib \
+                    procps-ng \
+                    iproute2 \
+                    iputils \
+                    net-tools \
+                    lsof \
+                    jq \
+                    python \
+                    python-pip \
+                    python-virtualenv \
+                    || fail "System package installation failed."
+
+            elif command -v apt-get >/dev/null 2>&1; then
+
+                export DEBIAN_FRONTEND=noninteractive
+
+                apt-get update -y \
+                    || fail "apt update failed."
+
+                apt-get install -y \
+                    ca-certificates \
+                    curl \
+                    git \
+                    unzip \
+                    xz-utils \
+                    tar \
+                    gzip \
+                    rsync \
+                    build-essential \
+                    openssl \
+                    libssl-dev \
+                    zlib1g-dev \
+                    procps \
+                    iproute2 \
+                    iputils-ping \
+                    net-tools \
+                    lsof \
+                    jq \
+                    python3 \
+                    python3-pip \
+                    python3-venv \
+                    || fail "System package installation failed."
+
             elif command -v dnf >/dev/null 2>&1; then
-                install_dnf
-            elif command -v yum >/dev/null 2>&1; then
-                install_yum
-            elif command -v pacman >/dev/null 2>&1; then
-                install_pacman
+
+                dnf install -y \
+                    ca-certificates \
+                    curl \
+                    git \
+                    unzip \
+                    xz \
+                    tar \
+                    gzip \
+                    rsync \
+                    gcc \
+                    gcc-c++ \
+                    make \
+                    openssl \
+                    openssl-devel \
+                    zlib-devel \
+                    procps \
+                    iproute \
+                    iputils \
+                    net-tools \
+                    lsof \
+                    jq \
+                    python3 \
+                    python3-pip \
+                    || fail "System package installation failed."
+
             else
-                fail "Unsupported distribution: $OS_ID"
+
+                fail "Unsupported operating system: $OS_ID"
+
             fi
+
             ;;
+
     esac
 
     ok "System dependencies installed."
 }
 
-# ============================================================
-# DOCKER
-# ============================================================
-
-install_docker() {
-
-    # Codespaces already provide their own container environment.
-    if [[ "$IS_CODESPACE" -eq 1 ]]; then
-        log "Codespace detected: skipping Docker installation."
-        return 0
-    fi
-
-    if command -v docker >/dev/null 2>&1; then
-        ok "Docker already installed."
-        return 0
-    fi
-
-    if [[ "$HAS_SYSTEMD" -ne 1 ]]; then
-        warn "systemd unavailable; Docker setup skipped."
-        return 0
-    fi
-
-    case "$OS_ID" in
-
-        ubuntu|debian|linuxmint|pop|elementary)
-
-            install -m 0755 -d /etc/apt/keyrings
-
-            if [[ ! -f /etc/apt/keyrings/docker.gpg ]]; then
-
-                if curl -fsSL \
-                    "https://download.docker.com/linux/$OS_ID/gpg" |
-                    gpg --dearmor \
-                    -o /etc/apt/keyrings/docker.gpg; then
-
-                    chmod a+r /etc/apt/keyrings/docker.gpg
-
-                else
-
-                    warn "Docker GPG key download failed."
-                    return 0
-                fi
-            fi
-
-            . /etc/os-release
-
-            DOCKER_ARCH="$(dpkg --print-architecture)"
-            DOCKER_CODENAME="${VERSION_CODENAME:-}"
-
-            if [[ -z "$DOCKER_CODENAME" ]]; then
-                DOCKER_CODENAME="$(lsb_release -cs 2>/dev/null || true)"
-            fi
-
-            if [[ -n "$DOCKER_CODENAME" ]]; then
-
-                cat > /etc/apt/sources.list.d/docker.list <<EOF
-deb [arch=$DOCKER_ARCH signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$OS_ID $DOCKER_CODENAME stable
-EOF
-
-                apt-get update -y
-
-                apt-get install -y \
-                    docker-ce \
-                    docker-ce-cli \
-                    containerd.io \
-                    docker-buildx-plugin \
-                    docker-compose-plugin \
-                    || warn "Docker installation failed."
-
-                systemctl enable --now docker.service 2>/dev/null || true
-
-                command -v docker >/dev/null 2>&1 &&
-                    ok "Docker installed."
-
-            fi
-            ;;
-
-        arch|cachyos|endeavouros|manjaro|omarchy)
-
-            pacman -S --noconfirm --needed \
-                docker \
-                docker-compose \
-                || true
-
-            if command -v docker >/dev/null 2>&1; then
-
-                systemctl enable --now docker.service \
-                    2>/dev/null || true
-
-                ok "Docker installed."
-            fi
-            ;;
-
-        fedora|rhel|rocky|almalinux|centos)
-
-            if command -v dnf >/dev/null 2>&1; then
-                dnf install -y docker || true
-            else
-                yum install -y docker || true
-            fi
-
-            if command -v docker >/dev/null 2>&1; then
-
-                systemctl enable --now docker.service \
-                    2>/dev/null || true
-
-                ok "Docker installed."
-            fi
-            ;;
-    esac
-}
 
 # ============================================================
-# DOWNLOAD SOURCE
+# DOWNLOAD REPOSITORY
 # ============================================================
 
-download_source() {
+download_repo() {
 
-    TMP_ROOT="$(mktemp -d /tmp/spiderpanel.XXXXXX)" || \
-        fail "Could not create temporary directory."
+    TMP_ROOT=$(mktemp -d /tmp/spiderpanel.XXXXXX)
 
     log "Downloading SpiderPanel..."
 
@@ -495,38 +418,37 @@ download_source() {
         --branch "$BRANCH" \
         --single-branch \
         "$REPO" \
-        "$TMP_ROOT/app" || \
-        fail "Could not clone $REPO"
+        "$TMP_ROOT/app" \
+        || fail "Git clone failed."
 
-    [[ -f "$TMP_ROOT/app/main.py" ]] || \
-        fail "main.py not found."
+    [[ -f "$TMP_ROOT/app/main.py" ]] \
+        || fail "main.py not found in repository."
 
-    [[ -f "$TMP_ROOT/app/requirements.txt" ]] || \
-        fail "requirements.txt not found."
+    [[ -f "$TMP_ROOT/app/requirements.txt" ]] \
+        || fail "requirements.txt not found in repository."
 
     ok "Repository downloaded."
 }
 
+
 # ============================================================
-# DEPLOY SOURCE
+# DEPLOY
 # ============================================================
 
-deploy_application() {
+deploy() {
 
     mkdir -p "$APP_DIR"
 
-    PERSIST="$TMP_ROOT/persist"
+    local keep="$TMP_ROOT/keep"
 
-    mkdir -p "$PERSIST"
+    mkdir -p "$keep"
 
-    # Preserve database/data.
     if [[ -d "$APP_DIR/data" ]]; then
-        cp -a "$APP_DIR/data" "$PERSIST/data" 2>/dev/null || true
+        cp -a "$APP_DIR/data" "$keep/data"
     fi
 
-    # Preserve local .env.
     if [[ -f "$APP_DIR/.env" ]]; then
-        cp -f "$APP_DIR/.env" "$PERSIST/.env" 2>/dev/null || true
+        cp -f "$APP_DIR/.env" "$keep/.env"
     fi
 
     log "Installing application files..."
@@ -539,28 +461,20 @@ deploy_application() {
         --exclude '*.pid' \
         --exclude '*.log' \
         "$TMP_ROOT/app/" \
-        "$APP_DIR/" || \
-        fail "Could not copy application files."
+        "$APP_DIR/" \
+        || fail "Application deployment failed."
 
-    if [[ -d "$PERSIST/data" ]]; then
-
+    if [[ -d "$keep/data" ]]; then
         rm -rf "$APP_DIR/data"
-
-        cp -a \
-            "$PERSIST/data" \
-            "$APP_DIR/data"
+        cp -a "$keep/data" "$APP_DIR/data"
     fi
 
-    if [[ -f "$PERSIST/.env" ]]; then
-
-        cp -f \
-            "$PERSIST/.env" \
-            "$APP_DIR/.env"
+    if [[ -f "$keep/.env" ]]; then
+        cp -f "$keep/.env" "$APP_DIR/.env"
     fi
 
     mkdir -p \
         "$APP_DIR/data" \
-        "$APP_DIR/data/scanned" \
         "$APP_DIR/xray"
 
     chmod 755 "$APP_DIR"
@@ -568,32 +482,165 @@ deploy_application() {
     ok "Application installed."
 }
 
+
 # ============================================================
-# UV
+# INSTALL UV
 # ============================================================
 
 install_uv() {
 
-    UV_BIN="/usr/local/bin/uv"
+    local uv_dir="/usr/local/bin"
+    local installer="/tmp/uv-install.sh"
+    local candidate=""
+    local version=""
 
-    if [[ -x "$UV_BIN" ]]; then
-        ok "uv already installed."
-        return 0
+    export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+
+    # --------------------------------------------------------
+    # Existing /usr/local/bin/uv
+    # --------------------------------------------------------
+
+    if [[ -x "$uv_dir/uv" ]]; then
+
+        if "$uv_dir/uv" --version >/dev/null 2>&1; then
+
+            UV="$uv_dir/uv"
+
+            version="$("$UV" --version 2>/dev/null || true)"
+
+            ok "uv ready: $version"
+
+            return 0
+        fi
+
     fi
+
+
+    # --------------------------------------------------------
+    # Search existing uv
+    # --------------------------------------------------------
+
+    for candidate in \
+        /usr/local/bin/uv \
+        /usr/bin/uv \
+        /usr/local/uv/uv \
+        /root/.local/bin/uv \
+        /root/.cargo/bin/uv
+    do
+
+        if [[ -x "$candidate" ]] \
+            && "$candidate" --version >/dev/null 2>&1
+        then
+
+            if [[ "$candidate" != "$uv_dir/uv" ]]; then
+
+                ln -sf "$candidate" "$uv_dir/uv"
+
+            fi
+
+            UV="$uv_dir/uv"
+
+            version="$("$UV" --version 2>/dev/null || true)"
+
+            ok "uv ready: $version"
+
+            return 0
+        fi
+
+    done
+
+
+    # --------------------------------------------------------
+    # Download official installer
+    # --------------------------------------------------------
 
     log "Installing uv..."
 
-    curl -LsSf \
-        https://astral.sh/uv/install.sh |
-        env UV_UNMANAGED_INSTALL="/usr/local" \
-        sh || \
-        fail "Could not install uv."
+    rm -f "$installer"
 
-    [[ -x "$UV_BIN" ]] || \
+    curl -fL \
+        --retry 5 \
+        --retry-delay 2 \
+        --connect-timeout 15 \
+        --max-time 300 \
+        https://astral.sh/uv/install.sh \
+        -o "$installer" \
+        || fail "uv installer download failed."
+
+    [[ -s "$installer" ]] \
+        || fail "uv installer is empty."
+
+    chmod 755 "$installer"
+
+
+    # --------------------------------------------------------
+    # Official unmanaged installation
+    #
+    # UV_UNMANAGED_INSTALL tells uv installer exactly where
+    # to place the binary.
+    # --------------------------------------------------------
+
+    if ! env \
+        UV_UNMANAGED_INSTALL="$uv_dir" \
+        UV_NO_MODIFY_PATH=1 \
+        sh "$installer"
+    then
+
+        rm -f "$installer"
+
         fail "uv installation failed."
 
-    ok "uv installed."
+    fi
+
+    rm -f "$installer"
+
+
+    # --------------------------------------------------------
+    # Locate installed binary
+    # --------------------------------------------------------
+
+    if [[ ! -x "$uv_dir/uv" ]]; then
+
+        for candidate in \
+            /usr/local/uv/uv \
+            /root/.local/bin/uv \
+            /root/.cargo/bin/uv
+        do
+
+            if [[ -x "$candidate" ]] \
+                && "$candidate" --version >/dev/null 2>&1
+            then
+
+                ln -sf "$candidate" "$uv_dir/uv"
+
+                break
+            fi
+
+        done
+
+    fi
+
+
+    # --------------------------------------------------------
+    # Final verification
+    # --------------------------------------------------------
+
+    [[ -x "$uv_dir/uv" ]] \
+        || fail "uv was installed but binary could not be located."
+
+    "$uv_dir/uv" --version >/dev/null 2>&1 \
+        || fail "uv binary exists but cannot execute."
+
+    UV="$uv_dir/uv"
+
+    version="$("$UV" --version 2>/dev/null || true)"
+
+    [[ -n "$version" ]] \
+        || fail "Cannot determine uv version."
+
+    ok "uv ready: $version"
 }
+
 
 # ============================================================
 # PYTHON 3.12
@@ -601,159 +648,263 @@ install_uv() {
 
 setup_python() {
 
-    log "Preparing dedicated Python 3.12 runtime..."
-
     install_uv
 
-    UV_BIN="/usr/local/bin/uv"
+    export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+
+    log "Preparing dedicated Python 3.12 runtime..."
+
 
     # --------------------------------------------------------
-    # IMPORTANT:
-    # Never create SpiderPanel venv using system python.
-    # Omarchy / Arch may provide Python 3.14.
+    # Install Python 3.12 through uv
     # --------------------------------------------------------
 
-    log "Installing Python 3.12 with uv..."
+    "$UV" python install 3.12 \
+        || fail "Python 3.12 installation failed."
 
-    "$UV_BIN" python install 3.12 || \
-        fail "Python 3.12 installation failed."
 
-    PY312="$(
-        "$UV_BIN" python find 3.12 2>/dev/null |
-        head -n1 || true
+    # --------------------------------------------------------
+    # Find Python
+    # --------------------------------------------------------
+
+    local py=""
+
+    py="$(
+        "$UV" python find 3.12 2>/dev/null \
+        | head -n1 \
+        || true
     )"
 
-    [[ -n "$PY312" && -x "$PY312" ]] || \
-        fail "Python 3.12 runtime was not found."
+    [[ -n "$py" ]] \
+        || fail "Python 3.12 binary not found."
 
-    PY312_VERSION="$(
-        "$PY312" \
-        -c \
-        'import sys; print(".".join(map(str,sys.version_info[:3])))'
+    [[ -x "$py" ]] \
+        || fail "Python 3.12 binary is not executable."
+
+
+    # --------------------------------------------------------
+    # Verify Python
+    # --------------------------------------------------------
+
+    local version=""
+
+    version="$(
+        "$py" -c \
+        'import sys; print(".".join(map(str, sys.version_info[:2])))'
     )"
 
-    log "Selected Python: $PY312_VERSION"
+    [[ "$version" == "3.12" ]] \
+        || fail "Wrong Python selected: $version"
 
-    [[ "$PY312_VERSION" == 3.12.* ]] || \
-        fail "Wrong Python runtime: $PY312_VERSION"
-
-    # --------------------------------------------------------
-    # Detect and destroy incompatible venv.
-    # --------------------------------------------------------
-
-    RECREATE_VENV=0
-
-    if [[ ! -x "$VENV_DIR/bin/python" ]]; then
-
-        RECREATE_VENV=1
-
-    else
-
-        EXISTING_VERSION="$(
-            "$VENV_DIR/bin/python" \
-            -c \
-            'import sys; print(".".join(map(str,sys.version_info[:2])))' \
-            2>/dev/null || true
-        )"
-
-        if [[ "$EXISTING_VERSION" != "3.12" ]]; then
-
-            warn "Existing venv uses Python $EXISTING_VERSION."
-
-            log "Removing incompatible venv..."
-
-            RECREATE_VENV=1
-        fi
-    fi
-
-    if [[ "$RECREATE_VENV" -eq 1 ]]; then
-
-        rm -rf "$VENV_DIR"
-
-        log "Creating Python 3.12 virtual environment..."
-
-        "$UV_BIN" venv \
-            --python "$PY312" \
-            "$VENV_DIR" || \
-            fail "Could not create Python 3.12 venv."
-
-    fi
-
-    [[ -x "$VENV_DIR/bin/python" ]] || \
-        fail "Venv Python missing."
 
     # --------------------------------------------------------
-    # Make absolutely sure it is 3.12.
+    # Create venv
     # --------------------------------------------------------
 
-    FINAL_VERSION="$(
-        "$VENV_DIR/bin/python" \
-        -c \
-        'import sys; print(".".join(map(str,sys.version_info[:2])))'
+    rm -rf "$VENV"
+
+    log "Creating Python 3.12 virtual environment..."
+
+    "$UV" venv \
+        --python "$py" \
+        "$VENV" \
+        || fail "Virtual environment creation failed."
+
+
+    local p="$VENV/bin/python"
+
+    [[ -x "$p" ]] \
+        || fail "venv Python missing."
+
+
+    version="$(
+        "$p" -c \
+        'import sys; print(".".join(map(str, sys.version_info[:2])))'
     )"
 
-    [[ "$FINAL_VERSION" == "3.12" ]] || \
-        fail "Venv was created with Python $FINAL_VERSION instead of 3.12."
+    [[ "$version" == "3.12" ]] \
+        || fail "venv is not Python 3.12."
+
 
     # --------------------------------------------------------
-    # Python package installation
+    # Pip
     # --------------------------------------------------------
 
-    mkdir -p /root/.cache/pip
+    log "Preparing pip..."
 
-    export PIP_DISABLE_PIP_VERSION_CHECK=1
-    export PIP_NO_CACHE_DIR=1
+    "$p" -m ensurepip --upgrade >/dev/null 2>&1 || true
 
-    log "Upgrading pip..."
-
-    "$VENV_DIR/bin/python" \
-        -m pip install \
+    "$p" -m pip install \
         --upgrade \
+        --no-cache-dir \
         pip \
         setuptools \
-        wheel || \
-        fail "Could not upgrade pip."
+        wheel \
+        || fail "Packaging tools installation failed."
 
-    log "Installing SpiderPanel Python dependencies..."
 
-    "$VENV_DIR/bin/python" \
-        -m pip install \
+    # --------------------------------------------------------
+    # Requirements
+    # --------------------------------------------------------
+
+    log "Installing Python dependencies..."
+
+    if ! "$p" -m pip install \
         --no-cache-dir \
-        -r "$APP_DIR/requirements.txt" || \
-        fail "Python dependency installation failed."
+        --only-binary=:all: \
+        -r "$APP_DIR/requirements.txt"
+    then
+
+        warn "Binary-only installation failed."
+
+        log "Retrying dependency installation with source packages..."
+
+        "$p" -m pip install \
+            --no-cache-dir \
+            -r "$APP_DIR/requirements.txt" \
+            || fail "Dependency installation failed."
+
+    fi
+
 
     # --------------------------------------------------------
-    # Dependency verification
+    # Dependency test
     # --------------------------------------------------------
 
-    "$VENV_DIR/bin/python" \
-        -c 'import fastapi' || \
-        fail "FastAPI verification failed."
+    "$p" - <<'PY'
+import sys
 
-    "$VENV_DIR/bin/python" \
-        -c 'import uvicorn' || \
-        fail "Uvicorn verification failed."
+required = [
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "websockets",
+    "aiofiles",
+    "qrcode",
+    "PIL",
+    "psutil",
+    "cryptography",
+    "socks",
+]
 
-    "$VENV_DIR/bin/python" \
-        -c 'import PIL' || \
-        fail "Pillow verification failed."
+assert sys.version_info[:2] == (3, 12), sys.version
 
-    "$VENV_DIR/bin/python" \
-        -c 'import httpx' || \
-        fail "HTTPX verification failed."
+for module in required:
+    __import__(module)
 
-    echo
-    ok "Python runtime:"
-    "$VENV_DIR/bin/python" --version
+print("Python dependency test: OK")
+PY
 
-    echo
-    ok "Installed Pillow:"
-    "$VENV_DIR/bin/python" \
-        -c 'import PIL; print(PIL.__version__)'
-
-    echo
-    ok "Python environment ready."
+    ok "Python runtime ready: $("$p" --version)"
 }
+
+
+# ============================================================
+# SECRETS
+# ============================================================
+
+generate_secret() {
+
+    openssl rand -hex 32
+}
+
+
+generate_password() {
+
+    openssl rand -hex 10
+}
+
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+config() {
+
+    mkdir -p "$APP_DIR/data"
+
+    local secret=""
+    local password=""
+
+    if [[ -f "$ENV_FILE" ]]; then
+
+        secret="$(
+            grep '^SECRET_KEY=' "$ENV_FILE" \
+            | head -n1 \
+            | cut -d= -f2- \
+            || true
+        )"
+
+        password="$(
+            grep '^ADMIN_PASSWORD=' "$ENV_FILE" \
+            | head -n1 \
+            | cut -d= -f2- \
+            || true
+        )"
+
+    fi
+
+
+    [[ -n "$secret" ]] \
+        || secret="$(generate_secret)"
+
+    [[ -n "$password" ]] \
+        || password="$(generate_password)"
+
+
+    cat > "$ENV_FILE" <<EOF
+SECRET_KEY=$secret
+ADMIN_PASSWORD=$password
+PORT=8080
+HOST=0.0.0.0
+DATA_DIR=$APP_DIR/data
+SPIDER_DATA_DIR=$APP_DIR/data
+XRAY_BIN=$XRAY
+MTPROTO_PROXY_BIN=$MTPROXY
+WORKER_SYNC_INTERVAL=3600
+RAILWAY_PUBLIC_DOMAIN=
+PYTHONUNBUFFERED=1
+PYTHONDONTWRITEBYTECODE=1
+PIP_NO_CACHE_DIR=1
+EOF
+
+    chmod 600 "$ENV_FILE"
+
+
+    cat > "$APP_DIR/INSTALL-CREDENTIALS.txt" <<EOF
+SpiderPanel
+===========
+
+URL:
+http://127.0.0.1:8080/spider
+
+Port:
+8080
+
+Admin Password:
+$password
+
+Application:
+$APP_DIR
+
+Environment:
+$ENV_FILE
+
+Python:
+$VENV/bin/python
+
+Xray:
+$XRAY
+
+MTProto:
+$MTPROXY
+EOF
+
+    chmod 600 "$APP_DIR/INSTALL-CREDENTIALS.txt"
+
+    ok "Configuration completed."
+}
+
 
 # ============================================================
 # XRAY
@@ -761,428 +912,283 @@ setup_python() {
 
 install_xray() {
 
-    mkdir -p "$XRAY_DIR"
+    local arch=""
+    local xray_arch=""
+    local url=""
+    local zip=""
 
-    if [[ -x "$XRAY_BIN" ]]; then
-        ok "Existing Xray preserved."
+    mkdir -p "$APP_DIR/xray"
+
+
+    if [[ -x "$XRAY" ]] \
+        && "$XRAY" version >/dev/null 2>&1
+    then
+
+        ok "Xray already installed."
+
         return 0
     fi
 
-    log "Installing Xray-core v$XRAY_VERSION..."
 
-    XRAY_ZIP="$TMP_ROOT/xray.zip"
+    arch="$(uname -m)"
 
-    XRAY_URL="https://github.com/XTLS/Xray-core/releases/download/v${XRAY_VERSION}/Xray-linux-64.zip"
 
-    if ! curl -fL \
-        --retry 3 \
-        --connect-timeout 10 \
-        --max-time 180 \
-        "$XRAY_URL" \
-        -o "$XRAY_ZIP"; then
+    case "$arch" in
 
-        warn "Xray download failed. SpiderPanel can download it later."
-        return 0
-    fi
+        x86_64|amd64)
+            xray_arch="64"
+            ;;
 
-    unzip -oq \
-        "$XRAY_ZIP" \
-        -d "$XRAY_DIR" || {
+        aarch64|arm64)
+            xray_arch="arm64-v8a"
+            ;;
 
-        warn "Xray extraction failed."
-        return 0
-    }
+        armv7l|armv7)
+            xray_arch="arm32-v7a"
+            ;;
 
-    if [[ ! -f "$XRAY_BIN" ]]; then
+        armv6l)
+            xray_arch="arm32-v6a"
+            ;;
 
-        FOUND_XRAY="$(
-            find "$XRAY_DIR" \
-                -maxdepth 1 \
-                -type f \
-                -name xray \
-                -print \
-                -quit \
-                2>/dev/null || true
-        )"
+        i686|i386)
+            xray_arch="32"
+            ;;
 
-        if [[ -n "$FOUND_XRAY" ]]; then
-            mv -f "$FOUND_XRAY" "$XRAY_BIN"
+        *)
+            warn "Unsupported Xray architecture: $arch"
+            return 0
+            ;;
+
+    esac
+
+
+    url="https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-${xray_arch}.zip"
+
+    zip="$APP_DIR/xray.zip"
+
+
+    log "Installing Xray..."
+
+    if curl -fL \
+        --retry 5 \
+        --retry-delay 2 \
+        "$url" \
+        -o "$zip"
+    then
+
+        rm -rf "$APP_DIR/xray"
+
+        mkdir -p "$APP_DIR/xray"
+
+        if unzip -o "$zip" \
+            -d "$APP_DIR/xray" >/dev/null
+        then
+
+            rm -f "$zip"
+
+            chmod +x "$XRAY" 2>/dev/null || true
+
+            if [[ -x "$XRAY" ]] \
+                && "$XRAY" version >/dev/null 2>&1
+            then
+
+                ok "Xray installed."
+
+            else
+
+                warn "Xray binary was extracted but verification failed."
+
+            fi
+
+        else
+
+            rm -f "$zip"
+
+            warn "Xray extraction failed."
+
         fi
-    fi
-
-    if [[ -f "$XRAY_BIN" ]]; then
-
-        chmod 755 "$XRAY_BIN"
-
-        rm -f \
-            "$XRAY_DIR"/*.dat \
-            "$XRAY_DIR"/*.zip \
-            2>/dev/null || true
-
-        ok "Xray installed at $XRAY_BIN"
 
     else
 
-        warn "Xray binary was not found."
+        rm -f "$zip"
+
+        warn "Xray download failed."
 
     fi
 }
 
+
 # ============================================================
-# MTPROXY
+# MTPROTO
 # ============================================================
 
 install_mtproxy() {
 
-    if [[ -x "$MTPROXY_BIN" ]]; then
-        ok "Existing MTProxy preserved."
+    if [[ -x "$MTPROXY" ]]; then
+
+        ok "MTProxy already installed."
+
         return 0
     fi
 
-    log "Building Telegram MTProxy..."
 
-    MTPROXY_SRC="$TMP_ROOT/MTProxy"
+    local t=""
+    local b=""
+
+    t="$(mktemp -d /tmp/mtproxy.XXXXXX)"
+
+    log "Building MTProxy..."
+
 
     if ! git clone \
         --depth 1 \
         https://github.com/TelegramMessenger/MTProxy.git \
-        "$MTPROXY_SRC"; then
+        "$t/MTProxy"
+    then
 
-        warn "Could not download MTProxy."
+        rm -rf "$t"
+
+        warn "MTProxy download failed."
+
         return 0
     fi
+
 
     if ! make \
-        -C "$MTPROXY_SRC" \
-        -j"$(nproc 2>/dev/null || echo 2)"; then
+        -C "$t/MTProxy" \
+        -j"$(nproc 2>/dev/null || echo 2)"
+    then
 
-        warn "MTProxy compilation failed."
+        rm -rf "$t"
+
+        warn "MTProxy build failed."
+
         return 0
     fi
 
-    if [[ -x "$MTPROXY_SRC/objs/bin/mtproto-proxy" ]]; then
 
-        install \
-            -m 0755 \
-            "$MTPROXY_SRC/objs/bin/mtproto-proxy" \
-            "$MTPROXY_BIN"
+    if [[ -x "$t/MTProxy/objs/bin/mtproto-proxy" ]]; then
 
-        ok "MTProxy installed at $MTPROXY_BIN"
+        b="$t/MTProxy/objs/bin/mtproto-proxy"
+
+    elif [[ -x "$t/MTProxy/mtproto-proxy" ]]; then
+
+        b="$t/MTProxy/mtproto-proxy"
+
+    fi
+
+
+    if [[ -z "$b" ]]; then
+
+        rm -rf "$t"
+
+        warn "MTProxy binary not found."
+
+        return 0
+    fi
+
+
+    install \
+        -Dm755 \
+        "$b" \
+        "$MTPROXY"
+
+
+    rm -rf "$t"
+
+
+    if [[ -x "$MTPROXY" ]]; then
+
+        ok "MTProxy installed."
 
     else
 
-        warn "MTProxy binary not found after build."
+        warn "MTProxy installation failed."
 
     fi
 }
 
-# ============================================================
-# ENVIRONMENT
-# ============================================================
-
-generate_secret() {
-
-    "$VENV_DIR/bin/python" - <<'PY'
-import secrets
-print(secrets.token_urlsafe(48))
-PY
-}
-
-generate_password() {
-
-    "$VENV_DIR/bin/python" - <<'PY'
-import secrets
-print(secrets.token_urlsafe(18))
-PY
-}
-
-get_env_value() {
-
-    local KEY="$1"
-
-    if [[ -f "$ENV_FILE" ]]; then
-
-        grep "^${KEY}=" "$ENV_FILE" 2>/dev/null |
-            head -n1 |
-            cut -d= -f2- || true
-    fi
-}
-
-setup_environment() {
-
-    if [[ ! -f "$ENV_FILE" ]]; then
-
-        SECRET_KEY="$(generate_secret)"
-        ADMIN_PASSWORD="$(generate_password)"
-
-        cat > "$ENV_FILE" <<EOF
-SECRET_KEY=$SECRET_KEY
-ADMIN_PASSWORD=$ADMIN_PASSWORD
-
-DATA_DIR=$APP_DIR/data
-SPIDER_DATA_DIR=$APP_DIR/data
-
-PORT=$PORT
-
-MTPROTO_PROXY_BIN=$MTPROXY_BIN
-
-WORKER_SYNC_INTERVAL=3600
-
-RAILWAY_PUBLIC_DOMAIN=
-EOF
-
-        chmod 600 "$ENV_FILE"
-
-        ok "Environment created."
-
-    else
-
-        chmod 600 "$ENV_FILE"
-
-        if grep -q '^PORT=' "$ENV_FILE"; then
-            sed -i "s/^PORT=.*/PORT=$PORT/" "$ENV_FILE"
-        else
-            printf 'PORT=%s\n' "$PORT" >> "$ENV_FILE"
-        fi
-
-        if ! grep -q '^DATA_DIR=' "$ENV_FILE"; then
-            printf 'DATA_DIR=%s\n' "$APP_DIR/data" >> "$ENV_FILE"
-        fi
-
-        if ! grep -q '^SPIDER_DATA_DIR=' "$ENV_FILE"; then
-            printf 'SPIDER_DATA_DIR=%s\n' "$APP_DIR/data" >> "$ENV_FILE"
-        fi
-
-        if ! grep -q '^MTPROTO_PROXY_BIN=' "$ENV_FILE"; then
-            printf 'MTPROTO_PROXY_BIN=%s\n' "$MTPROXY_BIN" >> "$ENV_FILE"
-        fi
-
-        ok "Existing environment preserved."
-    fi
-
-    ADMIN_PASSWORD="$(get_env_value ADMIN_PASSWORD)"
-
-    if [[ -z "$ADMIN_PASSWORD" ]]; then
-
-        ADMIN_PASSWORD="$(generate_password)"
-
-        printf 'ADMIN_PASSWORD=%s\n' "$ADMIN_PASSWORD" >> "$ENV_FILE"
-
-        chmod 600 "$ENV_FILE"
-    fi
-
-    cat > "$APP_DIR/INSTALL-CREDENTIALS.txt" <<EOF
-SpiderPanel initial admin password:
-$ADMIN_PASSWORD
-
-Environment file:
-$ENV_FILE
-
-Application directory:
-$APP_DIR
-
-Application port:
-$PORT
-EOF
-
-    chmod 600 "$APP_DIR/INSTALL-CREDENTIALS.txt"
-
-    ok "Credentials saved."
-}
 
 # ============================================================
-# VALIDATION
+# SYSTEMD SERVICE
 # ============================================================
 
-validate_application() {
+create_service() {
 
-    log "Validating SpiderPanel Python source..."
+    systemd_ok || return 0
 
-    cd "$APP_DIR"
 
-    "$VENV_DIR/bin/python" \
-        -m compileall \
-        -q \
-        "$APP_DIR" || \
-        fail "Python syntax validation failed."
-
-    ok "Python syntax validation passed."
-}
-
-# ============================================================
-# PORT
-# ============================================================
-
-port_in_use() {
-
-    if command -v ss >/dev/null 2>&1; then
-
-        ss -lntp 2>/dev/null |
-            grep -Eq ":${PORT}[[:space:]]"
-
-    elif command -v lsof >/dev/null 2>&1; then
-
-        lsof \
-            -iTCP:"$PORT" \
-            -sTCP:LISTEN \
-            >/dev/null 2>&1
-
-    else
-
-        return 1
-    fi
-}
-
-port_owner() {
-
-    if command -v lsof >/dev/null 2>&1; then
-
-        lsof \
-            -nP \
-            -iTCP:"$PORT" \
-            -sTCP:LISTEN \
-            2>/dev/null || true
-
-    elif command -v ss >/dev/null 2>&1; then
-
-        ss -lntp 2>/dev/null |
-            grep -E ":${PORT}[[:space:]]" || true
-    fi
-}
-
-# ============================================================
-# SYSTEMD
-# ============================================================
-
-create_systemd_service() {
-
-    command -v systemctl >/dev/null 2>&1 || \
-        fail "systemctl not available."
-
-    cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
+    cat > "/etc/systemd/system/$SERVICE.service" <<EOF
 [Unit]
-Description=SpiderPanel Control Panel
+Description=SpiderPanel
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-
 User=root
-Group=root
-
 WorkingDirectory=$APP_DIR
-
 EnvironmentFile=$ENV_FILE
-
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONDONTWRITEBYTECODE=1
-Environment=PIP_NO_CACHE_DIR=1
-
-ExecStart=$VENV_DIR/bin/uvicorn main:app --host 0.0.0.0 --port $PORT
-
+ExecStart=$VENV/bin/uvicorn main:app --host 0.0.0.0 --port 8080
 Restart=always
 RestartSec=5
-
-TimeoutStartSec=180
-TimeoutStopSec=30
-
-KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=15
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+
     systemctl daemon-reload
 
-    systemctl enable \
-        "$SERVICE_NAME.service" \
-        >/dev/null
-
-    ok "systemd service created."
+    systemctl enable "$SERVICE.service" \
+        >/dev/null 2>&1 \
+        || true
 }
 
+
 # ============================================================
-# STANDALONE
+# RUNNING
 # ============================================================
 
-stop_standalone() {
+running() {
 
-    if [[ -f "$PID_FILE" ]]; then
+    if systemd_ok; then
 
-        PID="$(cat "$PID_FILE" 2>/dev/null || true)"
+        systemctl is-active \
+            --quiet \
+            "$SERVICE.service"
 
-        if [[ "$PID" =~ ^[0-9]+$ ]]; then
-
-            if kill -0 "$PID" 2>/dev/null; then
-
-                kill "$PID" 2>/dev/null || true
-
-                for _ in {1..20}; do
-
-                    kill -0 "$PID" 2>/dev/null || break
-
-                    sleep 0.25
-                done
-
-                kill -9 "$PID" 2>/dev/null || true
-            fi
-        fi
-
-        rm -f "$PID_FILE"
+        return $?
     fi
-}
 
-start_standalone() {
 
-    stop_standalone
-
-    if port_in_use; then
-
-        warn "Port $PORT is already occupied."
-
-        port_owner
-
+    if [[ ! -f "$PIDFILE" ]]; then
         return 1
     fi
 
-    touch "$LOG_FILE"
 
-    chmod 640 "$LOG_FILE"
+    local p=""
 
-    cd "$APP_DIR"
+    p="$(cat "$PIDFILE" 2>/dev/null || echo 0)"
 
-    nohup \
-        "$VENV_DIR/bin/uvicorn" \
-        main:app \
-        --host 0.0.0.0 \
-        --port "$PORT" \
-        >> "$LOG_FILE" \
-        2>&1 &
 
-    APP_PID="$!"
-
-    echo "$APP_PID" > "$PID_FILE"
-
-    chmod 640 "$PID_FILE"
-
-    sleep 4
-
-    if kill -0 "$APP_PID" 2>/dev/null; then
-
-        ok "SpiderPanel started. PID=$APP_PID"
+    if [[ "$p" =~ ^[0-9]+$ ]] \
+        && kill -0 "$p" 2>/dev/null
+    then
 
         return 0
+
     fi
 
-    error "SpiderPanel failed to start."
-
-    tail -n 120 "$LOG_FILE" 2>/dev/null || true
-
-    rm -f "$PID_FILE"
 
     return 1
 }
+
 
 # ============================================================
 # START
@@ -1190,54 +1196,72 @@ start_standalone() {
 
 start_panel() {
 
-    if [[ "$HAS_SYSTEMD" -eq 1 ]]; then
+    if systemd_ok; then
 
-        if systemctl is-active \
-            --quiet \
-            "$SERVICE_NAME.service"; then
+        create_service
 
-            ok "SpiderPanel is already running."
-
-            return 0
-        fi
-
-        if port_in_use; then
-
-            warn "Port $PORT is already occupied."
-
-            port_owner
-
-            return 1
-        fi
-
-        systemctl restart \
-            "$SERVICE_NAME.service"
-
-        sleep 4
-
-        if systemctl is-active \
-            --quiet \
-            "$SERVICE_NAME.service"; then
-
-            ok "SpiderPanel is running via systemd."
-
-            return 0
-        fi
-
-        error "SpiderPanel failed to start."
-
-        journalctl \
-            -u "$SERVICE_NAME.service" \
-            -n 120 \
-            --no-pager || true
-
-        return 1
+        systemctl restart "$SERVICE.service"
 
     else
 
-        start_standalone
+        if running; then
+
+            ok "SpiderPanel already running."
+
+            return 0
+        fi
+
+
+        touch "$LOGFILE"
+
+        cd "$APP_DIR"
+
+
+        nohup \
+            "$VENV/bin/uvicorn" \
+            main:app \
+            --host 0.0.0.0 \
+            --port 8080 \
+            >> "$LOGFILE" 2>&1 &
+
+
+        echo $! > "$PIDFILE"
+
     fi
+
+
+    sleep 3
+
+
+    if running; then
+
+        ok "SpiderPanel is running."
+
+        return 0
+    fi
+
+
+    printf '[ERROR] SpiderPanel failed to start.\n' >&2
+
+
+    if systemd_ok; then
+
+        journalctl \
+            -u "$SERVICE.service" \
+            -n 80 \
+            --no-pager \
+            || true
+
+    else
+
+        tail -n 80 "$LOGFILE" 2>/dev/null || true
+
+    fi
+
+
+    return 1
 }
+
 
 # ============================================================
 # STOP
@@ -1245,134 +1269,40 @@ start_panel() {
 
 stop_panel() {
 
-    if [[ "$HAS_SYSTEMD" -eq 1 ]]; then
+    if systemd_ok; then
 
-        systemctl stop \
-            "$SERVICE_NAME.service" \
-            >/dev/null 2>&1 || true
+        systemctl stop "$SERVICE.service" \
+            >/dev/null 2>&1 \
+            || true
 
     else
 
-        stop_standalone
+        if [[ -f "$PIDFILE" ]]; then
+
+            local p=""
+
+            p="$(cat "$PIDFILE" 2>/dev/null || echo 0)"
+
+            if [[ "$p" =~ ^[0-9]+$ ]]; then
+
+                kill "$p" 2>/dev/null || true
+
+                sleep 1
+
+                kill -9 "$p" 2>/dev/null || true
+
+            fi
+
+            rm -f "$PIDFILE"
+
+        fi
+
     fi
+
 
     ok "SpiderPanel stopped."
 }
 
-# ============================================================
-# INFO
-# ============================================================
-
-get_public_ip() {
-
-    curl \
-        -4 \
-        -fsS \
-        --max-time 5 \
-        https://api.ipify.org \
-        2>/dev/null || true
-}
-
-get_local_ip() {
-
-    ip -4 route get 1.1.1.1 2>/dev/null |
-        awk '
-        {
-            for(i=1;i<=NF;i++) {
-                if($i=="src") {
-                    print $(i+1)
-                    exit
-                }
-            }
-        }' || true
-}
-
-get_codespace_url() {
-
-    if [[ "$IS_CODESPACE" -eq 1 && -n "${CODESPACE_NAME:-}" ]]; then
-
-        DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
-
-        printf \
-            'https://%s-%s.%s/spider\n' \
-            "$CODESPACE_NAME" \
-            "$PORT" \
-            "$DOMAIN"
-    fi
-}
-
-info_panel() {
-
-    ADMIN_PASSWORD="$(get_env_value ADMIN_PASSWORD)"
-
-    PUBLIC_IP="$(get_public_ip)"
-    LOCAL_IP="$(get_local_ip)"
-    CODESPACE_URL="$(get_codespace_url)"
-
-    echo
-    echo "============================================================"
-    echo "                    SPIDERPANEL"
-    echo "============================================================"
-    echo
-
-    echo "Application : $APP_DIR"
-    echo "Environment : $ENV_FILE"
-    echo "Port        : $PORT"
-
-    if [[ "$HAS_SYSTEMD" -eq 1 ]]; then
-
-        echo "Mode        : systemd"
-        echo "Service     : $SERVICE_NAME.service"
-
-    else
-
-        echo "Mode        : standalone"
-        echo "PID file    : $PID_FILE"
-        echo "Log file    : $LOG_FILE"
-
-    fi
-
-    echo
-
-    if [[ -n "$PUBLIC_IP" ]]; then
-        echo "Public URL  : http://${PUBLIC_IP}:${PORT}/spider"
-    fi
-
-    if [[ -n "$LOCAL_IP" ]]; then
-        echo "Local URL   : http://${LOCAL_IP}:${PORT}/spider"
-    fi
-
-    if [[ -n "$CODESPACE_URL" ]]; then
-        echo "Codespace   : $CODESPACE_URL"
-    fi
-
-    echo
-
-    echo "Admin password:"
-    echo "${ADMIN_PASSWORD:-NOT FOUND}"
-
-    echo
-
-    echo "Credentials : $APP_DIR/INSTALL-CREDENTIALS.txt"
-
-    echo
-
-    echo "Commands:"
-    echo "  spiderpanel"
-    echo "  spiderpanel info"
-    echo "  spiderpanel status"
-    echo "  spiderpanel start"
-    echo "  spiderpanel stop"
-    echo "  spiderpanel restart"
-    echo "  spiderpanel update"
-    echo "  spiderpanel logs"
-    echo "  spiderpanel uninstall"
-
-    echo
-
-    echo "============================================================"
-    echo
-}
 
 # ============================================================
 # STATUS
@@ -1381,208 +1311,70 @@ info_panel() {
 status_panel() {
 
     echo
-    echo "============================================================"
-    echo "                    SpiderPanel Status"
-    echo "============================================================"
-    echo
 
-    echo "Application : $APP_DIR"
-    echo "Port        : $PORT"
+    echo "SpiderPanel status"
+    echo "------------------"
 
-    if [[ "$HAS_SYSTEMD" -eq 1 ]]; then
+    echo "OS: $OS_NAME"
 
-        echo "Mode        : systemd"
+    echo "Port: 8080"
 
-        if systemctl is-active \
-            --quiet \
-            "$SERVICE_NAME.service"; then
+    if [[ -x "$VENV/bin/python" ]]; then
 
-            echo "Status      : RUNNING"
-
-        else
-
-            echo "Status      : STOPPED"
-
-        fi
-
-        echo
-
-        systemctl status \
-            "$SERVICE_NAME.service" \
-            --no-pager \
-            || true
+        echo "Python: $(
+            "$VENV/bin/python" --version 2>&1
+        )"
 
     else
 
-        echo "Mode        : standalone"
-
-        if [[ -f "$PID_FILE" ]]; then
-
-            PID="$(cat "$PID_FILE" 2>/dev/null || true)"
-
-            if [[ "$PID" =~ ^[0-9]+$ ]] &&
-               kill -0 "$PID" 2>/dev/null; then
-
-                echo "Status      : RUNNING"
-                echo "PID         : $PID"
-
-            else
-
-                echo "Status      : STOPPED"
-
-            fi
-
-        else
-
-            echo "Status      : STOPPED"
-
-        fi
-
-        echo "Log         : $LOG_FILE"
+        echo "Python: missing"
 
     fi
 
-    echo
-}
 
-# ============================================================
-# LOGS
-# ============================================================
+    if systemd_ok; then
+        echo "Mode: systemd"
+    else
+        echo "Mode: standalone"
+    fi
 
-logs_panel() {
 
-    if [[ "$HAS_SYSTEMD" -eq 1 ]]; then
+    if running; then
+        echo "Status: RUNNING"
+    else
+        echo "Status: STOPPED"
+    fi
 
-        journalctl \
-            -u "$SERVICE_NAME.service" \
-            -f
+
+    if [[ -x "$XRAY" ]]; then
+
+        echo "Xray: installed"
 
     else
 
-        touch "$LOG_FILE"
-
-        tail -f "$LOG_FILE"
+        echo "Xray: missing"
 
     fi
+
+
+    if [[ -x "$MTPROXY" ]]; then
+
+        echo "MTProto: installed"
+
+    else
+
+        echo "MTProto: missing"
+
+    fi
+
+
+    echo
 }
 
-# ============================================================
-# UPDATE
-# ============================================================
-
-update_panel() {
-
-    log "Downloading newest SpiderPanel installer..."
-
-    exec bash <(
-        curl -fsSL \
-            --retry 3 \
-            --connect-timeout 10 \
-            --max-time 180 \
-            "$INSTALLER_URL"
-    ) install
-}
 
 # ============================================================
-# UNINSTALL
+# IP
 # ============================================================
-
-uninstall_panel() {
-
-    echo
-    echo "============================================================"
-    echo "WARNING"
-    echo "============================================================"
-    echo
-    echo "This will remove:"
-    echo
-    echo "  $APP_DIR"
-    echo "  $ENV_FILE"
-    echo "  $SERVICE_NAME.service"
-    echo "  $CLI_PATH"
-    echo
-    echo "SpiderPanel data will also be removed from $APP_DIR."
-    echo
-    read -r -p "Type REMOVE to continue: " CONFIRM
-
-    if [[ "$CONFIRM" != "REMOVE" ]]; then
-        echo "Cancelled."
-        return 0
-    fi
-
-    stop_panel || true
-
-    if [[ "$HAS_SYSTEMD" -eq 1 ]]; then
-
-        systemctl disable \
-            "$SERVICE_NAME.service" \
-            >/dev/null 2>&1 || true
-
-        rm -f \
-            "/etc/systemd/system/${SERVICE_NAME}.service"
-
-        systemctl daemon-reload || true
-    fi
-
-    rm -f "$PID_FILE" 2>/dev/null || true
-    rm -f "$ENV_FILE" 2>/dev/null || true
-    rm -f "$CLI_PATH" 2>/dev/null || true
-
-    rm -rf "$APP_DIR"
-
-    ok "SpiderPanel completely removed."
-}
-
-# ============================================================
-# CREATE GLOBAL COMMAND
-# ============================================================
-
-create_cli() {
-
-    cat > "$CLI_PATH" <<'EOF'
-#!/usr/bin/env bash
-
-set -Eeuo pipefail
-
-APP_DIR="/opt/SpiderPanel"
-ENV_FILE="/etc/spider-panel.env"
-
-SERVICE_NAME="spider-panel"
-
-PORT="8080"
-
-PID_FILE="$APP_DIR/spiderpanel.pid"
-LOG_FILE="$APP_DIR/spiderpanel.log"
-
-SYSTEMD=0
-CODESPACE=0
-
-if [[ "${CODESPACES:-}" == "true" || -n "${CODESPACE_NAME:-}" ]]; then
-    CODESPACE=1
-fi
-
-if command -v systemctl >/dev/null 2>&1; then
-
-    PID1="$(ps -p 1 -o comm= 2>/dev/null | tr -d '[:space:]' || true)"
-
-    if [[ "$PID1" == "systemd" ]]; then
-        SYSTEMD=1
-    fi
-fi
-
-get_env() {
-
-    local KEY="$1"
-
-    if [[ -f "$ENV_FILE" ]]; then
-
-        grep "^${KEY}=" \
-            "$ENV_FILE" \
-            2>/dev/null |
-            head -n1 |
-            cut -d= -f2- || true
-    fi
-}
 
 get_public_ip() {
 
@@ -1591,224 +1383,96 @@ get_public_ip() {
         -fsS \
         --max-time 5 \
         https://api.ipify.org \
-        2>/dev/null || true
+        2>/dev/null \
+        || true
 }
+
 
 get_local_ip() {
 
-    ip -4 route get 1.1.1.1 2>/dev/null |
-        awk '
-        {
-            for(i=1;i<=NF;i++) {
-                if($i=="src") {
-                    print $(i+1)
-                    exit
-                }
-            }
-        }' || true
+    hostname -I \
+        2>/dev/null \
+        | awk '{print $1}' \
+        || true
 }
 
-get_codespace_url() {
 
-    if [[ "$CODESPACE" -eq 1 && -n "${CODESPACE_NAME:-}" ]]; then
-
-        DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
-
-        printf \
-            'https://%s-%s.%s/spider\n' \
-            "$CODESPACE_NAME" \
-            "$PORT" \
-            "$DOMAIN"
-    fi
-}
-
-running() {
-
-    if [[ "$SYSTEMD" -eq 1 ]]; then
-
-        systemctl is-active \
-            --quiet \
-            "$SERVICE_NAME.service"
-
-    else
-
-        [[ -f "$PID_FILE" ]] || return 1
-
-        PID="$(cat "$PID_FILE" 2>/dev/null || true)"
-
-        [[ "$PID" =~ ^[0-9]+$ ]] || return 1
-
-        kill -0 "$PID" 2>/dev/null
-    fi
-}
-
-start_panel() {
-
-    if [[ "$SYSTEMD" -eq 1 ]]; then
-
-        systemctl restart \
-            "$SERVICE_NAME.service"
-
-    else
-
-        if running; then
-
-            echo "SpiderPanel is already running."
-
-            return 0
-        fi
-
-        mkdir -p "$APP_DIR"
-
-        nohup \
-            "$APP_DIR/.venv/bin/uvicorn" \
-            main:app \
-            --host 0.0.0.0 \
-            --port "$PORT" \
-            >> "$LOG_FILE" \
-            2>&1 &
-
-        echo "$!" > "$PID_FILE"
-
-    fi
-
-    sleep 3
-
-    if running; then
-
-        echo "SpiderPanel started."
-
-    else
-
-        echo "SpiderPanel failed to start."
-
-        if [[ "$SYSTEMD" -eq 1 ]]; then
-
-            journalctl \
-                -u "$SERVICE_NAME.service" \
-                -n 100 \
-                --no-pager || true
-
-        else
-
-            tail -n 100 "$LOG_FILE" \
-                2>/dev/null || true
-        fi
-
-        exit 1
-    fi
-}
-
-stop_panel() {
-
-    if [[ "$SYSTEMD" -eq 1 ]]; then
-
-        systemctl stop \
-            "$SERVICE_NAME.service" \
-            || true
-
-    else
-
-        if [[ -f "$PID_FILE" ]]; then
-
-            PID="$(cat "$PID_FILE" 2>/dev/null || true)"
-
-            if [[ "$PID" =~ ^[0-9]+$ ]]; then
-                kill "$PID" 2>/dev/null || true
-            fi
-
-            rm -f "$PID_FILE"
-        fi
-
-    fi
-
-    echo "SpiderPanel stopped."
-}
-
-restart_panel() {
-
-    stop_panel
-
-    sleep 1
-
-    start_panel
-}
-
-status_panel() {
-
-    echo
-    echo "SpiderPanel"
-    echo "-----------"
-
-    echo "Port: $PORT"
-
-    if [[ "$SYSTEMD" -eq 1 ]]; then
-        echo "Mode: systemd"
-    else
-        echo "Mode: standalone"
-    fi
-
-    if running; then
-        echo "Status: RUNNING"
-    else
-        echo "Status: STOPPED"
-    fi
-
-    echo
-}
+# ============================================================
+# INFO
+# ============================================================
 
 info_panel() {
 
-    PASSWORD="$(get_env ADMIN_PASSWORD)"
+    local password=""
+    local ip=""
+    local local_ip=""
 
-    PUBLIC_IP="$(get_public_ip)"
-    LOCAL_IP="$(get_local_ip)"
-    CODE_URL="$(get_codespace_url)"
+    password="$(
+        grep '^ADMIN_PASSWORD=' "$ENV_FILE" \
+        2>/dev/null \
+        | head -n1 \
+        | cut -d= -f2- \
+        || true
+    )"
+
+
+    ip="$(get_public_ip)"
+
+    local_ip="$(get_local_ip)"
+
 
     echo
-    echo "============================================================"
-    echo "                    SPIDERPANEL"
-    echo "============================================================"
-    echo
 
-    echo "Application : $APP_DIR"
-    echo "Environment : $ENV_FILE"
-    echo "Port        : $PORT"
+    echo "================================================"
+    echo "                 SPIDERPANEL"
+    echo "================================================"
 
-    if [[ "$SYSTEMD" -eq 1 ]]; then
-        echo "Mode        : systemd"
-        echo "Service     : $SERVICE_NAME.service"
-    else
-        echo "Mode        : standalone"
-        echo "PID file    : $PID_FILE"
-        echo "Log file    : $LOG_FILE"
+    echo "URL: http://127.0.0.1:8080/spider"
+
+
+    if [[ -n "$local_ip" ]]; then
+
+        echo "Local URL: http://${local_ip}:8080/spider"
+
     fi
 
-    echo
 
-    if [[ -n "$PUBLIC_IP" ]]; then
-        echo "Public URL  : http://${PUBLIC_IP}:${PORT}/spider"
+    if [[ -n "$ip" ]]; then
+
+        echo "Public URL: http://${ip}:8080/spider"
+
     fi
 
-    if [[ -n "$LOCAL_IP" ]]; then
-        echo "Local URL   : http://${LOCAL_IP}:${PORT}/spider"
+
+    if [[ "$IS_CODESPACE" == "1" ]] \
+        && [[ -n "${CODESPACE_NAME:-}" ]]
+    then
+
+        local domain="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
+
+        echo "Codespace URL: https://${CODESPACE_NAME}-8080.${domain}/spider"
+
+        echo "Forward port 8080 in Codespaces."
+
     fi
 
-    if [[ -n "$CODE_URL" ]]; then
-        echo "Codespace   : $CODE_URL"
-    fi
 
     echo
+    echo "Admin Password: ${password:-NOT FOUND}"
 
-    echo "Admin password:"
-    echo "${PASSWORD:-NOT FOUND}"
+    echo "Application: $APP_DIR"
 
-    echo
+    echo "Environment: $ENV_FILE"
 
-    echo "Credentials : $APP_DIR/INSTALL-CREDENTIALS.txt"
+    echo "Python: $VENV/bin/python"
+
+    echo "Xray: $XRAY"
+
+    echo "MTProto: $MTPROXY"
 
     echo
     echo "Commands:"
+
     echo "  spiderpanel"
     echo "  spiderpanel info"
     echo "  spiderpanel status"
@@ -1819,143 +1483,228 @@ info_panel() {
     echo "  spiderpanel logs"
     echo "  spiderpanel uninstall"
 
-    echo
-    echo "============================================================"
+    echo "================================================"
+
     echo
 }
 
+
+# ============================================================
+# LOGS
+# ============================================================
+
 logs_panel() {
 
-    if [[ "$SYSTEMD" -eq 1 ]]; then
+    if systemd_ok; then
 
         journalctl \
-            -u "$SERVICE_NAME.service" \
-            -f
+            -u "$SERVICE.service" \
+            -f \
+            --no-pager
 
     else
 
-        touch "$LOG_FILE"
+        touch "$LOGFILE"
 
-        tail -f "$LOG_FILE"
+        tail -f "$LOGFILE"
 
     fi
 }
 
+
+# ============================================================
+# UPDATE
+# ============================================================
+
 update_panel() {
+
+    local f=""
+
+    f="$(mktemp /tmp/spiderpanel-update.XXXXXX)"
+
 
     curl \
         -fsSL \
-        --retry 3 \
-        --connect-timeout 10 \
-        --max-time 180 \
-        "https://raw.githubusercontent.com/amirh00sain/SpiderPanel/main/start.sh" |
-        bash
+        --retry 5 \
+        --retry-delay 2 \
+        "$INSTALLER_URL" \
+        -o "$f" \
+        || fail "Update download failed."
+
+
+    chmod 700 "$f"
+
+
+    bash "$f" install
+
+
+    rm -f "$f"
 }
+
+
+# ============================================================
+# UNINSTALL
+# ============================================================
 
 uninstall_panel() {
 
     echo
-    echo "WARNING: SpiderPanel will be deleted."
+
+    echo "This will remove SpiderPanel."
+
     echo
 
-    read -r \
-        -p "Type REMOVE to continue: " \
-        CONFIRM
 
-    if [[ "$CONFIRM" != "REMOVE" ]]; then
+    read \
+        -r \
+        -p "Type REMOVE to continue: " \
+        confirmation
+
+
+    if [[ "$confirmation" != "REMOVE" ]]; then
+
         echo "Cancelled."
-        exit 0
+
+        return 0
     fi
+
 
     stop_panel || true
 
-    if [[ "$SYSTEMD" -eq 1 ]]; then
+
+    if systemd_ok; then
 
         systemctl disable \
-            "$SERVICE_NAME.service" \
-            >/dev/null 2>&1 || true
+            "$SERVICE.service" \
+            >/dev/null 2>&1 \
+            || true
 
         rm -f \
-            "/etc/systemd/system/${SERVICE_NAME}.service"
+            "/etc/systemd/system/$SERVICE.service"
 
-        systemctl daemon-reload || true
+        systemctl daemon-reload \
+            >/dev/null 2>&1 \
+            || true
+
     fi
 
-    rm -f "$PID_FILE" 2>/dev/null || true
-    rm -f "$ENV_FILE" 2>/dev/null || true
-    rm -rf "$APP_DIR"
-    rm -f "/usr/local/bin/spiderpanel"
 
-    echo
-    echo "SpiderPanel removed."
-    echo
+    rm -f "$CLI"
+
+    rm -f "$ENV_FILE"
+
+    rm -rf "$APP_DIR"
+
+
+    ok "SpiderPanel removed."
 }
 
-menu() {
 
-    while true; do
+# ============================================================
+# CLI
+# ============================================================
 
-        clear 2>/dev/null || true
+create_cli() {
 
+    cat > "$CLI" <<'EOF'
+#!/usr/bin/env bash
+
+set -e
+
+APP="/opt/SpiderPanel"
+
+if [[ ! -f "$APP/start.sh" ]]; then
+    echo "SpiderPanel is not installed."
+    exit 1
+fi
+
+case "${1:-menu}" in
+
+    install)
+        bash "$APP/start.sh" install
+        ;;
+
+    info)
+        bash "$APP/start.sh" info
+        ;;
+
+    status)
+        bash "$APP/start.sh" status
+        ;;
+
+    start)
+        bash "$APP/start.sh" start
+        ;;
+
+    stop)
+        bash "$APP/start.sh" stop
+        ;;
+
+    restart)
+        bash "$APP/start.sh" restart
+        ;;
+
+    update)
+        bash "$APP/start.sh" update
+        ;;
+
+    logs)
+        bash "$APP/start.sh" logs
+        ;;
+
+    uninstall)
+        bash "$APP/start.sh" uninstall
+        ;;
+
+    *)
         echo
-        echo "============================================================"
-        echo "                    SPIDERPANEL"
-        echo "============================================================"
+        echo "SpiderPanel"
         echo
-        echo "  1) Info"
-        echo "  2) Status"
-        echo "  3) Start"
-        echo "  4) Stop"
-        echo "  5) Restart"
-        echo "  6) Update"
-        echo "  7) Logs"
-        echo "  8) Uninstall"
-        echo "  0) Exit"
+        echo "1) Info"
+        echo "2) Status"
+        echo "3) Start"
+        echo "4) Stop"
+        echo "5) Restart"
+        echo "6) Update"
+        echo "7) Logs"
+        echo "8) Uninstall"
+        echo "0) Exit"
         echo
 
-        printf "Select: "
+        read -r -p "Select: " n
 
-        read -r CHOICE
-
-        case "$CHOICE" in
+        case "$n" in
 
             1)
-                info_panel
-                read -r -p "Press Enter..."
+                bash "$APP/start.sh" info
                 ;;
 
             2)
-                status_panel
-                read -r -p "Press Enter..."
+                bash "$APP/start.sh" status
                 ;;
 
             3)
-                start_panel
-                read -r -p "Press Enter..."
+                bash "$APP/start.sh" start
                 ;;
 
             4)
-                stop_panel
-                read -r -p "Press Enter..."
+                bash "$APP/start.sh" stop
                 ;;
 
             5)
-                restart_panel
-                read -r -p "Press Enter..."
+                bash "$APP/start.sh" restart
                 ;;
 
             6)
-                update_panel
-                read -r -p "Press Enter..."
+                bash "$APP/start.sh" update
                 ;;
 
             7)
-                logs_panel
+                bash "$APP/start.sh" logs
                 ;;
 
             8)
-                uninstall_panel
-                exit 0
+                bash "$APP/start.sh" uninstall
                 ;;
 
             0)
@@ -1964,76 +1713,21 @@ menu() {
 
             *)
                 echo "Invalid option."
-                sleep 1
                 ;;
+
         esac
 
-    done
-}
-
-COMMAND="${1:-menu}"
-
-case "$COMMAND" in
-
-    menu)
-        menu
         ;;
 
-    info)
-        info_panel
-        ;;
-
-    status)
-        status_panel
-        ;;
-
-    start)
-        start_panel
-        ;;
-
-    stop)
-        stop_panel
-        ;;
-
-    restart)
-        restart_panel
-        ;;
-
-    update)
-        update_panel
-        ;;
-
-    logs)
-        logs_panel
-        ;;
-
-    uninstall|remove|delete)
-        uninstall_panel
-        ;;
-
-    *)
-        echo
-        echo "SpiderPanel"
-        echo
-        echo "Usage:"
-        echo "  spiderpanel"
-        echo "  spiderpanel info"
-        echo "  spiderpanel status"
-        echo "  spiderpanel start"
-        echo "  spiderpanel stop"
-        echo "  spiderpanel restart"
-        echo "  spiderpanel update"
-        echo "  spiderpanel logs"
-        echo "  spiderpanel uninstall"
-        echo
-        ;;
 esac
 EOF
 
-    chmod 755 "$CLI_PATH"
+
+    chmod 755 "$CLI"
 
     ok "Global command installed: spiderpanel"
 }
+
 
 # ============================================================
 # INSTALL
@@ -2041,102 +1735,226 @@ EOF
 
 install_panel() {
 
-    become_root "$@"
+    root "$@"
 
-    detect_os
-    detect_environment
+    detect
 
-    echo
-    log "Installing $APP_NAME..."
-    echo
-
-    log "OS: $PRETTY_NAME"
-
-    if [[ "$IS_CODESPACE" -eq 1 ]]; then
-
-        log "Environment: GitHub Codespaces"
-
-    elif [[ "$HAS_SYSTEMD" -eq 1 ]]; then
-
-        log "Environment: Linux + systemd"
-
-    else
-
-        log "Environment: Linux without systemd"
-
-    fi
 
     echo
 
-    install_packages
+    log "Installing SpiderPanel..."
 
-    install_docker
+    log "OS: $OS_NAME"
 
-    download_source
+    log "Port: 8080"
 
-    deploy_application
+
+    packages
+
+    download_repo
+
+    deploy
 
     setup_python
 
-    install_xray
+    install_xray || true
 
-    install_mtproxy
+    install_mtproxy || true
 
-    setup_environment
+    config
 
-    validate_application
 
-    if [[ "$HAS_SYSTEMD" -eq 1 ]]; then
+    # --------------------------------------------------------
+    # Python compile check
+    # --------------------------------------------------------
 
-        create_systemd_service
+    log "Checking Python source files..."
+
+    "$VENV/bin/python" \
+        -m compileall \
+        -q \
+        "$APP_DIR" \
+        || fail "Python compile check failed."
+
+
+    # --------------------------------------------------------
+    # Keep installer inside app
+    # --------------------------------------------------------
+
+    if [[ -f "$TMP_ROOT/app/start.sh" ]]; then
+
+        cp -f \
+            "$TMP_ROOT/app/start.sh" \
+            "$APP_DIR/start.sh"
+
+        chmod 755 "$APP_DIR/start.sh"
+
+    else
+
+        # If repository does not contain start.sh,
+        # preserve current running installer.
+
+        if [[ ! -f "$APP_DIR/start.sh" ]]; then
+
+            warn "Repository does not contain start.sh."
+
+        fi
 
     fi
 
-    start_panel || \
-        fail "SpiderPanel could not be started."
+
+    # --------------------------------------------------------
+    # CLI
+    # --------------------------------------------------------
 
     create_cli
 
-    hash -r 2>/dev/null || true
 
-    echo
-    ok "SpiderPanel installation completed."
-    echo
+    # --------------------------------------------------------
+    # Service
+    # --------------------------------------------------------
+
+    create_service
+
+
+    # --------------------------------------------------------
+    # Start
+    # --------------------------------------------------------
+
+    start_panel
+
+
+    # --------------------------------------------------------
+    # Information
+    # --------------------------------------------------------
 
     info_panel
+
+
+    ok "Installation completed."
 }
+
 
 # ============================================================
 # MAIN
 # ============================================================
 
-COMMAND="${1:-install}"
+main() {
 
-case "$COMMAND" in
+    case "${1:-install}" in
 
-    install)
+        install)
 
-        install_panel "$@"
+            install_panel "$@"
 
-        ;;
+            ;;
 
-    *)
+        info)
 
-        become_root "$@"
+            root "$@"
 
-        detect_os
-        detect_environment
+            detect
 
-        if [[ -x "$CLI_PATH" ]]; then
+            info_panel
 
-            exec "$CLI_PATH" "$@"
+            ;;
 
-        else
+        status)
 
-            install_panel install
+            root "$@"
 
-        fi
+            detect
 
-        ;;
+            status_panel
 
-esac
+            ;;
+
+        start)
+
+            root "$@"
+
+            detect
+
+            start_panel
+
+            ;;
+
+        stop)
+
+            root "$@"
+
+            detect
+
+            stop_panel
+
+            ;;
+
+        restart)
+
+            root "$@"
+
+            detect
+
+            stop_panel
+
+            sleep 1
+
+            start_panel
+
+            ;;
+
+        update)
+
+            root "$@"
+
+            update_panel
+
+            ;;
+
+        logs)
+
+            root "$@"
+
+            detect
+
+            logs_panel
+
+            ;;
+
+        uninstall)
+
+            root "$@"
+
+            detect
+
+            uninstall_panel
+
+            ;;
+
+        *)
+
+            echo
+            echo "SpiderPanel Universal Installer"
+            echo
+            echo "Usage:"
+            echo
+            echo "  start.sh install"
+            echo "  start.sh info"
+            echo "  start.sh status"
+            echo "  start.sh start"
+            echo "  start.sh stop"
+            echo "  start.sh restart"
+            echo "  start.sh update"
+            echo "  start.sh logs"
+            echo "  start.sh uninstall"
+            echo
+
+            exit 1
+
+            ;;
+
+    esac
+}
+
+
+main "$@"
