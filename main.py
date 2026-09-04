@@ -1756,7 +1756,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             return ""
         ts=inbound.get("tls_settings") or {}; ws=inbound.get("ws_settings") or {}; xh=inbound.get("xhttp_settings") or {}; gr=inbound.get("grpc_settings") or {}
         host=addr_ip or str(ts.get("domain") or inbound.get("domain") or panel_domain).strip()
-        port=addr_port or str(ts.get("public_port") or inbound.get("port") or 443)
+        port=addr_port or str(inbound.get("port") or 443)
         sni=str(ts.get("sni") or inbound.get("sni") or host).strip()
         fp=str(inbound.get("fingerprint") or ts.get("fingerprint") or "chrome")
         transport=str(inbound.get("network") or "ws").lower()
@@ -1885,7 +1885,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     tls_domain = str(tls_cfg.get("domain") or (inbound.get("domain") if inbound else "") or panel_domain).strip()
     tls_sni = str(tls_cfg.get("sni") or (inbound.get("sni") if inbound else "") or tls_domain).strip()
     tls_host = str(tls_cfg.get("host") or ((inbound.get("ws_settings") or {}).get("host") if inbound else "") or tls_domain).strip()
-    tls_port = str(tls_cfg.get("public_port") or (inbound.get("external_port") if inbound else "") or 443)
+    tls_port = str((inbound.get("port") if inbound else "") or 443)
 
     # ── REVERSE (user → CF Worker → Railway → site) — path /reverse/{uuid} ──
     if proto == "reverse":
@@ -3434,10 +3434,6 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
             tls_domain = str(tls_settings.get("domain") or domain or "").strip()
             tls_sni = str(tls_settings.get("sni") or sni or "").strip()
             tls_host = str(tls_settings.get("host") or "").strip()
-            public_raw = tls_settings.get("public_port")
-            if public_raw in (None, "", 0, "0"):
-                raise HTTPException(status_code=400, detail="TLS Public Port is required")
-            public_port = _parse_port(public_raw, 443, "public_port")
             if not tls_domain or not tls_sni:
                 raise HTTPException(status_code=400, detail="TLS Domain and SNI are required")
             network, ws_settings, xhttp_settings, grpc_settings = _canonical_inbound_transport(body, protocol, security)
@@ -3445,11 +3441,11 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
                 raise HTTPException(status_code=400, detail=f"{network.upper()} Host is required")
             domain = tls_domain
             external_domain = tls_domain
-            external_port = public_port
+            external_port = ""
             sni = tls_sni
             fingerprint = str(tls_settings.get("fingerprint") or fingerprint or "chrome").strip()
             tls_settings = {"domain": tls_domain, "sni": tls_sni, "host": tls_host,
-                             "public_port": public_port, "fingerprint": fingerprint}
+                             "fingerprint": fingerprint}
             security = "tls"
         else:
             network, ws_settings, xhttp_settings, grpc_settings = _canonical_inbound_transport(body, protocol, security)
@@ -3761,7 +3757,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
                 ib["external_domain"] = td
                 ib["sni"] = tsni
                 ib["external_port"] = tp
-                ib["tls_settings"] = {"domain": td, "sni": tsni, "host": th, "public_port": tp,
+                ib["tls_settings"] = {"domain": td, "sni": tsni, "host": th,
                                       "fingerprint": str(ts.get("fingerprint") or ib.get("fingerprint") or "chrome")}
                 # Host is meaningful for WS/XHTTP only. gRPC uses serviceName/authority.
                 if ib.get("network") == "ws":
@@ -7137,7 +7133,7 @@ CF_TOKEN_LINK = (
     "%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C"
     "%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C"
     "%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%5D"
-    "&accountId=*&zoneId=all&name=Spider%20Workers%20Full%20Access%20Token"
+    "&accountId=*&zoneId=all&name=SpiderPanel-Token"
 )
 
 # Worker script deployed to the user's Cloudflare account lives in the project

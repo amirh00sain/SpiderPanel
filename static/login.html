@@ -177,7 +177,7 @@
             backdrop-filter:none !important;
             -webkit-backdrop-filter:none !important;
         }
-        .login-card { border-radius:10px !important; box-shadow:0 22px 55px rgba(0,0,0,.48) !important; }
+        .login-card { border-radius:32px !important; box-shadow:0 22px 55px rgba(0,0,0,.42) !important; }
         .login-title { background:none !important; -webkit-text-fill-color:#f2f4f7 !important; color:#f2f4f7 !important; }
         .input-glass { border-radius:7px !important; background:#0c0e11 !important; border-color:rgba(255,255,255,.12) !important; box-shadow:none !important; }
         .input-glass:focus { border-color:rgba(255,255,255,.32) !important; box-shadow:0 0 0 3px rgba(255,255,255,.05) !important; }
@@ -189,6 +189,14 @@
 <script>
   document.documentElement.setAttribute('data-theme', localStorage.getItem('spider-theme') === 'light' ? 'light' : 'dark');
 </script>
+
+<style id="final-login-monochrome">
+html,body{background:#000!important;color:#fff!important}
+html[data-theme="light"],html[data-theme="light"] body{background:#fff!important;color:#000!important}
+.login-card,.glass-card{border-radius:32px!important;box-shadow:0 22px 55px rgba(0,0,0,.42)!important}
+#loginBtn,.btn-hover-effect,button,input{box-shadow:none!important;text-shadow:none!important;outline:none!important}
+#loginBtn:focus,input:focus{box-shadow:none!important}
+</style>
 </head>
 <body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex items-center justify-center relative">
 
