@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from urllib.parse import quote
 from collections import deque, defaultdict
-import base64
+import base64, urllib.parse
 import io
 import logging
 
@@ -1742,34 +1742,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             return wcfgs[0]
         return ""
 
-    # ── NODE (same UUID across every registered SpiderPanel) ──
-    if proto == "node":
-        existing = [c.get("config") for c in (user.get("node_configs") or []) if c.get("config")]
-        if existing:
-            return existing[0]
-        # Immediate fallback while the async remote sync is settling.
-        try:
-            selected_ids = set()
-            for iid in (user.get("inbound_ids") or []):
-                ibn = INBOUNDS.get(iid) or {}
-                if str(ibn.get("protocol") or "").lower() == "node":
-                    selected_ids.update(str(x) for x in (ibn.get("enabled_node_ids") or []))
-            # An explicitly empty checkbox set is authoritative: no Node is used.
-            for nid, node in NODES.items():
-                if str(nid) not in selected_ids:
-                    continue
-                cfg = _node_config_for_user(node, config_uuid, username)
-                if cfg:
-                    return cfg
-        except Exception:
-            pass
-        return ""
-
-    # ── WIREGUARD / AmneziaWG ──
-    if proto == "wireguard":
-        if not inbound:
-            return ""
-        return generate_wg_config(user_id, user, inbound, remark_tag)
+    # ── NODE selection is now an attribute of Config inbounds. ──
 
     # ── TELEGRAM PROXY ──
     if proto == "telegram":
@@ -1777,26 +1750,43 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             return ""
         return generate_telegram_proxy_link(user_id, user, inbound, remark_tag)
 
-    # ── TROJAN (TLS/WS) ──
-    if proto == "trojan":
+    # ── VMESS / TROJAN ──
+    if proto in ("vmess", "trojan"):
         if not inbound:
             return ""
-        ts = inbound.get("tls_settings") or {}
-        ws = inbound.get("ws_settings") or {}
-        host = addr_ip or str(ts.get("domain") or inbound.get("domain") or panel_domain).strip()
-        port = addr_port or str(ts.get("public_port") or inbound.get("external_port") or 443)
-        sni = str(ts.get("sni") or inbound.get("sni") or "").strip()
-        ws_host = str(ts.get("host") or ws.get("host") or "").strip()
-        path = str(ws.get("path") or "/").strip() or "/"
-        if not sni or not ws_host:
-            return ""
-        if not path.startswith("/"):
-            path = "/" + path
-        params = (f"security=tls&type=ws&sni={quote(sni, safe='')}"
-                  f"&host={quote(ws_host, safe='')}&path={quote(path, safe='')}"
-                  f"&fp={quote(str(inbound.get('fingerprint') or ts.get('fingerprint') or 'chrome'), safe='')}"
-                  "&alpn=http/1.1")
-        return f"trojan://{quote(config_uuid, safe='')}@{host}:{port}?{params}#{remark}"
+        ts=inbound.get("tls_settings") or {}; ws=inbound.get("ws_settings") or {}; xh=inbound.get("xhttp_settings") or {}; gr=inbound.get("grpc_settings") or {}
+        host=addr_ip or str(ts.get("domain") or inbound.get("domain") or panel_domain).strip()
+        port=addr_port or str(ts.get("public_port") or inbound.get("port") or 443)
+        sni=str(ts.get("sni") or inbound.get("sni") or host).strip()
+        fp=str(inbound.get("fingerprint") or ts.get("fingerprint") or "chrome")
+        transport=str(inbound.get("network") or "ws").lower()
+        if proto=="trojan":
+            if transport=="grpc":
+                service=str(gr.get("serviceName") or "").strip()
+                if not service: return ""
+                params=f"security=tls&type=grpc&serviceName={quote(service, safe='')}&sni={quote(sni)}&fp={quote(fp)}&alpn=h2"
+                if gr.get("authority"): params+=f"&authority={quote(str(gr.get('authority')))}"
+            elif transport=="xhttp":
+                path=str(xh.get("path") or "/xhttp").strip(); path=path if path.startswith("/") else "/"+path
+                params=f"security=tls&type=xhttp&path={quote(path, safe='')}&sni={quote(sni)}&fp={quote(fp)}&alpn=h2,http/1.1"
+            elif transport=="tcp":
+                params=f"security=tls&type=tcp&sni={quote(sni)}&fp={quote(fp)}&alpn=h2,http/1.1"
+            else:
+                path=str(ws.get("path") or "/ws").strip(); path=path if path.startswith("/") else "/"+path; path=path.rstrip("/") or "/ws"; path=f"{path}/{config_uuid}"
+                wh=str(ts.get("host") or ws.get("host") or host).strip()
+                params=f"security=tls&type=ws&sni={quote(sni)}&host={quote(wh)}&path={quote(path, safe='')}&fp={quote(fp)}&alpn=http/1.1"
+            return f"trojan://{quote(config_uuid, safe='')}@{host}:{port}?{params}#{remark}"
+        # Standard VMess URL uses a base64-encoded JSON object.
+        import base64
+        obj={"v":"2","ps":urllib.parse.unquote(rem),"add":host,"port":int(port),"id":config_uuid,"aid":0,"scy":"auto","net":transport,"type":"none","host":host,"path":"","tls":"tls","sni":sni,"alpn":"h2,http/1.1","fp":fp}
+        if transport=="ws":
+            obj["path"]=str(ws.get("path") or "/ws"); obj["host"]=str(ts.get("host") or ws.get("host") or host)
+        elif transport=="xhttp":
+            obj["path"]=str(xh.get("path") or "/xhttp"); obj["type"]="none"
+        elif transport=="grpc":
+            obj["path"]=str(gr.get("serviceName") or "grpc"); obj["type"]="gun"
+        raw=base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        return f"vmess://{raw}"
 
     # ── SOCKS5 ──
     if proto == "socks5":
@@ -3212,11 +3202,13 @@ async def list_inbounds(_=Depends(require_auth)):
         snap = dict(INBOUNDS)
     result = []
     for iid, ib in snap.items():
-        result.append({
-            "inbound_id": iid,
-            **ib,
-            "users_count": sum(1 for u in USERS.values() if iid in (u.get("inbound_ids") or ([u.get("inbound_id")] if u.get("inbound_id") else []))),
-        })
+        legacy_proto = str(ib.get("protocol") or "").lower()
+        if legacy_proto in ("wireguard", "socks5"):
+            continue
+        row = {"inbound_id": iid, **ib}
+        row.setdefault("inbound_type", "telegram" if legacy_proto == "telegram" else "config")
+        row["users_count"] = sum(1 for u in USERS.values() if iid in (u.get("inbound_ids") or ([u.get("inbound_id")] if u.get("inbound_id") else [])))
+        result.append(row)
     result.sort(key=lambda x: x.get("created_at") or "", reverse=True)
     return {"inbounds": result}
 
@@ -3241,9 +3233,12 @@ def _normalize_transport_path(value: object, field: str, *, allow_root: bool = F
 
 
 def _canonical_inbound_transport(body: dict, protocol: str, security: str) -> tuple[str, dict, dict, dict]:
+    protocol = str(protocol or "").lower()
     network = str(body.get("network") or "ws").strip().lower()
     if protocol in ("socks5", "shadowsocks", "wireguard", "telegram", "node", "worker", "tunnel", "reverse"):
         return network, {}, {}, {}
+    if security == "reality" and protocol != "vless":
+        raise HTTPException(status_code=400, detail="Reality security is supported only for VLESS")
     if network not in ("tcp", "ws", "xhttp", "grpc"):
         raise HTTPException(status_code=400, detail="Unsupported transport")
     ws = dict(body.get("ws_settings") or {}) if isinstance(body.get("ws_settings"), dict) else {}
@@ -3306,15 +3301,47 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
     body = await request.json()
     name = (body.get("name") or "اینباند جدید").strip()[:60]
     protocol = str(body.get("protocol") or "vless").lower()
-    if protocol not in ("vless", "vmess", "trojan", "socks5", "shadowsocks", "reality", "worker", "tunnel", "reverse", "wireguard", "telegram", "node"):
+    if protocol not in ("vless", "vmess", "trojan", "shadowsocks", "worker", "tunnel", "reverse", "telegram", "node"):
         raise HTTPException(status_code=400, detail="Invalid protocol")
     network = str(body.get("network") or "ws").lower()
     security = str(body.get("security") or "tls").lower()
+    inbound_type = str(body.get("inbound_type") or ("telegram" if protocol == "telegram" else "config")).lower()
+    if inbound_type not in ("config", "telegram", "node"):
+        raise HTTPException(status_code=400, detail="Invalid inbound type")
+    if inbound_type == "telegram" and protocol != "telegram":
+        protocol = "telegram"
+    if inbound_type == "node" and protocol != "node":
+        protocol = "node"
+    if inbound_type == "config" and protocol in ("telegram", "node"):
+        raise HTTPException(status_code=400, detail="Telegram Proxy must use Telegram inbound type")
+    if protocol == "vless" and security == "reality":
+        pass
+    elif protocol in ("vmess", "trojan") and security != "tls":
+        raise HTTPException(status_code=400, detail="VMess/Trojan inbounds require TLS in this panel")
+    elif protocol == "shadowsocks":
+        security = "none"
     domain = str(body.get("domain") or "").strip()
     external_domain = str(body.get("external_domain") or "").strip()
     sni = str(body.get("sni") or "").strip()
     destination = str(body.get("destination") or "").strip()
     server_name = str(body.get("server_name") or "").strip()
+    # A Node inbound is a selector-only object: no listener/protocol fields.
+    if inbound_type == "node":
+        requested = [str(x) for x in (body.get("enabled_node_ids") or [])]
+        valid = [nid for nid in requested if nid in NODES]
+        if not valid:
+            raise HTTPException(status_code=400, detail="Select at least one node / حداقل یک نود را انتخاب کنید")
+        inbound_id = generate_short_id()
+        async with INBOUNDS_LOCK:
+            if any(ib.get("name") == name for ib in INBOUNDS.values()):
+                raise HTTPException(status_code=409, detail="Inbound name already exists")
+            INBOUNDS[inbound_id] = {
+                "name": name, "protocol": "node", "inbound_type": "node",
+                "enabled_node_ids": valid, "created_at": datetime.now().isoformat()
+            }
+        await save_state()
+        log_activity("inbound", f"اینباند نود «{name}» ساخته شد / Node inbound created", "ok")
+        return {"ok": True, "inbound_id": inbound_id, **INBOUNDS[inbound_id]}
     # A "worker" inbound is a special type: it is addressed to the deployed
     # Cloudflare Worker domain; Railway only controls it and is not in the
     # client traffic path.
@@ -3401,8 +3428,8 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
         external_domain = telegram_settings["external_domain"]
 
     if protocol in ("vless", "vmess", "trojan"):
-        if security not in ("tls", "reality"):
-            raise HTTPException(status_code=400, detail="VLESS/VMess/Trojan security must be TLS or Reality")
+        if security not in (("tls", "reality") if protocol == "vless" else ("tls",)):
+            raise HTTPException(status_code=400, detail=("VLESS security must be TLS or Reality" if protocol == "vless" else "VMess/Trojan security must be TLS"))
         if security == "tls":
             tls_domain = str(tls_settings.get("domain") or domain or "").strip()
             tls_sni = str(tls_settings.get("sni") or sni or "").strip()
@@ -3430,7 +3457,9 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
 
     # Auto-generate Reality keys (x25519 pbk/priv + short_id + mldsa65 seed)
     # fresh for every reality inbound. SNI target is fixed.
-    if protocol == "reality" or security == "reality":
+    if security == "reality":
+        if protocol != "vless":
+            raise HTTPException(status_code=400, detail="Reality security is supported only for VLESS")
         # Reality is intentionally explicit: do not silently invent the
         # destination, SNI, private key, or short-id for a user-created inbound.
         raw_priv = str(reality_settings.get("private_key") or "").strip()
@@ -3507,7 +3536,7 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
     else:
         # For TLS WS/XHTTP (non-reality, non-worker): external_domain and external_port
         # are derived from the panel domain and must not leak Reality/TG-only values.
-        if protocol not in ("telegram", "wireguard"):
+        if protocol not in ("telegram",):
             external_domain = ""
             external_port = ""
     # WireGuard uses the validated UDP listen port above.
@@ -3519,6 +3548,7 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
         INBOUNDS[inbound_id] = {
             "name": name,
             "protocol": protocol,
+            "inbound_type": inbound_type,
             "port": port,
             "network": network,
             "security": security,
@@ -3534,7 +3564,7 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
             "xhttp_settings": xhttp_settings,
             "ws_settings": ws_settings,
             "grpc_settings": grpc_settings,
-            "enabled_node_ids": list(NODES.keys()) if protocol == "node" else [],
+            "enabled_node_ids": [str(x) for x in (body.get("enabled_node_ids") or []) if str(x) in NODES] if inbound_type == "config" else [],
             "wireguard_settings": wireguard_settings,
             "telegram_settings": telegram_settings,
             "tls_settings": tls_settings,
@@ -3567,10 +3597,34 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             raise HTTPException(status_code=403, detail="اینباند سیستمی است و قابل ویرایش نیست")
         if "name" in body:
             ib["name"] = str(body["name"]).strip()[:60]
+        if "inbound_type" in body:
+            ib["inbound_type"] = str(body.get("inbound_type") or ("telegram" if str(ib.get("protocol") or "").lower()=="telegram" else "config")).lower()
+            if ib["inbound_type"] not in ("config", "telegram", "node"):
+                raise HTTPException(status_code=400, detail="Invalid inbound type")
         if "protocol" in body:
             p = str(body["protocol"]).lower()
-            if p in ("vless", "vmess", "trojan", "socks5", "shadowsocks", "reality", "worker", "tunnel", "reverse", "wireguard", "telegram", "node"):
+            if p in ("vless", "vmess", "trojan", "shadowsocks", "telegram", "node"):
                 ib["protocol"] = p
+            elif p in ("socks5", "wireguard", "reality"):
+                raise HTTPException(status_code=400, detail="This protocol is no longer available for new Config inbounds")
+        # Node inbound is selector-only: name + checked node IDs, nothing else.
+        if (ib.get("protocol") or "").lower() == "node" or (ib.get("inbound_type") or "").lower() == "node":
+            ib["protocol"] = "node"
+            ib["inbound_type"] = "node"
+            if "enabled_node_ids" in body:
+                requested = [str(x) for x in (body.get("enabled_node_ids") or [])]
+                ib["enabled_node_ids"] = [nid for nid in requested if nid in NODES]
+            if not ib.get("enabled_node_ids"):
+                raise HTTPException(status_code=400, detail="Select at least one node / حداقل یک نود را انتخاب کنید")
+            await save_state()
+            return {"ok": True, "inbound_id": inbound_id, **ib}
+        if (ib.get("protocol") or "").lower() == "telegram":
+            ib["inbound_type"] = "telegram"
+        elif (ib.get("inbound_type") or "config").lower() != "telegram":
+            ib["inbound_type"] = "config"
+        if (ib.get("security") or "").lower() == "reality" and (ib.get("protocol") or "").lower() != "vless":
+            raise HTTPException(status_code=400, detail="Reality security is supported only for VLESS")
+
         # A worker inbound always targets the connected worker domain; if the
         # inbound's domain is stale/empty, refresh it automatically.
         if ib.get("protocol") == "worker":
@@ -3742,7 +3796,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib["external_port"] = 0
         if "telegram_settings" in body and isinstance(body["telegram_settings"], dict):
             ib["telegram_settings"] = body["telegram_settings"]
-        if (ib.get("protocol") or "").lower() == "node" and "enabled_node_ids" in body:
+        if "enabled_node_ids" in body and (ib.get("inbound_type") or "config").lower() == "config":
             requested = [str(x) for x in (body.get("enabled_node_ids") or [])]
             ib["enabled_node_ids"] = [nid for nid in requested if nid in NODES]
 
@@ -3780,13 +3834,13 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
 
     await save_state()
     log_activity("inbound", f"اینباند «{ib.get('name', inbound_id)}» ویرایش شد", "info")
-    if (ib.get("protocol") or "").lower() == "node":
+    if (ib.get("inbound_type") or "config").lower() == "config" and (ib.get("protocol") or "").lower() in ("vless","vmess","trojan","shadowsocks"):
         async def _resync_selected_node_users():
             async with USERS_LOCK:
                 node_users = [(u.get("config_uuid", uid), u.get("username", uid), dict(u)) for uid, u in USERS.items()
                               if inbound_id in (u.get("inbound_ids") or [])]
             selected = set(str(x) for x in (ib.get("enabled_node_ids") or []))
-            for cuuid, uname, ucopy in node_users:
+            for cuuid, uname, _ in node_users:
                 await _sync_user_to_selected_nodes(cuuid, {"username": uname}, selected)
         asyncio.create_task(_resync_selected_node_users())
     asyncio.create_task(_xray_apply())
@@ -3862,9 +3916,6 @@ async def delete_inbound(inbound_id: str, _=Depends(require_auth)):
         ib = INBOUNDS.get(inbound_id)
         if not ib:
             raise HTTPException(status_code=404, detail="inbound not found")
-        # NODE inbound is system-managed; never let users delete it.
-        if (ib.get("protocol") or "").lower() == "node":
-            raise HTTPException(status_code=403, detail="NODE inbound is system-managed and cannot be deleted")
         ib = INBOUNDS.pop(inbound_id, None)
         name = ib.get("name", inbound_id)
     # Stop Telegram Proxy if this was a telegram inbound
@@ -4078,9 +4129,6 @@ async def create_user(request: Request, _=Depends(require_panel_or_node)):
             path = f"/tunnel/{config_uuid}"
         elif primary_inbound_proto == "reverse":
             path = f"/reverse/{config_uuid}"
-        elif primary_inbound_proto == "node":
-            # NODE inbound: user is replicated to all nodes with the same UUID.
-            path = f"/ws/{config_uuid}"
         elif primary_inbound_proto == "reality":
             if primary_inbound_network == "xhttp":
                 path = f"{str((primary_inbound.get('xhttp_settings') or {}).get('path') or '/xhttp').rstrip('/')}/stream-up/{config_uuid}"
@@ -4222,8 +4270,8 @@ async def create_user(request: Request, _=Depends(require_panel_or_node)):
     asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
     # NODE inbound: replicate the user to all registered nodes (same UUID).
     node_results = []
-    if primary_inbound_proto == "node":
-        selected = await _selected_node_ids_for_user(user)
+    selected = await _selected_node_ids_for_user(user)
+    if selected:
         node_results = await _sync_user_to_selected_nodes(config_uuid, {"username": username}, selected)
     return {
         "user_id": user_id,
@@ -8675,48 +8723,8 @@ async def verify_panel_api_key(request: Request, _=Depends(require_auth)):
 
 # ── NODE inbound / config helpers ────────────────────────────────────────────
 async def _ensure_node_inbound() -> str | None:
-    """Create the system-managed NODE inbound only after a node exists."""
-    if not NODES:
-        return None
-    nd = _safe_host(SETTINGS.get("domain"), get_host())
-    async with INBOUNDS_LOCK:
-        for iid, ib in INBOUNDS.items():
-            if (ib.get("protocol") or "").lower() == "node":
-                # Keep this inbound system-owned and non-editable.
-                ib["name"] = "NODE (Multi-Node Sync)"
-                ib["domain"] = nd
-                ib["external_domain"] = nd
-                ib["external_port"] = 443
-                ib["port"] = 443
-                ib["network"] = "ws"
-                ib["security"] = "tls"
-                ib["ws_settings"] = dict(ib.get("ws_settings") or {"path": "/ws/{uuid}"})
-                ib.setdefault("enabled_node_ids", list(NODES.keys()))
-                # Node inbound is editable: selected node ids are authoritative.
-                ib["system_managed"] = False
-                return iid
-        iid = "default-node"
-        INBOUNDS[iid] = {
-            "name": "NODE (Multi-Node Sync)",
-            "protocol": "node",
-            "port": 443,
-            "network": "ws",
-            "security": "tls",
-            "domain": nd,
-            "external_domain": nd,
-            "sni": nd,
-            "external_port": 443,
-            "fingerprint": "chrome",
-            "reality_settings": {},
-            "xhttp_settings": {},
-            "ws_settings": {"path": "/ws/{uuid}"},
-            "grpc_settings": {},
-            "created_at": datetime.now().isoformat(),
-            "system_managed": True,
-        }
-    await save_state()
-    log_activity("inbound", "اینباند NODE پس از افزودن اولین Node ساخته شد", "ok")
-    return iid
+    """Legacy compatibility: node selection now belongs to Config inbounds."""
+    return None
 
 def _node_base_url(url: str) -> str:
     return str(url or "").strip().rstrip("/")
@@ -8738,40 +8746,26 @@ def _node_config_for_user(node: dict, config_uuid: str, username: str) -> str:
     return f"vless://{config_uuid}@{host}:443?{params}#{quote(f'Spider-{username}')}"
 
 async def _refresh_node_user_configs(user_ids=None):
-    """Refresh the node config list on every user that uses the NODE inbound."""
-    node_inbound = any((ib.get("protocol") or "").lower() == "node" for ib in INBOUNDS.values())
-    if not node_inbound:
-        return 0
+    """Refresh node config lists for users whose selected Config inbounds include nodes."""
     async with NODES_LOCK:
         nodes_snap = list(NODES.items())
     if not nodes_snap:
         return 0
     async with USERS_LOCK:
-        targets = [(uid, u) for uid, u in USERS.items()
-                   if (not user_ids or uid in user_ids) and
-                      ((u.get("inbound_ids") or []) and any(iid and (INBOUNDS.get(iid) or {}).get("protocol") == "node" for iid in u.get("inbound_ids") or []))]
-        for uid, u in targets:
-            cfgs = []
-            node_inbound_ids = []
-            for _iid in (u.get("inbound_ids") or []):
-                _ib = INBOUNDS.get(_iid) or {}
-                if str(_ib.get("protocol") or "").lower() == "node":
-                    node_inbound_ids.append(_ib)
-            if not node_inbound_ids:
-                selected_nodes = []
-            else:
-                # Missing enabled_node_ids is a legacy record: preserve old behaviour (all nodes).
-                explicit_sets = [set(str(x) for x in ibx.get("enabled_node_ids", [])) for ibx in node_inbound_ids if "enabled_node_ids" in ibx]
-                if explicit_sets:
-                    allowed = set().union(*explicit_sets)
-                    selected_nodes = [(nid, node) for nid, node in nodes_snap if nid in allowed]
-                else:
-                    selected_nodes = nodes_snap
-            for nid, node in selected_nodes:
-                cfg = _node_config_for_user(node, u.get("config_uuid", uid), u.get("username", uid))
-                if cfg:
-                    cfgs.append({"node_id": nid, "node": node.get("name", nid), "config": cfg})
-            u["node_configs"] = cfgs
+        targets = []
+        for uid, u in USERS.items():
+            if user_ids and uid not in user_ids:
+                continue
+            selected_ids = await _selected_node_ids_for_user(u)
+            if selected_ids:
+                targets.append((uid, u, selected_ids))
+        for uid, u, selected_ids in targets:
+            cfgs=[]
+            for nid,node in nodes_snap:
+                if nid in selected_ids:
+                    cfg=_node_config_for_user(node,u.get("config_uuid",uid),u.get("username",uid))
+                    if cfg: cfgs.append({"node_id":nid,"node":node.get("name",nid),"config":cfg})
+            u["node_configs"]=cfgs
     if targets:
         asyncio.create_task(save_state())
     return len(targets)
@@ -8793,7 +8787,7 @@ async def list_nodes(_=Depends(require_auth)):
                 "api_key": node.get("api_key", "")[:8] + "***" if node.get("api_key") else "",
                 "last_sync": node.get("last_sync", ""),
                 "created_at": node.get("created_at", ""),
-                "enabled_inbounds": [iid for iid, ib in INBOUNDS.items() if str(ib.get("protocol") or "").lower() == "node" and nid in (ib.get("enabled_node_ids") or [])],
+                "enabled_inbounds": [iid for iid, ib in INBOUNDS.items() if (ib.get("inbound_type") or "config").lower() == "config" and nid in (ib.get("enabled_node_ids") or [])],
             })
     return {"nodes": result}
 
@@ -8858,22 +8852,18 @@ async def add_node(request: Request, _=Depends(require_auth)):
             "last_sync": datetime.now().isoformat(),
             "created_at": datetime.now().isoformat(),
         }
-    node_inbound_id = await _ensure_node_inbound()
-    # The first Node creates the selector inbound. Existing NODE users are then
-    # replicated onto the newly registered node and their subscription gets the
-    # new node config as well.
-    existing_node_users = []
+    # Existing Config inbounds with this node selected immediately begin using it.
+    existing_users=[]
     async with USERS_LOCK:
-        for uid, u in USERS.items():
-            iids = u.get("inbound_ids") or []
-            if node_inbound_id and node_inbound_id in iids:
-                existing_node_users.append((uid, dict(u)))
-    for uid, u in existing_node_users:
-        await _create_user_on_nodes(u.get("config_uuid", uid), {"username": u.get("username", uid)}, only_node_id=node_id)
-    await _refresh_node_user_configs([uid for uid, _ in existing_node_users])
+        for uid,u in USERS.items():
+            if node_id in await _selected_node_ids_for_user(u):
+                existing_users.append((uid,dict(u)))
+    for uid,u in existing_users:
+        await _create_user_on_nodes(u.get("config_uuid",uid), {"username":u.get("username",uid)}, only_node_id=node_id)
+    await _refresh_node_user_configs([uid for uid,_ in existing_users])
     asyncio.create_task(save_state())
     log_activity("node", f"نود «{uname}» اضافه شد", "ok")
-    return {"ok": True, "node_id": node_id, "name": uname, "region": region, "inbound_id": node_inbound_id}
+    return {"ok": True, "node_id": node_id, "name": uname, "region": region}
 
 
 @app.delete("/api/nodes/{node_id}")
@@ -8885,7 +8875,7 @@ async def delete_node(node_id: str, _=Depends(require_auth)):
         name = NODES[node_id].get("name", node_id)
         del NODES[node_id]
         for ib in INBOUNDS.values():
-            if str(ib.get("protocol") or "").lower() == "node":
+            if (ib.get("inbound_type") or "config").lower() == "config":
                 ib["enabled_node_ids"] = [x for x in (ib.get("enabled_node_ids") or []) if str(x) != str(node_id)]
     asyncio.create_task(_refresh_node_user_configs())
     asyncio.create_task(save_state())
@@ -8924,7 +8914,7 @@ async def _selected_node_ids_for_user(user: dict) -> set[str]:
     ids = set()
     for iid in (user.get("inbound_ids") or []):
         ib = INBOUNDS.get(iid) or {}
-        if str(ib.get("protocol") or "").lower() == "node":
+        if (ib.get("inbound_type") or "config").lower() in ("config", "node"):
             ids.update(str(x) for x in (ib.get("enabled_node_ids") or []))
     return ids
 

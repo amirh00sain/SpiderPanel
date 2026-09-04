@@ -1594,10 +1594,12 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
   <div class="filter-bar">
     <div class="chip-row">
-      <span class="chip active" data-filter="all" data-i18n="all">همه</span>
-      <span class="chip" data-filter="proxy">Proxy</span>
-      <span class="chip" data-filter="wireguard">WireGuard</span>
-      <span class="chip" data-filter="tls">TLS</span>
+      <span class="chip active" data-filter="all" data-i18n="all">همه / All</span>
+      <span class="chip" data-filter="telegram">تلگرام / Telegram</span>
+      <span class="chip" data-filter="vless">VLESS</span>
+      <span class="chip" data-filter="vmess">VMess</span>
+      <span class="chip" data-filter="trojan">Trojan</span>
+      <span class="chip" data-filter="shadowsocks">Shadowsocks</span>
       <span class="chip" data-filter="reality">Reality</span>
     </div>
     <div class="search-box">
@@ -1987,16 +1989,25 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
   function dataProtoKey(link) {
     var l = String(link || '').trim().toLowerCase();
-    if (l.indexOf('https://t.me/proxy?') === 0 || l.indexOf('tg://proxy') === 0 || l.indexOf('mtproto://') === 0 || l.indexOf('telegram://') === 0) return 'proxy';
-    if (l.indexOf('wireguard://') === 0 || l.indexOf('wg://') === 0 || l.indexOf('peer.') === 0 && l.indexOf('amnezia') >= 0) return 'wireguard';
+    if (l.indexOf('https://t.me/proxy?') === 0 || l.indexOf('tg://proxy') === 0 || l.indexOf('mtproto://') === 0 || l.indexOf('telegram://') === 0) return 'telegram';
     if (l.indexOf('security=reality') >= 0) return 'reality';
-    if (l.indexOf('security=tls') >= 0 || l.indexOf('&tls=1') >= 0) return 'tls';
-    if (/^(vless|vmess|trojan|ss|socks|hysteria2|tuic):\/\//.test(l)) return 'proxy';
+    if (l.indexOf('vless://') === 0) return 'vless';
+    if (l.indexOf('vmess://') === 0) return 'vmess';
+    if (l.indexOf('trojan://') === 0) return 'trojan';
+    if (l.indexOf('ss://') === 0) return 'shadowsocks';
     return 'other';
   }
 
   function categoryTitle(key) {
-    var titles = { proxy: lang === 'fa' ? 'Proxy' : 'Proxy', wireguard: 'WireGuard', tls: 'VLESS / TLS / WS', reality: 'VLESS / Reality', other: lang === 'fa' ? 'سایر' : 'Other' };
+    var titles = {
+      telegram: 'تلگرام / Telegram',
+      vless: 'VLESS',
+      vmess: 'VMess',
+      trojan: 'Trojan',
+      shadowsocks: 'Shadowsocks',
+      reality: 'Reality / واقعیت',
+      other: 'سایر / Other'
+    };
     return titles[key] || titles.other;
   }
 
@@ -2005,7 +2016,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
     if (!list) return;
     list.innerHTML = '';
     var iconColors = ['var(--cyan)', 'var(--magenta)', 'var(--gold)', 'var(--orange)', 'var(--success)'];
-    var groups = {proxy:[], wireguard:[], tls:[], reality:[], other:[]};
+    var groups = {telegram:[], vless:[], vmess:[], trojan:[], shadowsocks:[], reality:[], other:[]};
     CONFIG_LINKS.forEach(function(link, i) { groups[dataProtoKey(link)].push({link:link, i:i}); });
     Object.keys(groups).forEach(function(key) {
       var entries = groups[key];
