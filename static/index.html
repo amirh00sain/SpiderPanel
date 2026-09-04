@@ -586,7 +586,7 @@ input,select,button,textarea{font-family:inherit}
   height:100vh;
 }
 .sb-brand{padding:22px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
-.sb-brand img{width:42px;height:42px;mix-blend-mode:screen}
+.sb-brand img{width:42px;height:42px;mix-blend-mode:normal;filter:none;opacity:1}
 .sb-brand-t{font-size:17px;font-weight:800;letter-spacing:3px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .sb-brand-t span{color:inherit;-webkit-text-fill-color:inherit}
 .sb-brand-s{font-size:10px;color:var(--txt2);letter-spacing:5px;margin-top:2px}
@@ -1416,29 +1416,29 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
       <!-- SETTINGS TAB -->
       <div class="tab-content hidden" id="tab-settings">
         <div class="panel">
-          <div class="panel-h"><span class="glow">تنظیمات / Settings</span></div>
+          <div class="panel-h"><span class="glow" data-i18n="settings">تنظیمات</span></div>
           <div class="acc-group settings-accordion">
             <div class="acc-item" data-acc="settings-ui">
-              <div class="acc-head" onclick="accToggle('settings-ui')"><span class="glow">ظاهر / UI</span><span class="acc-arrow">▼</span></div>
+              <div class="acc-head" onclick="accToggle('settings-ui')"><span class="glow" data-i18n="settingsUi">ظاهر</span><span class="acc-arrow">▼</span></div>
               <div class="acc-body" id="acc-body-settings-ui">
                 <div class="acc-body-inner">
-                  <div class="set-row"><span class="set-lbl" data-i18n="appearance">Appearance / تنظیمات ظاهری</span></div>
-                  <div class="set-row"><span class="set-lbl" data-i18n="themeMode">Display Mode / حالت نمایش</span><div style="display:flex;gap:8px"><button class="btn btn-sm btn-g" onclick="setTheme('dark')"><span data-i18n="dark">Dark / تاریک</span></button><button class="btn btn-sm btn-g" onclick="setTheme('light')"><span data-i18n="light">Light / روشن</span></button></div></div>
-                  <div class="set-row"><span class="set-lbl" data-i18n="panelMusic">Panel Music / موسیقی پنل</span><button type="button" class="ios-switch on" id="audio-autoplay" onclick="togglePanelAudio()" data-i18n-title="toggleMusic" title="روشن/خاموش / On/Off"></button></div>
+                  <div class="set-row"><span class="set-lbl" data-i18n="appearance">ظاهر</span></div>
+                  <div class="set-row"><span class="set-lbl" data-i18n="themeMode">حالت نمایش</span><div style="display:flex;gap:8px"><button class="btn btn-sm btn-g" onclick="setTheme('dark')"><span data-i18n="dark">تاریک</span></button><button class="btn btn-sm btn-g" onclick="setTheme('light')"><span data-i18n="light">روشن</span></button></div></div>
+                  <div class="set-row"><span class="set-lbl" data-i18n="panelMusic">موسیقی پنل</span><button type="button" class="ios-switch on" id="audio-autoplay" onclick="togglePanelAudio()" data-i18n-title="toggleMusic" title="روشن/خاموش / On/Off"></button></div>
                   <div class="sub-link" id="audio-file" style="margin-top:8px;margin-bottom:0">static/music-panel.mp3</div>
                   <audio id="panel-audio-player" loop style="display:none"></audio>
                 </div>
               </div>
             </div>
             <div class="acc-item" data-acc="settings-advanced">
-              <div class="acc-head" onclick="accToggle('settings-advanced')"><span class="glow">پیشرفته / Advanced</span><span class="acc-arrow">▼</span></div>
+              <div class="acc-head" onclick="accToggle('settings-advanced')"><span class="glow" data-i18n="settingsAdvanced">پیشرفته</span><span class="acc-arrow">▼</span></div>
               <div class="acc-body" id="acc-body-settings-advanced">
                 <div class="acc-body-inner">
-                  <div class="panel inner-settings"><div class="panel-h"><span>تغییر رمز / Change Password</span></div><form onsubmit="changePassword(event)"><div class="f-g"><label data-i18n="curPass">Current Password / رمز فعلی</label><input type="password" id="cp-old" required></div><div class="f-g"><label data-i18n="newPass">New Password / رمز جدید</label><input type="password" id="cp-new" required minlength="4"></div><button class="btn btn-p" style="width:100%" data-i18n="changePassBtn">Change Password / تغییر رمز</button></form></div>
+                  <div class="panel inner-settings"><div class="panel-h"><span>تغییر رمز / Change Password</span></div><form onsubmit="changePassword(event)"><div class="f-g"><label data-i18n="curPass">رمز فعلی</label><input type="password" id="cp-old" required></div><div class="f-g"><label data-i18n="newPass">رمز جدید</label><input type="password" id="cp-new" required minlength="4"></div><button class="btn btn-p" style="width:100%" data-i18n="changePassBtn">تغییر رمز</button></form></div>
                   <div class="panel inner-settings"><div class="panel-h"><span data-i18n="panelUpdate">Panel Update / بروزرسانی پنل</span></div><div class="px-hint" data-i18n="panelUpdateHint">با زدن این دکمه، آخرین نسخه ریپو از GitHub دریافت و روی سرور نصب می‌شود / Pulls the latest repository from GitHub and installs it on the server.</div><button class="btn btn-p" style="width:100%;margin-top:10px" id="upd-btn" onclick="runPanelUpdate()"><span data-i18n="updatePanel">Update / بروزرسانی</span></button><pre id="upd-log" dir="ltr" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:var(--bg2,#111);color:var(--txt);font-size:11px;max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:monospace"></pre></div>
-                  <div class="panel inner-settings"><div class="panel-h"><span data-i18n="backupRestore">Backup & Restore / بکاپ و بازیابی</span></div><div class="px-hint" data-i18n="backupRestoreHint">Full backup includes users, links, inbounds, scans, settings, groups, and Worker config. JSON file is downloaded/uploaded. / بکاپ کامل شامل کاربران، لینک‌ها، اینباندها، اسکن‌ها، تنظیمات، گروه‌ها و تنظیمات Worker است.</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p" style="flex:1" onclick="downloadBackup()"><span data-i18n="backup">Backup (Download) / بکاپ</span></button><button class="btn btn-g" style="flex:1" onclick="document.getElementById('restore-file').click()"><span data-i18n="restore">Restore (Upload) / بازیابی</span></button></div><input type="file" id="restore-file" accept=".json" style="display:none" onchange="uploadRestore(this)"><pre id="restore-log" dir="ltr" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:var(--bg2,#111);color:var(--txt);font-size:11px;max-height:150px;overflow-y:auto;white-space:pre-wrap;font-family:monospace"></pre></div>
+                  <div class="panel inner-settings"><div class="panel-h"><span data-i18n="backupRestore">بکاپ و بازیابی</span></div><div class="px-hint" data-i18n="backupRestoreHint">بکاپ کامل شامل کاربران، لینک‌ها، اینباندها، اسکن‌ها، تنظیمات، گروه‌ها و تنظیمات Worker است.</div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-p" style="flex:1" onclick="downloadBackup()"><span data-i18n="backup">بکاپ (دانلود)</span></button><button class="btn btn-g" style="flex:1" onclick="document.getElementById('restore-file').click()"><span data-i18n="restore">بازیابی (آپلود)</span></button></div><input type="file" id="restore-file" accept=".json" style="display:none" onchange="uploadRestore(this)"><pre id="restore-log" dir="ltr" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:var(--bg2,#111);color:var(--txt);font-size:11px;max-height:150px;overflow-y:auto;white-space:pre-wrap;font-family:monospace"></pre></div>
                   <div class="panel inner-settings"><div class="panel-h"><span data-i18n="serverInfo">Server Info / اطلاعات سرور</span></div><div class="set-row"><span class="set-lbl">IP / Country / آی‌پی / کشور</span><span id="server-ip-country" style="font-size:13px;color:var(--txt)">Detecting... / در حال شناسایی...</span></div></div>
-                  <div class="panel inner-settings"><div class="panel-h"><span data-i18n="panelApiKey">Panel API Key / کلید API پنل</span></div><div class="set-row" style="border-bottom:none;flex-wrap:wrap;gap:8px"><span class="set-lbl" style="font-size:11px;max-width:100%;flex-basis:100%;margin-bottom:4px">این کلید برای اتصال و مدیریت پنل از طریق API استفاده می‌شود / This key is used to connect to and manage the panel through the API.</span><div style="display:flex;gap:8px;width:100%;align-items:center"><input type="password" id="panel-api-key-input" dir="ltr" readonly style="flex:1;background:var(--bg2);font-family:monospace;font-size:12px"><button type="button" class="btn btn-sm btn-g api-key-eye" id="panel-api-key-toggle" onclick="toggleApiKeyVis()" title="Show API key / نمایش کلید" aria-label="Show API key"><span id="panel-api-key-eye" aria-hidden="true">View</span></button><button class="btn btn-sm btn-g" onclick="copyApiKey()">Copy / کپی</button></div><button class="btn btn-sm btn-r" onclick="regenerateApiKey()" style="width:100%;margin-top:6px"><span data-i18n="regenerateKey">Regenerate Key / بازتولید کلید</span></button></div></div>
+                  <div class="panel inner-settings"><div class="panel-h"><span data-i18n="panelApiKey">کلید API پنل</span></div><div class="set-row" style="border-bottom:none;flex-wrap:wrap;gap:8px"><span class="set-lbl" style="font-size:11px;max-width:100%;flex-basis:100%;margin-bottom:4px">این کلید برای اتصال و مدیریت پنل از طریق API استفاده می‌شود / This key is used to connect to and manage the panel through the API.</span><div style="display:flex;gap:8px;width:100%;align-items:center"><input type="password" id="panel-api-key-input" dir="ltr" readonly style="flex:1;background:var(--bg2);font-family:monospace;font-size:12px"><button type="button" class="btn btn-sm btn-g api-key-eye" id="panel-api-key-toggle" onclick="toggleApiKeyVis()" title="Show API key / نمایش کلید" aria-label="Show API key"><span id="panel-api-key-eye" aria-hidden="true">View</span></button><button class="btn btn-sm btn-g" onclick="copyApiKey()">Copy / کپی</button></div><button class="btn btn-sm btn-r" onclick="regenerateApiKey()" style="width:100%;margin-top:6px"><span data-i18n="regenerateKey">بازتولید کلید</span></button></div></div>
                 </div>
               </div>
             </div>
@@ -1497,7 +1497,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a3.005 3.005 0 0 0-2.116-2.117C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.382.569A3.005 3.005 0 0 0 .502 6.186C-.067 8.063-.067 12-.067 12s0 3.937.569 5.814a3.005 3.005 0 0 0 2.116 2.117C4.495 20.5 12 20.5 12 20.5s7.505 0 9.382-.569a3.005 3.005 0 0 0 2.116-2.117c.569-1.877.569-5.814.569-5.814s0-3.937-.569-5.814zM9.6 15.5v-7l6 3.5-6 3.5z"/></svg>
               <span data-i18n="contactYoutube">یوتیوب</span>
             </a>
-            <a class="contact-bubble gh" href="https://github.com/amirh00sain/SpiderPanel" target="_blank" rel="noopener" title="GitHub">
+            <a class="contact-bubble gh" href="https://github.com/amirh00sain/SpiderPanel" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-.3.063-.61.095-.88.095-1.74 0-2.13-1.32-2.13-1.32-.285-.72-.695-1.313-1.238-1.673-.99-.675.06-.662.06-.662 1.08.06 1.65 1.065 1.65 1.065.96 1.65 2.52 1.173 3.135.897.097-.698.375-1.173.682-1.442-2.38-.27-4.875-1.19-4.875-5.31 0-1.173.42-2.133 1.11-2.883-.11-.27-.48-1.362.105-2.838 0 0 .907-.285 2.97 1.105.87-.24 1.8-.36 2.73-.36.93 0 1.86.12 2.73.36 2.06-1.39 2.97-1.105 2.97-1.105.586 1.476.216 2.568.105 2.838.69.75 1.11 1.71 1.11 2.883 0 4.13-2.5 5.035-4.885 5.31.385.33.72.98.72 1.975 0 1.425-.015 2.57-.015 2.92 0 .32.22.695.825.575C20.565 22.09 24 17.595 24 12.297 24 5.67 18.63.297 12 .297z"/></svg>
               <span>GitHub</span>
             </a>
@@ -1592,7 +1592,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
           <option value="trojan">Trojan</option>
           <option value="shadowsocks">Shadowsocks</option>
         </select></div>
-        <div class="f-g"><label>پورت داخلی / Internal Port</label><input type="number" id="ib-port" value="443" min="1" max="65535" dir="ltr"></div>
+        <div class="f-g"><label data-i18n="intPortLabel">پورت داخلی</label><input type="number" id="ib-port" value="443" min="1" max="65535" dir="ltr"></div>
       </div>
 
       <div id="ib-vless-security">
@@ -1723,19 +1723,19 @@ var selectedTheme = safeStorageGet('spider-theme', 'dark');
 var LANG = safeStorageGet('spider-lang', 'fa');
 var I18N = {
   fa: {
-    'dash': 'داشبورد', 'users': 'کاربران', 'inbounds': 'اینباندها', 'scanner': 'اسکنر آی‌پی', 'worker': 'ورکر', 'settings': 'تنظیمات', 'contact': 'تماس با من', 'logout': 'خروج',
-    'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک Worker جدید با ساب‌دامین اختصاصی و KV اختصاصی ساخته شود. پنل مثل یک ریموت، کانفیگ‌ها را به Worker می‌فرستد.', 'cfToken': 'توکن API کلادفلر', 'cfTokenPermissions': 'این لینک سه دسترسی لازم پنل را از قبل انتخاب می‌کند: Workers Scripts، Workers KV Storage و Workers Routes.', 'getToken': 'گرفتن توکن', 'cfAccountId': 'شناسه حساب', 'cfWorkerName': 'نام ورکر', 'cfWorkerDomain': 'دامنه ورکر', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت راه‌دور', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف ورکر', 'workerUrl': 'آدرس ورکر', 'lastSync': 'آخرین همگام‌سازی', 'lastError': 'آخرین خطا', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'افزودن کشور', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'noProxyYet': 'هنوز کشوری اضافه نکرده‌اید', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال همگام‌سازی...', 'synced': 'همگام‌سازی شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'proxyCodePrompt': 'کد کشور (مثلا de):', 'proxyCountryPrompt': 'نام کشور:', 'proxyHostPrompt': 'آدرس Proxy IP (مثلا de.example.com):', 'proxyPortPrompt': 'پورت Proxy IP:', 'proxySaved': 'کشور ذخیره و Worker بروزرسانی شد', 'confirmDelProxy': 'این کشور حذف شود؟', 'proxyDeleted': 'کشور حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Worker با مسیر /route/{کد کشور} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'Worker جدید با نام تصادفی (spider-xxxxxx)، ساب‌دامین اختصاصی و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
+    'dash': 'داشبورد', 'users': 'کاربران', 'inbounds': 'اینباندها', 'scanner': 'اسکنر آی‌پی', 'worker': 'Worker', 'settings': 'تنظیمات', 'contact': 'Contact Me', 'logout': 'خروج',
+    'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک Worker جدید با ساب‌دامین اختصاصی و KV اختصاصی ساخته شود. پنل مثل یک ریموت، کانفیگ‌ها را به Worker می‌فرستد.', 'cfToken': 'توکن API کلادفلر', 'cfTokenPermissions': 'این لینک سه دسترسی لازم پنل را از قبل انتخاب می‌کند: Workers Scripts، Workers KV Storage و Workers Routes.', 'getToken': 'گرفتن توکن', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت راه‌دور', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف ورکر', 'workerUrl': 'Worker URL', 'lastSync': 'آخرین همگام‌سازی', 'lastError': 'آخرین خطا', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'افزودن کشور', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'noProxyYet': 'هنوز کشوری اضافه نکرده‌اید', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال همگام‌سازی...', 'synced': 'همگام‌سازی شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'proxyCodePrompt': 'کد کشور (مثلا de):', 'proxyCountryPrompt': 'نام کشور:', 'proxyHostPrompt': 'آدرس Proxy IP (مثلا de.example.com):', 'proxyPortPrompt': 'پورت Proxy IP:', 'proxySaved': 'کشور ذخیره و Worker بروزرسانی شد', 'confirmDelProxy': 'این کشور حذف شود؟', 'proxyDeleted': 'کشور حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Worker با مسیر /route/{کد کشور} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'Worker جدید با نام تصادفی (spider-xxxxxx)، ساب‌دامین اختصاصی و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
     'tab.dash': 'داشبورد', 'tab.users': 'مدیریت کاربران', 'tab.inbounds': 'مدیریت اینباندها', 'tab.scanner': 'اسکنر آی‌پی', 'tab.settings': 'تنظیمات',
     'inboundFixedHint': 'فقط اینباندهای پیش‌فرض پنل استفاده می‌شوند. WS/TLS به‌صورت خودکار با دامنه اصلی پنل آماده است؛ Reality را با دامنه و پورت خودتان تکمیل کنید (کلید pbk به‌صورت خودکار ساخته می‌شود).', 'inboundFixed': 'افزودن اینباند غیرفعال است — فقط اینباندهای پیش‌فرض.', 'inboundAuto': 'این اینباند خودکار است و نیازی به تنظیم ندارد.',
     'newUser': 'کاربر جدید', 'newInbound': 'اینباند جدید', 'domain': 'دامنه',
-    'loading': 'در حال بارگذاری...', 'noUsers': 'هیچ کاربری وجود ندارد', 'noInbounds': 'هیچ اینباندی وجود ندارد', 'errLoadUsers': 'خطا در بارگذاری کاربران', 'errLoadInbounds': 'خطا در بارگذاری اینباندها', 'errLoadStats': 'خطا در بارگذاری آمار',
+    'loading': 'در حال بارگذاری...', 'detecting':'در حال شناسایی...', 'errDetecting':'خطا در تشخیص', 'workerLoadError':'خطا در بارگذاری ورکر', 'currentLabel':'فعلی:', 'lastRunLabel':'آخرین اجرا:', 'intPortLabel':'پورت داخلی', 'noUsers': 'هیچ کاربری وجود ندارد', 'noInbounds': 'هیچ اینباندی وجود ندارد', 'errLoadUsers': 'خطا در بارگذاری کاربران', 'errLoadInbounds': 'خطا در بارگذاری اینباندها', 'errLoadStats': 'خطا در بارگذاری آمار',
     'live': '● LIVE', 'scnTip': 'اسکن زنده از رنج‌های Cloudflare. IPهای پاسخ‌دهنده مرتب و ۱۰ تای اول به صورت خودکار ذخیره می‌شوند.',
     'ipCount': 'تعداد IP', 'targetPort': 'پورت هدف', 'startScan': 'شروع اسکن', 'stop': 'توقف', 'scanning': 'در حال اسکن...', 'scanStopped': 'اسکن متوقف شد',
     'found': 'IP یافت شده', 'tried': 'تست شده', 'bestPing': 'بهترین پینگ', 'saved': 'ذخیره شده', 'savedFirst10': 'ذخیره شده (اولین ۱۰ آی‌پی)', 'clear': 'پاک کردن', 'notSaved': 'هنوز ذخیره‌ای نیست', 'startPrompt': 'برای شروع اسکن، دکمه «شروع اسکن» را بزنید', 'noHit': 'هیچ آی‌پی پاسخ‌دهنده‌ای یافت نشد', 'saveCleared': 'لیست ذخیره‌شده پاک شد',
     'scnRailwayTip': 'اسکن زنده از رنج‌های اعلام‌شده Railway (اروپا). IPهای پاسخ‌دهنده مرتب و ۱۰ تای اول به صورت خودکار ذخیره می‌شوند.',
     'scnTcpTip': 'دامنه موردنظر را وارد کنید؛ IP دامنه (DNS) نمایش داده می‌شود و پینگ TCP آن به صورت زنده گزارش می‌شود. دامنه‌های Railway به صورت پیش‌فرض وجود دارند و قابل افزودن/حذف هستند.',
     'addDomain': 'افزودن دامنه', 'checkDomains': 'شروع بررسی دامنه‌ها', 'checking': 'در حال بررسی...', 'checkingDomains': 'در حال بررسی دامنه‌ها...',
-    'serverResources': 'Server Resources', 'settingsUi':'UI / ظاهر', 'settingsAdvanced':'Advanced / پیشرفته', 'appearance': 'تنظیمات ظاهری', 'themeMode': 'حالت نمایش', 'fixedTheme': 'فونت و رنگ هماهنگ با صفحه ساب + iOS است.', 'theme': 'تم', 'dark': 'تاریک', 'light': 'روشن', 'color': 'رنگ', 'lightMode': 'حالت روشن فعال شد', 'darkMode': 'حالت تاریک فعال شد',
+    'serverResources': 'Server Resources', 'settingsUi':'UI', 'settingsAdvanced':'Advanced', 'appearance': 'تنظیمات ظاهری', 'themeMode': 'حالت نمایش', 'fixedTheme': 'فونت و رنگ هماهنگ با صفحه ساب + iOS است.', 'theme': 'تم', 'dark': 'تاریک', 'light': 'روشن', 'color': 'رنگ', 'lightMode': 'حالت روشن فعال شد', 'darkMode': 'حالت تاریک فعال شد',
     'red': 'قرمز', 'green': 'سبز', 'blue': 'آبی',
     'panelMusic': 'Panel Music', 'bgMusic': 'Background Music', 'toggleMusic': 'روشن/خاموش', 'changePassword': 'Change Password', 'curPass': 'رمز فعلی', 'newPass': 'رمز جدید', 'changePassBtn': 'تغییر رمز',
     'contactSub': 'برای پشتیبانی و همکاری با من در ارتباط باشید', 'contactTelegram': 'تلگرام', 'contactYoutube': 'یوتیوب',
@@ -1782,19 +1782,19 @@ var I18N = {
     'login': { 'signIn': 'Sign In' }
   },
   en: {
-    'dash': 'Dashboard', 'users': 'Users', 'inbounds': 'Inbounds', 'scanner': 'IP Scanner', 'worker': 'ورکر', 'settings': 'Settings', 'contact': 'تماس با من', 'logout': 'Logout',
-    'workerSetupTip': 'Connect the panel to Cloudflare to create a brand-new Worker with its own dedicated subdomain and KV. The panel acts as a remote control, pushing configs to the Worker.', 'cfToken': 'Cloudflare API Token', 'cfTokenPermissions': 'This link preselects the three permissions required by the panel: Workers Scripts, Workers KV Storage, and Workers Routes.', 'getToken': 'Get Token', 'cfAccountId': 'شناسه حساب', 'cfWorkerName': 'نام ورکر', 'cfWorkerDomain': 'دامنه ورکر', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'آدرس ورکر', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'Add Country', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'noProxyYet': 'No country added yet', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'proxyCodePrompt': 'Country code (e.g. de):', 'proxyCountryPrompt': 'Country name:', 'proxyHostPrompt': 'Proxy IP host (e.g. de.example.com):', 'proxyPortPrompt': 'Proxy IP port:', 'proxySaved': 'Country saved, worker updated', 'confirmDelProxy': 'Delete this country?', 'proxyDeleted': 'Country deleted', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Worker domain with a /route/{code} path — traffic never crosses Railway.', 'workerAutoName': 'A new worker is created with a random name (spider-xxxxxx), its own subdomain and its own dedicated KV — no name entry needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
+    'dash': 'Dashboard', 'users': 'Users', 'inbounds': 'Inbounds', 'scanner': 'IP Scanner', 'worker': 'Worker', 'settings': 'Settings', 'contact': 'Contact Me', 'logout': 'Logout',
+    'workerSetupTip': 'Connect the panel to Cloudflare to create a brand-new Worker with its own dedicated subdomain and KV. The panel acts as a remote control, pushing configs to the Worker.', 'cfToken': 'Cloudflare API Token', 'cfTokenPermissions': 'This link preselects the three permissions required by the panel: Workers Scripts, Workers KV Storage, and Workers Routes.', 'getToken': 'Get Token', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'Worker URL', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'Add Country', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'noProxyYet': 'No country added yet', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'proxyCodePrompt': 'Country code (e.g. de):', 'proxyCountryPrompt': 'Country name:', 'proxyHostPrompt': 'Proxy IP host (e.g. de.example.com):', 'proxyPortPrompt': 'Proxy IP port:', 'proxySaved': 'Country saved, worker updated', 'confirmDelProxy': 'Delete this country?', 'proxyDeleted': 'Country deleted', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Worker domain with a /route/{code} path — traffic never crosses Railway.', 'workerAutoName': 'A new worker is created with a random name (spider-xxxxxx), its own subdomain and its own dedicated KV — no name entry needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
     'tab.dash': 'Dashboard', 'tab.users': 'Manage Users', 'tab.inbounds': 'Manage Inbounds', 'tab.scanner': 'IP Scanner', 'tab.settings': 'Settings',
     'inboundFixedHint': 'Only the panel’s default inbounds are used. WS/TLS is ready automatically with the panel’s main domain; fill Reality’s domain & ports yourself (pbk is auto-generated).', 'inboundFixed': 'Adding inbounds is disabled — only the default inbounds.', 'inboundAuto': 'This inbound is automatic — nothing to configure.',
     'newUser': 'New User', 'newInbound': 'New Inbound', 'domain': 'Domain',
-    'loading': 'Loading...', 'noUsers': 'No users found', 'noInbounds': 'No inbounds found', 'errLoadUsers': 'Error loading users', 'errLoadInbounds': 'Error loading inbounds', 'errLoadStats': 'Error loading stats',
+    'loading': 'Loading...', 'detecting':'Detecting...', 'errDetecting':'Detection failed', 'workerLoadError':'Failed to load Worker', 'currentLabel':'Current:', 'lastRunLabel':'Last run:', 'intPortLabel':'Internal Port', 'noUsers': 'No users found', 'noInbounds': 'No inbounds found', 'errLoadUsers': 'Error loading users', 'errLoadInbounds': 'Error loading inbounds', 'errLoadStats': 'Error loading stats',
     'live': '● LIVE', 'scnTip': 'Live scan of Cloudflare ranges. Working IPs are sorted and the first 10 are auto-saved.',
     'ipCount': 'IP Count', 'targetPort': 'Target Port', 'startScan': 'Start Scan', 'stop': 'Stop', 'scanning': 'Scanning...', 'scanStopped': 'Scan stopped',
     'found': 'IP Found', 'tried': 'Tested', 'bestPing': 'Best Ping', 'saved': 'Saved', 'savedFirst10': 'Saved (first 10 IPs)', 'clear': 'Clear', 'notSaved': 'Nothing saved yet', 'startPrompt': 'Press "Start Scan" to begin scanning', 'noHit': 'No responding IP found', 'saveCleared': 'Saved list cleared',
     'scnRailwayTip': 'Live scan of announced Railway ranges (Europe). Working IPs are sorted and the first 10 are auto-saved.',
     'scnTcpTip': 'Enter a domain; its IP (DNS) is resolved and its TCP ping is reported live. Railway domains are pre-loaded and can be added/removed.',
     'addDomain': 'Add Domain', 'checkDomains': 'Check Domains', 'checking': 'Checking...', 'checkingDomains': 'Checking domains...',
-    'serverResources': 'Server Resources', 'settingsUi':'UI / ظاهر', 'settingsAdvanced':'Advanced / پیشرفته', 'appearance': 'Appearance', 'themeMode': 'Display Mode', 'fixedTheme': 'Font & colors matched to the sub page + iOS.', 'theme': 'Theme', 'dark': 'Dark', 'light': 'Light', 'color': 'Color', 'lightMode': 'Light mode enabled', 'darkMode': 'Dark mode enabled',
+    'serverResources': 'Server Resources', 'settingsUi':'UI', 'settingsAdvanced':'Advanced', 'appearance': 'Appearance', 'themeMode': 'Display Mode', 'fixedTheme': 'Font & colors matched to the sub page + iOS.', 'theme': 'Theme', 'dark': 'Dark', 'light': 'Light', 'color': 'Color', 'lightMode': 'Light mode enabled', 'darkMode': 'Dark mode enabled',
     'red': 'Red', 'green': 'Green', 'blue': 'Blue',
     'panelMusic': 'Panel Music', 'bgMusic': 'Background Music', 'toggleMusic': 'On/Off', 'changePassword': 'Change Password', 'curPass': 'Current Password', 'newPass': 'New Password', 'changePassBtn': 'Change Password',
     'contactSub': 'Get in touch with me for support and collaboration', 'contactTelegram': 'Telegram', 'contactYoutube': 'YouTube',
@@ -1841,6 +1841,37 @@ var I18N = {
     'login': { 'signIn': 'Sign In' }
   }
 };
+var DYNAMIC_I18N = {
+  fa: {
+    'Worker':'ورکر','Worker URL':'آدرس ورکر','Worker ID':'شناسه ورکر','KV ID':'شناسه KV','Last Sync':'آخرین همگام‌سازی','Last Error':'آخرین خطا',
+    'Proxy IP Pool':'مخزن IP پروکسی','Add Country':'افزودن کشور','Auto Update':'بروزرسانی خودکار','Update from Source':'بروزرسانی از منبع','Remove Worker Connection':'حذف اتصال ورکر',
+    'Create':'ایجاد','Stop':'توقف','Start':'شروع','Current:':'فعلی:','Last run:':'آخرین اجرا:','Announcements':'اطلاع‌رسانی','Channel Bot':'ربات کانال',
+    'Telegram Bot Token':'توکن ربات تلگرام','Channel ID':'شناسه کانال','Schedule':'زمان‌بندی','Send schedule':'زمان‌بندی ارسال','Every':'هر','Unit':'واحد','Save Schedule':'ثبت زمان‌بندی',
+    'Bot Status':'وضعیت ربات','Bot started':'ربات شروع شد','Bot stopped':'ربات متوقف شد','Bot configured':'ربات تنظیم شد','Error loading bot settings':'خطا در بارگذاری تنظیمات ربات',
+    'Settings':'تنظیمات','UI':'ظاهر','Advanced':'پیشرفته','Appearance':'ظاهر','Display Mode':'حالت نمایش','Dark':'تاریک','Light':'روشن','Panel Music':'موسیقی پنل',
+    'Current Password':'رمز فعلی','New Password':'رمز جدید','Change Password':'تغییر رمز','Panel Update':'بروزرسانی پنل','Update':'بروزرسانی','Backup & Restore':'بکاپ و بازیابی','Backup (Download)':'بکاپ (دانلود)','Restore (Upload)':'بازیابی (آپلود)','Server Info':'اطلاعات سرور','Panel API Key':'کلید API پنل',
+    'Telegram':'تلگرام','YouTube':'یوتیوب','Contact Me':'تماس با من','Get Token':'گرفتن توکن','Create New Worker':'ساخت ورکر جدید','Connect & Deploy':'اتصال و استقرار','Connected':'متصل','Disconnected':'قطع',
+    'Status':'وضعیت','Remote Status':'وضعیت راه‌دور','Last Heartbeat':'آخرین Heartbeat','Online Users':'کاربران آنلاین','Worker Traffic':'مصرف ورکر','View':'نمایش','Copy':'کپی','Regenerate Key':'بازتولید کلید',
+    'Show API key':'نمایش کلید','Hide secret':'مخفی کردن','Show secret':'نمایش','Loading...':'در حال بارگذاری...','Detecting...':'در حال شناسایی...','Error':'خطا'
+  },
+  en: {
+    'ورکر':'Worker','آدرس ورکر':'Worker URL','شناسه ورکر':'Worker ID','شناسه KV':'KV ID','آخرین همگام‌سازی':'Last Sync','آخرین خطا':'Last Error',
+    'مخزن IP پروکسی':'Proxy IP Pool','افزودن کشور':'Add Country','بروزرسانی خودکار':'Auto Update','بروزرسانی از منبع':'Update from Source','حذف اتصال ورکر':'Remove Worker Connection',
+    'ایجاد':'Create','توقف':'Stop','شروع':'Start','فعلی:':'Current:','آخرین اجرا:':'Last run:','اطلاع‌رسانی':'Announcements','ربات کانال':'Channel Bot',
+    'توکن ربات تلگرام':'Telegram Bot Token','شناسه کانال':'Channel ID','زمان‌بندی':'Schedule','زمان‌بندی ارسال':'Send schedule','هر':'Every','واحد':'Unit','ثبت زمان‌بندی':'Save Schedule',
+    'وضعیت ربات':'Bot Status','ربات شروع شد':'Bot started','ربات متوقف شد':'Bot stopped','ربات تنظیم شد':'Bot configured','خطا در بارگذاری تنظیمات ربات':'Error loading bot settings',
+    'تنظیمات':'Settings','ظاهر':'UI','پیشرفته':'Advanced','حالت نمایش':'Display Mode','تاریک':'Dark','روشن':'Light','موسیقی پنل':'Panel Music',
+    'رمز فعلی':'Current Password','رمز جدید':'New Password','تغییر رمز':'Change Password','بروزرسانی پنل':'Panel Update','بروزرسانی':'Update','بکاپ و بازیابی':'Backup & Restore','بکاپ (دانلود)':'Backup (Download)','بازیابی (آپلود)':'Restore (Upload)','اطلاعات سرور':'Server Info','کلید API پنل':'Panel API Key',
+    'تلگرام':'Telegram','یوتیوب':'YouTube','تماس با من':'Contact Me','گرفتن توکن':'Get Token','ساخت ورکر جدید':'Create New Worker','اتصال و استقرار':'Connect & Deploy','متصل':'Connected','قطع':'Disconnected','وضعیت':'Status','وضعیت راه‌دور':'Remote Status','آخرین Heartbeat':'Last Heartbeat','کاربران آنلاین':'Online Users','مصرف ورکر':'Worker Traffic',
+    'نمایش':'View','کپی':'Copy','بازتولید کلید':'Regenerate Key','نمایش کلید':'Show API key','مخفی کردن':'Hide secret','در حال بارگذاری...':'Loading...','در حال شناسایی...':'Detecting...','خطا':'Error'
+  }
+};
+function translateDynamicExact(text){
+  var raw=String(text||'').trim();
+  var dict=DYNAMIC_I18N[LANG]||DYNAMIC_I18N.fa;
+  return Object.prototype.hasOwnProperty.call(dict,raw) ? String(dict[raw]) : text;
+}
+
 function normalizeBilingualText(value) {
   if (value == null) return value;
   var text = String(value);
@@ -1865,10 +1896,11 @@ function cleanupMixedLanguageNodes(root) {
   while ((n = walker.nextNode())) nodes.push(n);
   nodes.forEach(function(node) {
     var text = node.nodeValue || '';
-    if (!/[\u0600-\u06ff]/.test(text) || !/[A-Za-z]/.test(text) || !/\s\/\s/.test(text)) return;
     var parent = node.parentElement;
     if (!parent || ['SCRIPT','STYLE','PRE','CODE','TEXTAREA'].indexOf(parent.tagName) >= 0) return;
-    node.nodeValue = normalizeBilingualText(text);
+    var normalized = normalizeBilingualText(text);
+    var translated = translateDynamicExact(normalized);
+    if (translated !== text) node.nodeValue = translated;
   });
   root.querySelectorAll && root.querySelectorAll('[title],[aria-label]').forEach(function(el) {
     ['title','aria-label'].forEach(function(attr) {
@@ -4245,7 +4277,7 @@ async function loadWorker() {
         html += '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;color:var(--accent)">Proxy IP Pool</span>';
         html += '<button class="btn btn-sm btn-p" onclick="workerAddProxy()">+ افزودن</button></div>';
         html += '<div id="worker-proxies"></div></div>';
-        html += '<div class="set-row" style="margin-top:12px"><span class="set-lbl">بروزرسانی خودکار</span>';
+        html += '<div class="set-row" style="margin-top:12px"><span class="set-lbl">' + t('autoSyncHourly') + '</span>';
         html += '<button type="button" class="ios-switch' + (w.auto_sync ? ' on' : '') + '" id="wk-auto" onclick="workerToggleAuto()"></button></div>';
         html += '<button class="btn btn-sm btn-g" onclick="workerSyncSource()" style="width:100%;margin-top:8px">بروزرسانی از منبع</button>';
         html += '<button class="btn btn-sm btn-r" onclick="workerDisconnect()" style="width:100%;margin-top:8px">حذف اتصال Worker</button>';
@@ -4256,7 +4288,7 @@ async function loadWorker() {
     }
   } catch(e) {
     if (badge) { badge.textContent = t('disconnected'); badge.className = 'badge badge-r'; }
-    if (wb) wb.innerHTML = '<div class="acc-body-inner"><div class="empty">خطا در بارگذاری Worker</div></div>';
+    if (wb) wb.innerHTML = '<div class="acc-body-inner"><div class="empty">' + t('workerLoadError') + '</div></div>';
   }
 }
 
@@ -4623,14 +4655,14 @@ async function loadServerInfo() {
       if (info.public_ip && info.country) {
         el.textContent = (info.country_flag || '') + ' ' + info.public_ip + ' (' + info.country + ')';
       } else {
-        el.textContent = 'در حال تشخیص...';
+        el.textContent = t('detecting');
         // Retry after a delay
         setTimeout(loadServerInfo, 5000);
       }
     }
   } catch(e) {
     var el2 = $id('server-ip-country');
-    if (el2) el2.textContent = 'خطا در تشخیص';
+    if (el2) el2.textContent = t('errDetecting');
   }
 }
 
@@ -4764,23 +4796,23 @@ async function loadBotConfig() {
     body.innerHTML = '<div class="acc-body-inner">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
       + '<span class="set-lbl">وضعیت ربات</span>' + statusBadge + '</div>'
-      + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>Telegram Bot Token</label><input type="password" id="bot-token" dir="ltr" placeholder="123456:ABC-defGHI..." value="' + (b.bot_token_masked || '') + '"></div>'
-      + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>Channel ID</label><input type="text" id="bot-channel" dir="ltr" placeholder="-1001234567890" value="' + esc(b.channel_id || '') + '"></div>'
+      + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>' + t('botToken') + '</label><input type="password" id="bot-token" dir="ltr" placeholder="123456:ABC-defGHI..." value="' + (b.bot_token_masked || '') + '"></div>'
+      + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>' + t('channelId') + '</label><input type="text" id="bot-channel" dir="ltr" placeholder="-1001234567890" value="' + esc(b.channel_id || '') + '"></div>'
       + '<div class="schedule-editor">'
-      + '<div class="schedule-title"><span>زمان‌بندی ارسال</span><small>فاصله اجرای خودکار را مشخص کنید</small></div>'
+      + '<div class="schedule-title"><span>' + t('scheduleSend') + '</span><small>' + t('scheduleHint') + '</small></div>'
       + '<div class="schedule-fields">'
-      + '<label class="schedule-field"><span>هر</span><input type="number" id="bot-interval" min="1" max="999999" value="' + (b.interval_value || 10) + '"></label>'
-      + '<label class="schedule-field schedule-unit"><span>واحد</span><select id="bot-interval-unit">' + intervalOpts + '</select></label>'
+      + '<label class="schedule-field"><span>' + t('every') + '</span><input type="number" id="bot-interval" min="1" max="999999" value="' + (b.interval_value || 10) + '"></label>'
+      + '<label class="schedule-field schedule-unit"><span>' + t('unit') + '</span><select id="bot-interval-unit">' + intervalOpts + '</select></label>'
       + '</div>'
-      + '<div class="schedule-actions"><button type="button" class="btn btn-p btn-sm" onclick="botScheduleSubmit()">ثبت زمان‌بندی</button>'
-      + '<span class="schedule-current">فعلی: ' + (b.interval_value || 10) + ' ' + (b.interval_unit || 'minutes') + '</span></div>'
+      + '<div class="schedule-actions"><button type="button" class="btn btn-p btn-sm" onclick="botScheduleSubmit()">' + t('saveSchedule') + '</button>'
+      + '<span class="schedule-current">' + t('currentLabel') + ' ' + (b.interval_value || 10) + ' ' + (b.interval_unit || 'minutes') + '</span></div>'
       + '</div>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      + '<button class="btn btn-p btn-sm" onclick="botSetupSubmit()">Create</button>'
-            + (b.running ? '<button class="btn btn-r btn-sm" onclick="botStop()">Stop</button>' : '<button class="btn btn-p btn-sm" onclick="botStart()">Start</button>')
+      + '<button class="btn btn-p btn-sm" onclick="botSetupSubmit()">' + t('create') + '</button>'
+            + (b.running ? '<button class="btn btn-r btn-sm" onclick="botStop()">' + t('stop') + '</button>' : '<button class="btn btn-p btn-sm" onclick="botStart()">' + t('start') + '</button>')
       + '</div>'
       + (b.last_error ? '<div class="px-hint" style="color:var(--red);margin-top:8px">' + esc(b.last_error) + '</div>' : '')
-      + (b.last_run ? '<div class="px-hint" style="margin-top:8px">Last run: ' + esc(b.last_run) + '</div>' : '')
+      + (b.last_run ? '<div class="px-hint" style="margin-top:8px">' + t('lastRunLabel') + ' ' + esc(b.last_run) + '</div>' : '')
       + '</div>';
   } catch(e) {
     var b2 = $id('acc-body-bot');
@@ -4904,3 +4936,5 @@ async function tunnelReverseToggle(sw) {
 </script>
 </body>
 </html>
+
+<style>img[src="/static/spider-logo.svg"]{mix-blend-mode:normal!important;filter:none!important;opacity:1!important;visibility:visible!important}</style>

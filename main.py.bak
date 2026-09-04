@@ -4301,7 +4301,6 @@ async def create_user(request: Request, _=Depends(require_panel_or_node)):
     asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
     # NODE inbound: replicate the user to all registered nodes (same UUID).
     node_results = []
-    user = USERS.get(user_id) or {}
     selected = await _selected_node_ids_for_user(user)
     if selected:
         node_results = await _sync_user_to_selected_nodes(config_uuid, {"username": username}, selected)
