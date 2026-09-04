@@ -500,3 +500,42 @@ async def packet_up_upload_proxy(proxy: str, uuid: str, session_id: str, seq: in
 async def stream_up_upload_proxy(proxy: str, uuid: str, session_id: str, request: Request):
     _SESSION_PROXY[session_id] = proxy
     return await stream_up_upload(uuid, session_id, request)
+
+
+# ── Custom XHTTP base-path compatibility ─────────────────────────────────────
+def _xhttp_match_custom_path(path: str):
+    import main as m
+    p=(path or '').strip('/')
+    parts=p.split('/') if p else []
+    for ib in m.INBOUNDS.values():
+        if str(ib.get('network') or '').lower()!='xhttp': continue
+        base=str((ib.get('xhttp_settings') or {}).get('path') or '').strip('/')
+        if not base: continue
+        pref=base.split('/')
+        if parts[:len(pref)]!=pref: continue
+        rest=parts[len(pref):]
+        # /base/{mode}/{uuid}/{session}
+        if len(rest)==3 and rest[0] in ('packet-up','stream-up'):
+            return rest[0],rest[1],rest[2],None
+        # /base/packet-up/{uuid}/{session}/{seq}
+        if len(rest)==4 and rest[0]=='packet-up' and rest[3].isdigit():
+            return rest[0],rest[1],rest[2],int(rest[3])
+    return None
+
+@router.get('/{path:path}')
+async def xhttp_custom_path_get(path: str, request: Request):
+    matched=_xhttp_match_custom_path(path)
+    if not matched: raise HTTPException(status_code=404,detail='not found')
+    mode,uuid,session,seq=matched
+    if seq is not None: raise HTTPException(status_code=400,detail='invalid GET')
+    return await xhttp_downlink(mode,uuid,session,request)
+
+@router.post('/{path:path}')
+async def xhttp_custom_path_post(path: str, request: Request):
+    matched=_xhttp_match_custom_path(path)
+    if not matched: raise HTTPException(status_code=404,detail='not found')
+    mode,uuid,session,seq=matched
+    if mode=='packet-up':
+        if seq is None: raise HTTPException(status_code=400,detail='packet-up sequence required')
+        return await packet_up_upload(uuid,session,seq,request)
+    return await stream_up_upload(uuid,session,request)

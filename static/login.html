@@ -166,6 +166,25 @@
             height: 100%;
             z-index: 0;
         }
+
+        /* Sharp, restrained login surface */
+        body { background:#090a0c !important; }
+        .glass-card {
+            background:rgba(17,19,22,.96) !important;
+            border:1px solid rgba(255,255,255,.11) !important;
+            border-radius:10px !important;
+            box-shadow:0 22px 55px rgba(0,0,0,.48) !important;
+            backdrop-filter:none !important;
+            -webkit-backdrop-filter:none !important;
+        }
+        .login-card { border-radius:10px !important; box-shadow:0 22px 55px rgba(0,0,0,.48) !important; }
+        .login-title { background:none !important; -webkit-text-fill-color:#f2f4f7 !important; color:#f2f4f7 !important; }
+        .input-glass { border-radius:7px !important; background:#0c0e11 !important; border-color:rgba(255,255,255,.12) !important; box-shadow:none !important; }
+        .input-glass:focus { border-color:rgba(255,255,255,.32) !important; box-shadow:0 0 0 3px rgba(255,255,255,.05) !important; }
+        #loginBtn { border-radius:7px !important; min-height:44px; box-shadow:0 9px 24px rgba(0,0,0,.28); }
+        .error-msg { border-radius:7px !important; }
+        .login-card::before,.login-card::after { display:none !important; }
+
 </style>
 <script>
   document.documentElement.setAttribute('data-theme', localStorage.getItem('spider-theme') === 'light' ? 'light' : 'dark');
@@ -227,9 +246,6 @@
 <div class="glass-card rounded-3xl w-full max-w-md p-stack-lg mx-margin-mobile flex flex-col gap-stack-lg shadow-2xl shadow-black/50 z-10" data-login-theme>
   <!-- Header -->
   <div class="flex flex-col items-center gap-stack-sm text-center">
-    <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-2">
-      <span class="material-symbols-outlined text-black" style="font-size: 28px;">cloud</span>
-    </div>
     <img src="/static/spider-logo.svg" alt="SPiDER" style="width:64px;height:64px;object-fit:contain;margin:0 auto 12px;display:block">
         <h1 class="font-headline-lg text-headline-lg text-on-surface">SPIDER PANEL</h1>
     <p class="font-body-sm text-body-sm text-on-surface-variant">High Performance Panel</p>

@@ -15,21 +15,21 @@
 /* Ultra-dark sub-style theme — absolute black, no glass, fixed teal accent.
    Matches the /sub page exactly. */
 :root{
-  /* Accent matches the /sub page: teal #00e1c1 on pure black, no glass, no glow. */
-  --teal:#00e1c1;--blue:#9db4ff;--spider-blue:#9db4ff;--spider-purple:#b9a6ff;--spider-red:#ff6b6b;
-  --neon:#00e1c1;--neon2:#2ef2d6;--purple:#b9a6ff;--green:#00e1c1;--red:#ff6b6b;
-  --gold:#00e1c1;--success:#00e1c1;--warning:#ffab00;--danger:#ff6b6b;
+  /* Accent matches the /sub page: teal #dfe3e8 on pure black, no glass, no glow. */
+  --teal:#dfe3e8;--blue:#9db4ff;--spider-blue:#9db4ff;--spider-purple:#b9a6ff;--spider-red:#ff6b6b;
+  --neon:#dfe3e8;--neon2:#ffffff;--purple:#b9a6ff;--green:#dfe3e8;--red:#ff6b6b;
+  --gold:#dfe3e8;--success:#dfe3e8;--warning:#ffab00;--danger:#ff6b6b;
   --bg:#000000;--bg2:#000000;--bg3:rgba(255,255,255,.06);--txt:#ffffff;--txt2:#c9c9ce;
   --r:12px;--radius:14px;--radius-lg:16px;--radius-xl:24px;
   --glass:#0a0a0d;--surface-glass:#0a0a0d;
-  --grad1:#00e1c1;--grad2:#2ef2d6;--grad:linear-gradient(135deg,#00e1c1,#2ef2d6);
-  --gradient:linear-gradient(90deg,#00e1c1,#2ef2d6);
+  --grad1:#dfe3e8;--grad2:#ffffff;--grad:linear-gradient(135deg,#dfe3e8,#ffffff);
+  --gradient:linear-gradient(90deg,#dfe3e8,#ffffff);
   --border:rgba(255,255,255,.06);
   --glow:none;--glow-strong:none;
   --logo-shadow:none;
-  --tab-bg:#00e1c1;--tab-color:#000;--tab-glow:none;
-  --nav-bg:rgba(0,225,193,.14);--nav-color:#00e1c1;
-  --border-glow:rgba(0,225,193,.4);--input-glow:rgba(0,225,193,.14);
+  --tab-bg:#dfe3e8;--tab-color:#000;--tab-glow:none;
+  --nav-bg:rgba(255,255,255,.14);--nav-color:#dfe3e8;
+  --border-glow:rgba(255,255,255,.4);--input-glow:rgba(255,255,255,.14);
   --line:rgba(255,255,255,.16);--input-bg:#121216;
   --orb1:rgba(255,255,255,.05);--orb2:rgba(255,255,255,.03);
   --surface:#FFFFFF;--text-primary:#ffffff;--text-secondary:#c9c9ce;
@@ -85,16 +85,16 @@
 .bg-fx{
   position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;
   background:
-    radial-gradient(ellipse 900px 600px at 25% 20%, rgba(0,225,193,0.16) 0%, transparent 70%),
-    radial-gradient(ellipse 700px 500px at 75% 15%, rgba(64,120,255,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 600px 400px at 60% 75%, rgba(139,92,246,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 500px 400px at 10% 80%, rgba(0,180,255,0.07) 0%, transparent 55%);
+    radial-gradient(ellipse 900px 600px at 25% 20%, rgba(255,255,255,0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 700px 500px at 75% 15%, rgba(96,165,250,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 400px at 60% 75%, rgba(148,163,184,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 500px 400px at 10% 80%, rgba(148,163,184,0.07) 0%, transparent 55%);
 }
 .bg-grid{
   position:fixed;inset:-2px;z-index:-2;pointer-events:none;
   background-image:
-    linear-gradient(rgba(0,225,193,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,225,193,0.04) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size:48px 48px;
   mask-image:radial-gradient(ellipse 90% 80% at 50% 45%, black 20%, transparent 70%);
   -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 45%, black 20%, transparent 70%);
@@ -141,18 +141,17 @@ html[lang="fa"] body{
 [data-theme="dark"] .sb-brand-t{
   text-shadow:none;
 }
-/* Neon accent in dark mode: teal like the /sub page */
+/* Restrained dark UI: grayscale surfaces with a small blue action accent. */
 [data-theme="dark"]{
-  --neon:#00e1c1;--neon2:#2ef2d6;--teal:#00e1c1;--green:#00e1c1;--success:#00e1c1;
-  --grad1:#00e1c1;--grad2:#2ef2d6;
-  --tab-bg:#00e1c1;--nav-color:#00e1c1;--nav-bg:rgba(0,225,193,.14);--border-glow:rgba(0,225,193,.4);--input-glow:rgba(0,225,193,.14);
-  --glow:none;--glow-strong:none;
-  --logo-shadow:none;
+  --neon:#dfe3e8;--neon2:#ffffff;--teal:#dfe3e8;--green:#dfe3e8;--success:#dfe3e8;
+  --grad1:#dfe3e8;--grad2:#ffffff;
+  --tab-bg:#e8ebef;--nav-color:#e8ebef;--nav-bg:rgba(255,255,255,.06);
+  --border-glow:rgba(255,255,255,.16);--input-glow:rgba(255,255,255,.06);
   --spider-red:#ff6b6b;--red:#ff6b6b;--danger:#ff6b6b;
-}
-/* White grid for the live background in dark mode */
-[data-theme="dark"] .bg-grid{
-  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  --bg:#090a0c;--bg2:#0e1013;--bg3:#15181c;--txt:#f3f4f6;--txt2:#a7adb7;
+  --glass:rgba(17,19,22,.96);--surface-glass:rgba(17,19,22,.96);
+  --border:rgba(255,255,255,.10);--shadow-sm:0 6px 18px rgba(0,0,0,.32);
+  --shadow-md:0 10px 28px rgba(0,0,0,.42);--shadow-lg:0 18px 48px rgba(0,0,0,.52);
 }
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(43,127,255,.25);border-radius:4px}
@@ -216,7 +215,7 @@ input,select,button,textarea{font-family:inherit}
             width: 48px;
             height: 48px;
             background: var(--grad);
-            box-shadow: 0 6px 18px rgba(0,225,193,.3);
+            box-shadow: 0 6px 18px rgba(255,255,255,.3);
             border-radius: var(--radius);
             display: flex;
             align-items: center;
@@ -320,15 +319,15 @@ input,select,button,textarea{font-family:inherit}
             align-items: center;
             justify-content: center;
             gap: 10px;
-            box-shadow: 0 6px 20px rgba(0,225,193,.25);
+            box-shadow: 0 6px 20px rgba(255,255,255,.25);
         }
         .login-btn::after{
-          content:'';position:absolute;inset:0;background:linear-gradient(90deg,#5a78ff,#00e1c1);opacity:0;transition:opacity .3s;
+          content:'';position:absolute;inset:0;background:linear-gradient(90deg,#5a78ff,#dfe3e8);opacity:0;transition:opacity .3s;
         }
         .login-btn span{position:relative;z-index:1;display:flex;align-items:center;gap:8px}
         .login-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0,225,193,.35);
+            box-shadow: 0 10px 30px rgba(255,255,255,.35);
         }
         .login-btn:hover:not(:disabled)::after { opacity:1; }
         .login-btn:active:not(:disabled) {
@@ -396,7 +395,7 @@ input,select,button,textarea{font-family:inherit}
 .sp-v6-accordion{display:flex;flex-direction:column;gap:8px}
 .sp-v6-item{border:1px solid var(--border);border-radius:12px;background:var(--glass);overflow:hidden}
 .sp-v6-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 15px;background:transparent;border:0;color:var(--txt);cursor:pointer;text-align:right;font:inherit}
-.sp-v6-head:hover{background:rgba(0,225,193,.05)}
+.sp-v6-head:hover{background:rgba(255,255,255,.05)}
 .sp-v6-head .sp-v6-chevron{transition:transform .2s;font-size:15px;opacity:.7}
 .sp-v6-item.open .sp-v6-chevron{transform:rotate(180deg)}
 .sp-v6-body{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
@@ -415,15 +414,19 @@ input,select,button,textarea{font-family:inherit}
 .secret-field{display:flex;align-items:center;gap:7px}
 .secret-field input{flex:1;min-width:0}
 .secret-field .btn{min-width:42px;height:42px;padding:0}
-.schedule-editor{margin:8px 0 14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--bg2);}
+.schedule-editor{margin:8px 0 14px;padding:14px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.075),rgba(255,255,255,.035));box-shadow:0 12px 32px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.07);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .schedule-title{display:flex;flex-direction:column;gap:3px;margin-bottom:12px}
 .schedule-title span{font-size:12px;font-weight:800;color:var(--txt)}
 .schedule-title small{font-size:10px;color:var(--txt2)}
 .schedule-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
-.schedule-field{display:flex;flex-direction:column;gap:5px;font-size:10px;color:var(--txt2)}
-.schedule-field input,.schedule-field select{width:100%;height:42px}
+.schedule-field{display:flex;flex-direction:column;gap:6px;font-size:10px;color:var(--txt2);min-width:0}
+.schedule-field input,.schedule-field select{width:100%;height:44px;box-sizing:border-box;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.045));color:var(--txt);box-shadow:0 8px 24px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.07);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);outline:none;transition:border-color .2s ease,box-shadow .2s ease,background .2s ease}
+.schedule-field input{padding:0 13px;text-align:center}
+.schedule-field select{padding:0 34px 0 13px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%),linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.045));background-position:calc(100% - 18px) 19px,calc(100% - 13px) 19px,0 0;background-size:5px 5px,5px 5px,100% 100%;background-repeat:no-repeat}
+.schedule-field input:focus,.schedule-field select:focus{border-color:rgba(255,255,255,.30);background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.055));box-shadow:0 0 0 3px rgba(255,255,255,.05),0 10px 28px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.09)}
+.schedule-field select option{background:#171717;color:#fff}
 .schedule-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
-.schedule-current{font-size:10px;color:var(--txt2);direction:ltr}
+.schedule-current{font-size:10px;color:var(--txt2);direction:ltr;padding:8px 11px;border:1px solid rgba(255,255,255,.10);border-radius:10px;background:rgba(255,255,255,.045);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
 @media(max-width:560px){.schedule-fields{grid-template-columns:1fr}.schedule-actions .btn{width:100%}.schedule-current{width:100%;text-align:center}}
 /* ═══ IP SCANNER ═══ */
 .scn-tabs { display: flex; gap: 8px; margin: 14px 0; background: var(--bg3); padding: 5px; border-radius: 14px; border: 1px solid var(--border); }
@@ -1624,8 +1627,12 @@ tr{animation:fadeIn .3s ease}
     <div class="f-r">
       <div class="f-g"><label>Protocol</label><select id="ib-protocol" onchange="onProtocolChange()">
         <option value="vless">VLESS</option>
+        <option value="trojan">Trojan (TLS/WS)</option>
+        <option value="socks5">SOCKS5</option>
+        <option value="shadowsocks">Shadowsocks</option>
         <option value="wireguard">WireGuard / AmneziaWG</option>
         <option value="telegram">Telegram Proxy</option>
+        <option value="node">Node (انتخاب نودها)</option>
       </select></div>
     </div>
 
@@ -1641,17 +1648,25 @@ tr{animation:fadeIn .3s ease}
       <option value="tls">TLS</option>
       <option value="reality">Reality</option>
     </select></div>
-    <div style="font-size:10px;color:var(--txt2);margin-bottom:10px">پروتکل اینباند VLESS است؛ تنها امنیت را انتخاب کنید (TLS یا Reality).</div>
+    <div style="font-size:10px;color:var(--txt2);margin-bottom:10px">برای VLESS یا Trojan، امنیت را انتخاب کنید (TLS یا Reality). در Trojan تنظیمات TLS/WS مستقیماً از همین فرم استفاده می‌شود.</div>
 
     <!-- TLS fields: the panel serves TLS at its public domain/443. -->
     <div id="ib-tls-connection-fields">
       <div class="divider"></div>
-      <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">TLS Connection</div>
+      <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">TLS / WebSocket Settings</div>
       <div class="f-r">
-        <div class="f-g"><label>Panel Domain</label><input type="text" id="ib-tls-domain" dir="ltr" readonly placeholder="دامنه پنل"></div>
-        <div class="f-g"><label>Public Port</label><input type="number" id="ib-tls-public-port" value="443" dir="ltr" readonly></div>
+        <div class="f-g"><label>SNI</label><input type="text" id="ib-tls-sni" dir="ltr" placeholder="example.com" required></div>
+        <div class="f-g"><label>Host</label><input type="text" id="ib-tls-host" dir="ltr" placeholder="example.com" required></div>
       </div>
-      <div class="px-hint" style="font-size:10px;margin-top:-4px">TLS این پنل از TLS دامنه اصلی استفاده می‌کند؛ این مقادیر برای جلوگیری از سردرگمی به‌صورت خودکار نمایش داده می‌شوند.</div>
+      <div class="f-r">
+        <div class="f-g"><label>Public Domain / Address</label><input type="text" id="ib-tls-domain" dir="ltr" placeholder="example.com" required></div>
+        <div class="f-g"><label>Public Port</label><input type="number" id="ib-tls-public-port" value="" min="1" max="65535" dir="ltr" placeholder="443" required></div>
+      </div>
+      <div class="f-r">
+        <div class="f-g"><label>WS Path</label><input type="text" id="ib-tls-path" dir="ltr" value="/ws" placeholder="/ws"></div>
+        <div class="f-g"><label>Fingerprint</label><select id="ib-fingerprint"><option value="chrome">chrome</option><option value="firefox">firefox</option><option value="safari">safari</option><option value="edge">edge</option><option value="random">random</option></select></div>
+      </div>
+      <div class="px-hint" style="font-size:10px;margin-top:-4px">تمام مقادیر اتصال TLS از فرم خوانده می‌شوند؛ هیچ SNI/Host/Domain پیش‌فرضی هنگام ساخت اینباند تحمیل نمی‌شود.</div>
     </div>
 
     <!-- Reality-only external address -->
@@ -1692,7 +1707,7 @@ tr{animation:fadeIn .3s ease}
     <div id="ib-wg-fields" class="hidden">
       <div class="divider"></div>
       <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">AmneziaWG Settings</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:rgba(0,225,193,.06);border:1px solid var(--border);border-radius:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px">
         <button type="button" class="ios-switch on" id="ib-wg-warp" onclick="this.classList.toggle('on')"></button>
         <div>
           <div style="font-size:12px;font-weight:700;color:var(--txt)">Cloudflare WARP Mode</div>
@@ -1750,7 +1765,30 @@ tr{animation:fadeIn .3s ease}
       <div id="ib-tg-railway-info" class="px-hint" style="margin-top:-4px">External Domain/Port entered for this Telegram inbound are authoritative. Railway TCP values are shown only as advisory.</div>
     </div>
 
+    <div id="ib-socks-fields" class="hidden">
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">SOCKS5 Settings</div>
+      <div class="f-r">
+        <div class="f-g"><label>Username</label><input type="text" id="ib-socks-user" dir="ltr" placeholder="optional"></div>
+        <div class="f-g"><label>Password</label><input type="password" id="ib-socks-pass" dir="ltr" placeholder="optional"></div>
+      </div>
+      <div class="px-hint" style="font-size:10px">SOCKS5 یک پروتکل پراکسی مستقل است و TLS/WS نیست؛ برای SOCKS5 اتصال مستقیم host:port ساخته می‌شود.</div>
+    </div>
+    <div id="ib-ss-fields" class="hidden">
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">Shadowsocks Settings</div>
+      <div class="f-g"><label>Method</label><select id="ib-ss-method" dir="ltr"><option value="2022-blake3-aes-256-gcm">2022-blake3-aes-256-gcm</option><option value="2022-blake3-aes-128-gcm">2022-blake3-aes-128-gcm</option><option value="2022-blake3-chacha20-poly1305">2022-blake3-chacha20-poly1305</option><option value="chacha20-ietf-poly1305">chacha20-ietf-poly1305</option></select></div>
+      <div class="f-g"><label>Password</label><input type="password" id="ib-ss-pass" dir="ltr" required></div>
+    </div>
+
     <!-- Network group -->
+    <div id="ib-node-fields" class="hidden">
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">Nodes used by this inbound</div>
+      <div id="ib-node-checks" style="display:grid;gap:7px"></div>
+      <div class="px-hint" style="font-size:10px">فقط Node هایی که تیک دارند در کانفیگ کاربران این Inbound استفاده می‌شوند.</div>
+    </div>
+
     <div class="divider"></div>
     <div id="ib-net-wrap">
       <div class="f-g"><label data-i18n="network">نوع انتقال (Transport)</label><select id="ib-network" onchange="onNetworkChange()">
@@ -1760,12 +1798,12 @@ tr{animation:fadeIn .3s ease}
         <option value="grpc">gRPC</option>
       </select></div>
       <!-- WS fields -->
-      <div id="ib-ws-fields" class="hidden"><div class="f-g"><label>Path</label><input type="text" id="ib-wspath" value="/" dir="ltr"></div></div>
+      <div id="ib-ws-fields" class="hidden"><div class="f-g"><label>Path (Base)</label><input type="text" id="ib-wspath" value="/" dir="ltr"></div></div>
       <!-- XHTTP fields -->
       <div id="ib-xhttp-fields" class="hidden">
-        <div class="f-g"><label>Path</label><input type="text" id="ib-xhttppath" value="/" dir="ltr"></div>
+        <div class="f-g"><label>Path (Base)</label><input type="text" id="ib-xhttppath" value="/" dir="ltr"></div>
         <div class="f-r">
-          <div class="f-g"><label>Mode</label><select id="ib-xhttp-mode"><option value="auto">auto</option><option value="packet-up">packet-up</option><option value="stream-one">stream-one</option></select></div>
+          <div class="f-g"><label>Mode</label><select id="ib-xhttp-mode"><option value="packet-up">packet-up</option><option value="stream-up">stream-up</option></select></div>
         </div>
       </div>
       <!-- gRPC fields -->
@@ -2735,17 +2773,36 @@ async function loadTelegramRailwayInfo(){
   } catch(e) { box.textContent = 'اطلاعات Railway TCP در دسترس نیست؛ مقادیر دستی اینباند استفاده می‌شوند.'; }
 }
 
+function renderInboundNodeChecks(selected){
+  var wrap=$id('ib-node-checks'); if(!wrap) return;
+  var nodes=(window.__NODES_CACHE||[]); var chosen=new Set((selected||[]).map(String));
+  wrap.innerHTML = nodes.length ? nodes.map(function(n){
+    var id=esc(n.id); return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px"><input type="checkbox" value="'+id+'" '+(chosen.has(String(n.id))?'checked':'')+'> <span>'+esc(n.name||n.id)+'</span><small style="margin-left:auto;color:var(--txt2)">'+esc(n.region||'')+'</small></label>';
+  }).join('') : '<div class="px-hint">هیچ Node ثبت نشده است.</div>';
+}
+
+async function loadNodeChoices(selected){
+  try { var r=await api('/api/nodes'); window.__NODES_CACHE=r.nodes||[]; renderInboundNodeChecks(selected); } catch(e) { renderInboundNodeChecks(selected); }
+}
+
 function onProtocolChange() {
   var proto = $id('ib-protocol').value;
   var isWg = proto === 'wireguard';
   var isTg = proto === 'telegram';
-  var isTls = !isWg && !isTg;
+  var isSocks = proto === 'socks5';
+  var isSS = proto === 'shadowsocks';
+  var isNode = proto === 'node';
+  var isTls = !isWg && !isTg && !isSocks && !isSS;
   toggleById('ib-tls-fields', isTls);
   toggleById('ib-tls-connection-fields', isTls);
   toggleById('ib-net-wrap', isTls);
   toggleById('ib-internal-port-wrap', isTls);
   toggleById('ib-wg-fields', isWg);
   toggleById('ib-tg-fields', isTg);
+  toggleById('ib-socks-fields', isSocks);
+  toggleById('ib-ss-fields', isSS);
+  toggleById('ib-node-fields', isNode);
+  if (isNode) loadNodeChoices(window.__EDIT_NODE_IDS || (window.__NODES_CACHE||[]).map(function(n){return n.id;}));
   if (isWg) loadWGEndpoints();
   if (isTg) loadTelegramRailwayInfo();
   if (isTls) loadTlsConnectionInfo();
@@ -2787,20 +2844,14 @@ function syncTlsDomainField(domain) {
 }
 
 async function loadTlsConnectionInfo() {
-  try {
-    var r = await api('/api/settings');
-    syncTlsDomainField(r.domain || '');
-  } catch(e) {
-    syncTlsDomainField(location.hostname || '');
-  }
+  // TLS connection values are user-owned. Do not silently overwrite SNI, Host,
+  // public domain or port. The endpoint is retained only for a non-mutating hint.
+  return true;
 }
 
 function onDomainChange() {
-  var d = $id('ib-domain').value;
-  // Domain changes must not overwrite Reality Server Name/SNI.
-  // Only prefill Destination when it is still empty.
-  var dest = $id('ib-dest');
-  if (d && dest && !dest.value.trim()) dest.value = d + ':443';
+  // Reality Destination/Target and SNI are independent user inputs.
+  // Never derive either field from another field automatically.
 }
 
 async function generateRealityKeysUI() {
@@ -2835,11 +2886,22 @@ function openCreateInbound() {
   $id('ib-title').textContent = t('newInbound');
   $id('ib-name').value = '';
   $id('ib-protocol').value = 'vless';
+  window.__EDIT_NODE_IDS = [];
   $id('ib-port').value = '443';
   $id('ib-security').value = 'tls';
   $id('ib-network').value = 'ws';
   $id('ib-extdomain').value = '';
   $id('ib-extport').value = '443';
+  $id('ib-tls-sni').value = '';
+  $id('ib-tls-host').value = '';
+  $id('ib-tls-domain').value = '';
+  $id('ib-tls-public-port').value = '443';
+  $id('ib-tls-path').value = '/ws';
+  $id('ib-fingerprint').value = 'chrome';
+  $id('ib-socks-user').value = '';
+  $id('ib-socks-pass').value = '';
+  if ($id('ib-ss-method')) $id('ib-ss-method').value = '2022-blake3-aes-256-gcm';
+  if ($id('ib-ss-pass')) $id('ib-ss-pass').value = '';
   $id('ib-dest').value = '';
   $id('ib-sni').value = '';
   $id('ib-privkey').value = '';
@@ -2880,11 +2942,19 @@ function editInbound(iid) {
   var isReality = (ib.protocol === 'reality' || ib.security === 'reality');
   var isWg = (ib.protocol || '').toLowerCase() === 'wireguard';
   var isTg = (ib.protocol || '').toLowerCase() === 'telegram';
+  var isSocks = (ib.protocol || '').toLowerCase() === 'socks5';
+  var isSS = (ib.protocol || '').toLowerCase() === 'shadowsocks';
   $id('ib-title').textContent = t('editInbound');
   $id('ib-id').value = iid;
   $id('ib-name').value = ib.name || '';
   $id('ib-protocol').value = ib.protocol || 'vless';
-  $id('ib-sni').value = (ib.reality_settings || {}).sni || ib.server_name || ib.sni || 'is1-ssl.mzstatic.com';
+  $id('ib-sni').value = (ib.reality_settings || {}).sni || ib.server_name || ib.sni || '';
+  $id('ib-tls-sni').value = (ib.tls_settings || {}).sni || ib.sni || '';
+  $id('ib-tls-host').value = (ib.tls_settings || {}).host || (ib.ws_settings || {}).host || ib.domain || '';
+  $id('ib-tls-domain').value = (ib.tls_settings || {}).domain || ib.external_domain || ib.domain || '';
+  $id('ib-tls-public-port').value = (ib.tls_settings || {}).public_port || ib.external_port || 443;
+  $id('ib-tls-path').value = (ib.ws_settings || {}).path || '/ws';
+  $id('ib-fingerprint').value = ib.fingerprint || 'chrome';
   $id('ib-dest').value = (ib.reality_settings || {}).dest || (ib.reality_settings || {}).target || ib.destination || '';
   var rs = ib.reality_settings || {};
   $id('ib-privkey').value = (rs || {}).private_key || '';
@@ -2894,10 +2964,18 @@ function editInbound(iid) {
   var ws = ib.ws_settings || {}; var xh = ib.xhttp_settings || {};
   $id('ib-wspath').value = ws.path || '/';
   $id('ib-xhttppath').value = xh.path || '/';
-  $id('ib-xhttp-mode').value = xh.mode || 'auto';
+  $id('ib-xhttp-mode').value = xh.mode || 'stream-up';
   $id('ib-grpc-svc').value = (ib.grpc_settings || {}).serviceName || 'grpc';
 
-  if (isWg) {
+  if (isSS) {
+    var ss = ib.socks_settings || {};
+    $id('ib-port').value = ib.port || 8388;
+    $id('ib-ss-method').value = ss.method || '2022-blake3-aes-256-gcm';
+    $id('ib-ss-pass').value = ss.password || '';
+    $id('ib-submit').textContent = t('updateInbound');
+    onProtocolChange();
+    openModal('mod-inbound');
+  } else if (isWg) {
     // WireGuard: populate WG-specific fields
     var wg = ib.wireguard_settings || {};
     var warpEl = $id('ib-wg-warp');
@@ -2920,6 +2998,16 @@ function editInbound(iid) {
     $id('ib-wg-h4').value = wg.h4 || '4';
     $id('ib-wg-i1').value = wg.i1 || '';
     $id('ib-submit').textContent = t('updateInbound');
+    window.__EDIT_NODE_IDS = ib.enabled_node_ids || [];
+    onProtocolChange();
+    openModal('mod-inbound');
+  } else if (isSocks) {
+    var ss = ib.socks_settings || {};
+    $id('ib-port').value = ib.port || 1080;
+    $id('ib-socks-user').value = ss.username || '';
+    $id('ib-socks-pass').value = ss.password || '';
+    $id('ib-submit').textContent = t('updateInbound');
+    window.__EDIT_NODE_IDS = ib.enabled_node_ids || [];
     onProtocolChange();
     openModal('mod-inbound');
   } else if (isTg) {
@@ -2930,6 +3018,12 @@ function editInbound(iid) {
     $id('ib-tg-extport').value = tg.external_port || ib.external_port || 443;
     $id('ib-tg-domain').value = tg.external_domain || ib.external_domain || '';
     if ($id('ib-tg-promo')) $id('ib-tg-promo').value = tg.promotion_channel || '';
+    $id('ib-submit').textContent = t('updateInbound');
+    window.__EDIT_NODE_IDS = ib.enabled_node_ids || [];
+    onProtocolChange();
+    openModal('mod-inbound');
+  } else if ((ib.protocol || '').toLowerCase() === 'node') {
+    window.__EDIT_NODE_IDS = ib.enabled_node_ids || [];
     $id('ib-submit').textContent = t('updateInbound');
     onProtocolChange();
     openModal('mod-inbound');
@@ -2967,13 +3061,23 @@ async function submitInbound(e) {
   var iid = $id('ib-id').value;
   var proto = $id('ib-protocol').value;
   var isWg = proto === 'wireguard';
+  var isSS = proto === 'shadowsocks';
 
   var body = {
     name: $id('ib-name').value,
     protocol: proto,
   };
+  if (proto === 'node') {
+    body.enabled_node_ids = Array.from(document.querySelectorAll('#ib-node-checks input[type=checkbox]:checked')).map(function(el){ return el.value; });
+  }
 
-  if (isWg) {
+  if (isSS) {
+    body.port = parseInt($id('ib-port').value, 10) || 8388;
+    body.security = 'none'; body.network = 'tcp';
+    body.method = $id('ib-ss-method').value || '2022-blake3-aes-256-gcm';
+    body.password = $id('ib-ss-pass').value || '';
+    body.socks_settings = { method: body.method, password: body.password };
+  } else if (isWg) {
     // WireGuard inbound uses a real UDP listen port and persisted server keys.
     var wgPort = parseInt($id('ib-wg-port').value, 10);
     body.port = Number.isFinite(wgPort) && wgPort > 0 ? wgPort : 51820;
@@ -2997,8 +3101,17 @@ async function submitInbound(e) {
       h4: $id('ib-wg-h4').value || '4',
       i1: $id('ib-wg-i1').value || ''
     };
+  } else if (proto === 'socks5') {
+    var socksPort = parseInt($id('ib-port').value, 10);
+    body.port = Number.isFinite(socksPort) && socksPort > 0 ? socksPort : 1080;
+    body.security = 'none';
+    body.network = 'tcp';
+    body.socks_settings = {
+      username: $id('ib-socks-user').value || '',
+      password: $id('ib-socks-pass').value || ''
+    };
   } else if (proto === 'telegram') {
-    // Telegram Proxy inbound - only 3 fields: internal_port, external_port, external_domain
+    // Telegram Proxy inbound - explicit listener/domain fields
     var internalPort = parseInt($id('ib-tg-intport').value) || 44344;
     var externalPort = parseInt($id('ib-tg-extport').value) || 443;
     body.telegram_settings = {
@@ -3011,23 +3124,46 @@ async function submitInbound(e) {
     body.port = internalPort;
     body.external_port = externalPort;
     body.external_domain = $id('ib-tg-domain').value || '';
+  } else if (proto === 'node') {
+    body.security = 'none'; body.network = 'tcp';
+    body.enabled_node_ids = Array.from(document.querySelectorAll('#ib-node-checks input[type=checkbox]:checked')).map(function(el){ return el.value; });
   } else {
-    // VLESS / TLS / Reality
+    // VLESS / Trojan / TLS / Reality
     var network = $id('ib-network').value;
     var security = $id('ib-security').value;
-    var sni = $id('ib-sni').value || 'is1-ssl.mzstatic.com';
     var internalPort = parseInt($id('ib-port').value, 10);
     body.port = Number.isFinite(internalPort) && internalPort > 0 ? internalPort : 443;
     body.network = network;
     body.security = security;
-    body.sni = sni;
+
+    if (security === 'tls') {
+      var tlsDomain = ($id('ib-tls-domain').value || '').trim();
+      var tlsSni = ($id('ib-tls-sni').value || '').trim();
+      var tlsHost = ($id('ib-tls-host').value || '').trim();
+      var tlsPath = ($id('ib-tls-path').value || '/').trim();
+      body.domain = tlsDomain;
+      body.external_domain = tlsDomain;
+      body.sni = tlsSni;
+      var tlsPublicPort = parseInt($id('ib-tls-public-port').value, 10);
+      if (!Number.isFinite(tlsPublicPort) || tlsPublicPort < 1 || tlsPublicPort > 65535) {
+        toast('TLS Public Port is required', 'warn'); btn.disabled = false; btn.textContent = iid ? t('updateInbound') : t('createInbound'); return;
+      }
+      body.tls_settings = {sni: tlsSni, host: tlsHost, domain: tlsDomain,
+                           public_port: tlsPublicPort,
+                           fingerprint: $id('ib-fingerprint').value || 'chrome'};
+      body.fingerprint = $id('ib-fingerprint').value || 'chrome';
+      if (network === 'ws') body.ws_settings = {path: $id('ib-wspath').value || '/', host: tlsHost};
+      else if (network === 'xhttp') body.xhttp_settings = {path: $id('ib-xhttppath').value || '/', mode: $id('ib-xhttp-mode').value || 'stream-up', host: tlsHost};
+      else if (network === 'grpc') body.grpc_settings = {serviceName: $id('ib-grpc-svc').value || '', authority: ''};
+    }
+
     if (security === 'reality') {
       body.external_port = parseInt($id('ib-extport').value) || null;
       body.external_domain = $id('ib-extdomain').value || '';
       // Reality uses independent Destination/Target and Server Name/SNI fields.
-      var sniVal = $id('ib-sni').value.trim() || 'is1-ssl.mzstatic.com';
+      var sniVal = $id('ib-sni').value.trim() || '';
       var destVal = $id('ib-dest').value.trim();
-      if (!destVal) destVal = sniVal + ':443';
+      if (!destVal) destVal = '';
       body.destination = destVal;
       body.server_name = sniVal;
       body.reality_settings = {
@@ -3044,7 +3180,8 @@ async function submitInbound(e) {
       };
     }
     if (network === 'ws') {
-      body.ws_settings = { path: $id('ib-wspath').value || '/' };
+      var wsHost = ($id('ib-tls-host').value || '').trim();
+      body.ws_settings = { path: $id('ib-wspath').value || '/', host: wsHost };
     } else if (network === 'xhttp') {
       body.xhttp_settings = {
         path: $id('ib-xhttppath').value || '/',
@@ -4467,7 +4604,7 @@ async function loadWorker() {
         // Setup form
         html += '<div class="px-hint" data-i18n="workerSetupTip">پنل را به Cloudflare متصل کنید.</div>';
         html += '<div class="f-g" style="margin-top:10px"><label data-i18n="cfToken">Cloudflare API Token</label><div class="secret-field"><input type="password" id="wk-token" dir="ltr" autocomplete="off"><button type="button" class="btn btn-sm btn-g" onclick="toggleSecretInput(\'wk-token\',this)" title="Show token" aria-label="Show token">◌</button></div></div>';
-         html += '<a class="btn btn-g" style="display:flex;align-items:center;justify-content:center;width:100%;margin-top:8px;text-decoration:none" href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22user_details%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22memberships%22%2C%22type%22%3A%22read%22%7D%5D%26accountId%3D%2A%26zoneId%3Dall%26name%3Dspider-panel" target="_blank" rel="noopener noreferrer">ساخت Token با دسترسی‌های لازم ↗</a>'
+         html += '<a class="btn btn-g" style="display:flex;align-items:center;justify-content:center;width:100%;margin-top:8px;text-decoration:none" href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=Spider%20Workers%20Full%20Access%20Token" target="_blank" rel="noopener noreferrer">ساخت Token با دسترسی‌های لازم ↗</a>'
         html += '<div class="px-hint" style="font-size:10px;color:var(--txt2);margin-bottom:6px">توکن فقط باید دسترسی‌های لازم Worker را داشته باشد.</div>';
         html += '<button class="btn btn-p" style="width:100%;margin-top:10px" onclick="workerSetup()"><span data-i18n="createNewWorker">ساخت Worker جدید</span></button>';
       } else {
@@ -4927,6 +5064,7 @@ async function loadNodes() {
   try {
     var r = await api('/api/nodes');
     var nodes = r.nodes || [];
+    window.__NODES_CACHE = nodes;
     var listEl = $id('node-list');
     var countEl = $id('node-count');
     var addBtn = $id('btn-add-node');
