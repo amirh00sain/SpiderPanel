@@ -1162,9 +1162,9 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
 
           <!-- Sub-tab selector -->
 <div class="scn-accordion" role="tablist" id="scanner-accordion">
-  <div class="scn-acc-item open" data-scanner-item="cf">
-    <button class="scn-tab active" id="scn-tab-cf" aria-expanded="true" aria-controls="scn-pane-cf" onclick="scnSwitch('cf',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Cloudflare</button>
-    <div class="scn-pane active" id="scn-pane-cf">
+  <div class="scn-acc-item" data-scanner-item="cf">
+    <button class="scn-tab" id="scn-tab-cf" aria-expanded="false" aria-controls="scn-pane-cf" onclick="scnSwitch('cf',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Cloudflare</button>
+    <div class="scn-pane" id="scn-pane-cf">
             <div class="scn-cfg">
               <div class="f-g"><label data-i18n="ipCount">تعداد IP</label><input type="number" id="scn-cf-count" value="30" min="1" max="100"></div>
               <div class="f-g"><label data-i18n="targetPort">پورت هدف</label><select id="scn-cf-port"><option value="443">443</option><option value="2053">2053</option><option value="8443">8443</option><option value="2083">2083</option></select></div>
@@ -3405,15 +3405,15 @@ function scnSwitch(which, btn) {
   if (which === 'sni') scnLoadSniResults();
 }
 
-function scnStopfunction scnInitAccordion() {
+function scnInitAccordion() {
+  // IP Scanner opens fully collapsed. The user must explicitly choose a scanner.
   document.querySelectorAll('#scanner-accordion .scn-acc-item').forEach(function(item){
-    var which=item.getAttribute('data-scanner-item');
     var b=item.querySelector('.scn-tab');
-    var open=which==='cf';
-    item.classList.toggle('open',open);
-    if(b){ b.classList.toggle('active',open); b.setAttribute('aria-expanded', open?'true':'false'); }
+    item.classList.remove('open');
+    if(b){ b.classList.remove('active'); b.setAttribute('aria-expanded','false'); }
+    var pane=item.querySelector('.scn-pane');
+    if(pane) pane.classList.remove('active');
   });
-  scnLoadSaved('cf');
 }
 
 function scnStop() { SCN_STOP = true; toast(t('scanStopped'), 'warn'); }
@@ -4283,9 +4283,11 @@ function initScannerAccordion(){
     item.appendChild(b);
     item.appendChild(p);
     b.type='button';
-    b.setAttribute('aria-expanded', b.classList.contains('active') ? 'true' : 'false');
-    // The inline onclick remains the single source of behavior.
-    if(b.classList.contains('active')) item.classList.add('open');
+    // Always start collapsed; the user must explicitly choose a scanner.
+    b.classList.remove('active');
+    b.setAttribute('aria-expanded', 'false');
+    item.classList.remove('open');
+    p.classList.remove('active');
   });
 }
 
