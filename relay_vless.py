@@ -5,6 +5,8 @@
 import asyncio
 import secrets
 import logging
+import hashlib
+import binascii
 from datetime import datetime, timezone, timedelta
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -35,6 +37,47 @@ def _get_main():
 # ══════════════════════════════════════════════════════════════════════════════
 
 RELAY_BUF_LOCAL = 256 * 1024
+
+
+
+def _parse_trojan_request(first_chunk: bytes, password: str):
+    """Parse a Trojan-over-WebSocket TCP request using the panel user's UUID as password."""
+    try:
+        token = hashlib.sha224(password.encode()).hexdigest().encode('ascii')
+        if len(first_chunk) < 58 or first_chunk[:56].lower() != token or first_chunk[56:58] != b"\r\n":
+            return None
+        pos = 58
+        # Trojan request: command byte + RSV byte + address/port + CRLF.
+        if len(first_chunk) < pos + 4:
+            return None
+        command = first_chunk[pos]
+        if command != 1:  # TCP CONNECT only; UDP ASSOCIATE needs a separate UDP relay.
+            return None
+        pos += 2  # command + reserved
+        atyp = first_chunk[pos]; pos += 1
+        if atyp == 1:
+            if len(first_chunk) < pos + 4: return None
+            address = '.'.join(str(x) for x in first_chunk[pos:pos+4]); pos += 4
+        elif atyp == 3:
+            if len(first_chunk) < pos + 1: return None
+            ln = first_chunk[pos]; pos += 1
+            if len(first_chunk) < pos + ln: return None
+            address = first_chunk[pos:pos+ln].decode('utf-8', errors='strict'); pos += ln
+        elif atyp == 4:
+            if len(first_chunk) < pos + 16: return None
+            import ipaddress
+            address = str(ipaddress.IPv6Address(first_chunk[pos:pos+16])); pos += 16
+        else:
+            return None
+        if len(first_chunk) < pos + 4:
+            return None
+        port = int.from_bytes(first_chunk[pos:pos+2], 'big'); pos += 2
+        if first_chunk[pos:pos+2] != b"\r\n":
+            return None
+        pos += 2
+        return address, port, first_chunk[pos:]
+    except (ValueError, binascii.Error, UnicodeError):
+        return None
 
 def _ws_client_ip(ws: WebSocket) -> str:
     fwd = ws.headers.get("x-forwarded-for")
@@ -175,11 +218,18 @@ async def websocket_tunnel(ws: WebSocket, uuid: str, proxy_override: str = None)
         if not first_chunk:
             return
 
-        command, address, port, payload = await parse_vless_header(first_chunk)
+        trojan_req = _parse_trojan_request(first_chunk, uuid)
+        if trojan_req is not None:
+            address, port, payload = trojan_req
+            transport_name = "trojan-ws"
+        else:
+            command, address, port, payload = await parse_vless_header(first_chunk)
+            transport_name = "vless-ws"
 
         if not await check_and_use(uuid, len(first_chunk)):
             await ws.close(code=1008, reason="quota/disabled")
             return
+        connections[conn_id]["transport"] = transport_name
 
         stats["total_requests"] += 1
         connections[conn_id]["bytes"] += len(first_chunk)

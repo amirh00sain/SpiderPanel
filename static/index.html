@@ -77,6 +77,9 @@
 [data-theme="light"] .f-g input::placeholder,[data-theme="light"] .f-g textarea::placeholder,
 [data-theme="light"] .input-glass::placeholder{color:#3a3a3e;opacity:.6}
 [data-theme="light"] .btn-g{background:rgba(0,0,0,.05)}
+[data-theme="light"] .node-select-row{background:rgba(0,0,0,.025)}
+[data-theme="light"] .node-select-row:hover{background:rgba(0,0,0,.045)}
+[data-theme="light"] .bot-glass-field input{background:rgba(255,255,255,.82);border-color:rgba(0,0,0,.12)}
 /* Light: no colored/white glow on the background */
 [data-theme="light"] .bg-fx{background:none}
 [data-theme="light"] .bg-grid{background:none}
@@ -414,6 +417,16 @@ input,select,button,textarea{font-family:inherit}
 .secret-field{display:flex;align-items:center;gap:7px}
 .secret-field input{flex:1;min-width:0}
 .secret-field .btn{min-width:42px;height:42px;padding:0}
+/* Transport isolation + glass selectors */
+.node-select-list{display:grid;gap:8px;margin-top:8px}
+.node-select-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:9px;min-height:44px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.035);box-shadow:var(--shadow-sm);cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
+.node-select-row:hover{background:rgba(255,255,255,.065);border-color:var(--border-glow);transform:translateY(-1px)}
+.node-select-row input{width:17px;height:17px;margin:0;accent-color:#111;cursor:pointer}
+.node-select-main{font-size:12px;font-weight:750;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node-select-row small{font-size:10px;color:var(--txt2);direction:ltr;text-align:left;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bot-glass-field input{background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 28px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.bot-glass-field input:focus{background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.05));border-color:rgba(255,255,255,.3);box-shadow:0 0 0 3px rgba(255,255,255,.045),0 12px 30px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.1)}
+.transport-section{padding:11px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.025);box-shadow:var(--shadow-sm)}
 .schedule-editor{margin:8px 0 14px;padding:14px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,.075),rgba(255,255,255,.035));box-shadow:0 12px 32px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.07);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .schedule-title{display:flex;flex-direction:column;gap:3px;margin-bottom:12px}
 .schedule-title span{font-size:12px;font-weight:800;color:var(--txt)}
@@ -1627,6 +1640,7 @@ tr{animation:fadeIn .3s ease}
     <div class="f-r">
       <div class="f-g"><label>Protocol</label><select id="ib-protocol" onchange="onProtocolChange()">
         <option value="vless">VLESS</option>
+        <option value="vmess">VMess</option>
         <option value="trojan">Trojan (TLS/WS)</option>
         <option value="socks5">SOCKS5</option>
         <option value="shadowsocks">Shadowsocks</option>
@@ -1650,29 +1664,25 @@ tr{animation:fadeIn .3s ease}
     </select></div>
     <div style="font-size:10px;color:var(--txt2);margin-bottom:10px">برای VLESS یا Trojan، امنیت را انتخاب کنید (TLS یا Reality). در Trojan تنظیمات TLS/WS مستقیماً از همین فرم استفاده می‌شود.</div>
 
-    <!-- TLS fields: the panel serves TLS at its public domain/443. -->
+    <!-- TLS common fields -->
     <div id="ib-tls-connection-fields">
       <div class="divider"></div>
-      <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">TLS / WebSocket Settings</div>
+      <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">TLS Settings</div>
       <div class="f-r">
         <div class="f-g"><label>SNI</label><input type="text" id="ib-tls-sni" dir="ltr" placeholder="example.com" required></div>
-        <div class="f-g"><label>Host</label><input type="text" id="ib-tls-host" dir="ltr" placeholder="example.com" required></div>
-      </div>
-      <div class="f-r">
         <div class="f-g"><label>Public Domain / Address</label><input type="text" id="ib-tls-domain" dir="ltr" placeholder="example.com" required></div>
-        <div class="f-g"><label>Public Port</label><input type="number" id="ib-tls-public-port" value="" min="1" max="65535" dir="ltr" placeholder="443" required></div>
       </div>
       <div class="f-r">
-        <div class="f-g"><label>WS Path</label><input type="text" id="ib-tls-path" dir="ltr" value="/ws" placeholder="/ws"></div>
+        <div class="f-g"><label>Public Port</label><input type="number" id="ib-tls-public-port" value="" min="1" max="65535" dir="ltr" placeholder="443" required></div>
         <div class="f-g"><label>Fingerprint</label><select id="ib-fingerprint"><option value="chrome">chrome</option><option value="firefox">firefox</option><option value="safari">safari</option><option value="edge">edge</option><option value="random">random</option></select></div>
       </div>
-      <div class="px-hint" style="font-size:10px;margin-top:-4px">تمام مقادیر اتصال TLS از فرم خوانده می‌شوند؛ هیچ SNI/Host/Domain پیش‌فرضی هنگام ساخت اینباند تحمیل نمی‌شود.</div>
+      <div class="px-hint" style="font-size:10px;margin-top:-4px">SNI و Public Domain/Port از کاربر گرفته می‌شوند و روی transportها مشترک نیستند.</div>
     </div>
 
     <!-- Reality-only external address -->
     <div id="ib-external-address-fields" class="hidden">
-      <div class="f-g"><label data-i18n="extDomain">دامنه خارجی (در آدرس کانفیگ)</label><input type="text" id="ib-extdomain" dir="ltr" data-i18n-placeholder="extDomainPlace" placeholder="مثال: tokaido.proxy.rlwy.net"></div>
-      <div class="f-g"><label data-i18n="extPortCfg">پورت خارجی (در آدرس کانفیگ)</label><input type="number" id="ib-extport" value="443" dir="ltr" placeholder="443"></div>
+      <div class="f-g"><label data-i18n="extDomain">دامنه خارجی (در آدرس کانفیگ)</label><input type="text" id="ib-extdomain" dir="ltr" data-i18n-placeholder="extDomainPlace" placeholder="مثال: tokaido.proxy.rlwy.net" required></div>
+      <div class="f-g"><label data-i18n="extPortCfg">پورت خارجی (در آدرس کانفیگ)</label><input type="number" id="ib-extport" value="" dir="ltr" placeholder="443" required></div>
     </div>
     </div>
 
@@ -1682,22 +1692,22 @@ tr{animation:fadeIn .3s ease}
       <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px" data-i18n="realitySettings">تنظیمات Reality</div>
       <div class="f-r">
         <div class="f-g"><label>Destination / Target (dest)</label>
-          <input type="text" id="ib-dest" value="" dir="ltr" placeholder="مثلاً cdn.example.com:443">
+          <input type="text" id="ib-dest" value="" dir="ltr" placeholder="مثلاً cdn.example.com:443" required>
         </div>
         <div class="f-g"><label>Server Name / SNI</label>
           <div style="display:flex;gap:6px;align-items:flex-end">
-            <input type="text" id="ib-sni" value="" dir="ltr" placeholder="مثلاً play.googleapis.com" style="flex:1">
+            <input type="text" id="ib-sni" value="" dir="ltr" placeholder="مثلاً play.googleapis.com" style="flex:1" required>
             <button type="button" class="btn btn-sm btn-b" onclick="snPickFastest()" title="سریع‌ترین SNI از sni_reality.txt" style="border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           </button>
         </div>
       </div>
       <div class="f-r">
-        <div class="f-g"><label>Private Key (x25519)</label><input type="text" id="ib-privkey" dir="ltr" data-i18n-placeholder="autoGen" placeholder="تولید خودکار"></div>
+        <div class="f-g"><label>Private Key (x25519)</label><input type="text" id="ib-privkey" dir="ltr" placeholder="Private key from xray x25519" required></div>
         <div class="f-g"><label>Public Key</label><input type="text" id="ib-pubkey" dir="ltr" data-i18n-placeholder="autoGen" placeholder="تولید خودکار" readonly></div>
       </div>
       <button type="button" class="btn btn-sm btn-b" onclick="generateRealityKeysUI()" style="width:100%;margin-bottom:10px"><span data-i18n="genRealityKey">تولید کلید Reality (x25519)</span></button>
-      <div class="f-g"><label data-i18n="shortIds">Short IDs</label><div style="display:flex;gap:6px"><input type="text" id="ib-shortids" value="" dir="ltr" data-i18n-placeholder="hex8" placeholder="هگز ۸ رقمی — خالی = تصادفی" style="flex:1"><button type="button" class="btn btn-sm" onclick="generateShortId()" style="white-space:nowrap"><span data-i18n="generate">+ تولید</span></button></div></div>
+      <div class="f-g"><label data-i18n="shortIds">Short IDs</label><div style="display:flex;gap:6px"><input type="text" id="ib-shortids" value="" dir="ltr" placeholder="هگز ۸ تا 16 رقمی" style="flex:1" required><button type="button" class="btn btn-sm" onclick="generateShortId()" style="white-space:nowrap"><span data-i18n="generate">+ تولید</span></button></div></div>
       <div class="f-g"><label data-i18n="spiderx">SpiderX</label><input type="text" id="ib-spiderx" dir="ltr" placeholder="/" value="/"></div>
     </div>
 
@@ -1785,7 +1795,7 @@ tr{animation:fadeIn .3s ease}
     <div id="ib-node-fields" class="hidden">
       <div class="divider"></div>
       <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px">Nodes used by this inbound</div>
-      <div id="ib-node-checks" style="display:grid;gap:7px"></div>
+      <div id="ib-node-checks" class="node-select-list"></div>
       <div class="px-hint" style="font-size:10px">فقط Node هایی که تیک دارند در کانفیگ کاربران این Inbound استفاده می‌شوند.</div>
     </div>
 
@@ -1798,16 +1808,28 @@ tr{animation:fadeIn .3s ease}
         <option value="grpc">gRPC</option>
       </select></div>
       <!-- WS fields -->
-      <div id="ib-ws-fields" class="hidden"><div class="f-g"><label>Path (Base)</label><input type="text" id="ib-wspath" value="/" dir="ltr"></div></div>
-      <!-- XHTTP fields -->
-      <div id="ib-xhttp-fields" class="hidden">
-        <div class="f-g"><label>Path (Base)</label><input type="text" id="ib-xhttppath" value="/" dir="ltr"></div>
+      <div id="ib-ws-fields" class="hidden">
         <div class="f-r">
-          <div class="f-g"><label>Mode</label><select id="ib-xhttp-mode"><option value="packet-up">packet-up</option><option value="stream-up">stream-up</option></select></div>
+          <div class="f-g"><label>WebSocket Path</label><input type="text" id="ib-wspath" value="/ws" dir="ltr" placeholder="/ws"></div>
+          <div class="f-g"><label>WebSocket Host</label><input type="text" id="ib-ws-host" value="" dir="ltr" placeholder="example.com"></div>
         </div>
       </div>
+      <!-- XHTTP fields -->
+      <div id="ib-xhttp-fields" class="hidden">
+        <div class="f-r">
+          <div class="f-g"><label>XHTTP Base Path</label><input type="text" id="ib-xhttppath" value="/xhttp" dir="ltr" placeholder="/xhttp"></div>
+          <div class="f-g"><label>XHTTP Host</label><input type="text" id="ib-xhttp-host" value="" dir="ltr" placeholder="example.com"></div>
+        </div>
+        <div class="f-g"><label>Mode</label><select id="ib-xhttp-mode"><option value="packet-up">packet-up</option><option value="stream-up">stream-up</option></select></div>
+      </div>
       <!-- gRPC fields -->
-      <div id="ib-grpc-fields" class="hidden"><div class="f-g"><label data-i18n="serviceName">Service Name</label><input type="text" id="ib-grpc-svc" value="grpc" dir="ltr"></div></div>
+      <div id="ib-grpc-fields" class="hidden">
+        <div class="f-r">
+          <div class="f-g"><label data-i18n="serviceName">Service Name</label><input type="text" id="ib-grpc-svc" value="grpc" dir="ltr" placeholder="grpc"></div>
+          <div class="f-g"><label>Authority (optional)</label><input type="text" id="ib-grpc-authority" value="" dir="ltr" placeholder="example.com"></div>
+        </div>
+        <div class="px-hint">gRPC از WebSocket Path و XHTTP Path استفاده نمی‌کند؛ فقط Service Name/Authority خودش را دارد.</div>
+      </div>
     </div>
 
     <div class="modal-btns">
@@ -2777,7 +2799,7 @@ function renderInboundNodeChecks(selected){
   var wrap=$id('ib-node-checks'); if(!wrap) return;
   var nodes=(window.__NODES_CACHE||[]); var chosen=new Set((selected||[]).map(String));
   wrap.innerHTML = nodes.length ? nodes.map(function(n){
-    var id=esc(n.id); return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px"><input type="checkbox" value="'+id+'" '+(chosen.has(String(n.id))?'checked':'')+'> <span>'+esc(n.name||n.id)+'</span><small style="margin-left:auto;color:var(--txt2)">'+esc(n.region||'')+'</small></label>';
+    var id=esc(n.id); return '<label class="node-select-row"><input type="checkbox" value="'+id+'" '+(chosen.has(String(n.id))?'checked':'')+'> <span class="node-select-main">'+esc(n.name||n.id)+'</span><small>'+esc(n.region||'')+'</small></label>';
   }).join('') : '<div class="px-hint">هیچ Node ثبت نشده است.</div>';
 }
 
@@ -2893,11 +2915,10 @@ function openCreateInbound() {
   $id('ib-extdomain').value = '';
   $id('ib-extport').value = '443';
   $id('ib-tls-sni').value = '';
-  $id('ib-tls-host').value = '';
+  $id('ib-ws-host').value = ''; $id('ib-xhttp-host').value = '';
   $id('ib-tls-domain').value = '';
   $id('ib-tls-public-port').value = '443';
-  $id('ib-tls-path').value = '/ws';
-  $id('ib-fingerprint').value = 'chrome';
+    $id('ib-fingerprint').value = 'chrome';
   $id('ib-socks-user').value = '';
   $id('ib-socks-pass').value = '';
   if ($id('ib-ss-method')) $id('ib-ss-method').value = '2022-blake3-aes-256-gcm';
@@ -2925,7 +2946,7 @@ function openCreateInbound() {
   $id('ib-wg-i1').value = '';
   $id('ib-wspath').value = '/';
   $id('ib-xhttppath').value = '/';
-  $id('ib-xhttp-mode').value = 'auto';
+  $id('ib-xhttp-mode').value = 'stream-up';
   $id('ib-grpc-svc').value = 'grpc';
   $id('ib-submit').textContent = t('createInbound');
   onProtocolChange();
@@ -2950,11 +2971,10 @@ function editInbound(iid) {
   $id('ib-protocol').value = ib.protocol || 'vless';
   $id('ib-sni').value = (ib.reality_settings || {}).sni || ib.server_name || ib.sni || '';
   $id('ib-tls-sni').value = (ib.tls_settings || {}).sni || ib.sni || '';
-  $id('ib-tls-host').value = (ib.tls_settings || {}).host || (ib.ws_settings || {}).host || ib.domain || '';
+  $id('ib-ws-host').value = (ib.ws_settings || {}).host || ''; $id('ib-xhttp-host').value = (ib.xhttp_settings || {}).host || '';
   $id('ib-tls-domain').value = (ib.tls_settings || {}).domain || ib.external_domain || ib.domain || '';
   $id('ib-tls-public-port').value = (ib.tls_settings || {}).public_port || ib.external_port || 443;
-  $id('ib-tls-path').value = (ib.ws_settings || {}).path || '/ws';
-  $id('ib-fingerprint').value = ib.fingerprint || 'chrome';
+    $id('ib-fingerprint').value = ib.fingerprint || 'chrome';
   $id('ib-dest').value = (ib.reality_settings || {}).dest || (ib.reality_settings || {}).target || ib.destination || '';
   var rs = ib.reality_settings || {};
   $id('ib-privkey').value = (rs || {}).private_key || '';
@@ -2965,7 +2985,7 @@ function editInbound(iid) {
   $id('ib-wspath').value = ws.path || '/';
   $id('ib-xhttppath').value = xh.path || '/';
   $id('ib-xhttp-mode').value = xh.mode || 'stream-up';
-  $id('ib-grpc-svc').value = (ib.grpc_settings || {}).serviceName || 'grpc';
+  $id('ib-grpc-svc').value = (ib.grpc_settings || {}).serviceName || 'grpc'; $id('ib-grpc-authority').value = (ib.grpc_settings || {}).authority || '';
 
   if (isSS) {
     var ss = ib.socks_settings || {};
@@ -3139,8 +3159,10 @@ async function submitInbound(e) {
     if (security === 'tls') {
       var tlsDomain = ($id('ib-tls-domain').value || '').trim();
       var tlsSni = ($id('ib-tls-sni').value || '').trim();
-      var tlsHost = ($id('ib-tls-host').value || '').trim();
-      var tlsPath = ($id('ib-tls-path').value || '/').trim();
+      var tlsHost = '';
+      var tlsPath = '';
+      var selectedTransportHost = network === 'ws' ? ($id('ib-ws-host').value || '').trim() : network === 'xhttp' ? ($id('ib-xhttp-host').value || '').trim() : '';
+      tlsHost = selectedTransportHost;
       body.domain = tlsDomain;
       body.external_domain = tlsDomain;
       body.sni = tlsSni;
@@ -3152,9 +3174,9 @@ async function submitInbound(e) {
                            public_port: tlsPublicPort,
                            fingerprint: $id('ib-fingerprint').value || 'chrome'};
       body.fingerprint = $id('ib-fingerprint').value || 'chrome';
-      if (network === 'ws') body.ws_settings = {path: $id('ib-wspath').value || '/', host: tlsHost};
-      else if (network === 'xhttp') body.xhttp_settings = {path: $id('ib-xhttppath').value || '/', mode: $id('ib-xhttp-mode').value || 'stream-up', host: tlsHost};
-      else if (network === 'grpc') body.grpc_settings = {serviceName: $id('ib-grpc-svc').value || '', authority: ''};
+      if (network === 'ws') body.ws_settings = {path: $id('ib-wspath').value || '/ws', host: ($id('ib-ws-host').value || '').trim()};
+      else if (network === 'xhttp') body.xhttp_settings = {path: $id('ib-xhttppath').value || '/xhttp', mode: $id('ib-xhttp-mode').value || 'stream-up', host: ($id('ib-xhttp-host').value || '').trim()};
+      else if (network === 'grpc') body.grpc_settings = {serviceName: $id('ib-grpc-svc').value || '', authority: ($id('ib-grpc-authority').value || '').trim()};
     }
 
     if (security === 'reality') {
@@ -3178,17 +3200,6 @@ async function submitInbound(e) {
         server_name: sniVal,
         sni: sniVal
       };
-    }
-    if (network === 'ws') {
-      var wsHost = ($id('ib-tls-host').value || '').trim();
-      body.ws_settings = { path: $id('ib-wspath').value || '/', host: wsHost };
-    } else if (network === 'xhttp') {
-      body.xhttp_settings = {
-        path: $id('ib-xhttppath').value || '/',
-        mode: $id('ib-xhttp-mode').value || 'auto'
-      };
-    } else if (network === 'grpc') {
-      body.grpc_settings = { serviceName: $id('ib-grpc-svc').value || 'grpc' };
     }
   }
 
@@ -4604,8 +4615,8 @@ async function loadWorker() {
         // Setup form
         html += '<div class="px-hint" data-i18n="workerSetupTip">پنل را به Cloudflare متصل کنید.</div>';
         html += '<div class="f-g" style="margin-top:10px"><label data-i18n="cfToken">Cloudflare API Token</label><div class="secret-field"><input type="password" id="wk-token" dir="ltr" autocomplete="off"><button type="button" class="btn btn-sm btn-g" onclick="toggleSecretInput(\'wk-token\',this)" title="Show token" aria-label="Show token">◌</button></div></div>';
-         html += '<a class="btn btn-g" style="display:flex;align-items:center;justify-content:center;width:100%;margin-top:8px;text-decoration:none" href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=Spider%20Workers%20Full%20Access%20Token" target="_blank" rel="noopener noreferrer">ساخت Token با دسترسی‌های لازم ↗</a>'
-        html += '<div class="px-hint" style="font-size:10px;color:var(--txt2);margin-bottom:6px">توکن فقط باید دسترسی‌های لازم Worker را داشته باشد.</div>';
+         html += '<a class="btn btn-g" style="display:flex;align-items:center;justify-content:center;width:100%;margin-top:8px;text-decoration:none" href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer">باز کردن صفحه ساخت Cloudflare Token ↗</a>'
+        html += '<div class="px-hint" style="font-size:10px;color:var(--txt2);margin-bottom:6px;line-height:1.8">از Custom Token استفاده کنید و فقط دسترسی‌های موردنیاز این پنل را بدهید: Account → Workers Scripts → Edit، Account → Workers KV Storage → Edit. اگر Route/DNS از API همین Token مدیریت می‌شود، Zone → Workers Routes → Edit و در صورت نیاز DNS → Edit را هم فقط برای Zone موردنظر اضافه کنید. محدوده Account/Zone را دستی انتخاب کنید تا wildcard ناخواسته ایجاد نشود.</div>';
         html += '<button class="btn btn-p" style="width:100%;margin-top:10px" onclick="workerSetup()"><span data-i18n="createNewWorker">ساخت Worker جدید</span></button>';
       } else {
         // Managed view
@@ -5141,8 +5152,8 @@ async function loadBotConfig() {
     body.innerHTML = '<div class="acc-body-inner">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
       + '<span class="set-lbl">وضعیت ربات</span>' + statusBadge + '</div>'
-      + '<div class="f-g" style="margin-bottom:12px"><label>Telegram Bot Token</label><input type="password" id="bot-token" dir="ltr" placeholder="123456:ABC-defGHI..." value="' + (b.bot_token_masked || '') + '"></div>'
-      + '<div class="f-g" style="margin-bottom:12px"><label>Channel ID</label><input type="text" id="bot-channel" dir="ltr" placeholder="-1001234567890" value="' + esc(b.channel_id || '') + '"></div>'
+      + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>Telegram Bot Token</label><input type="password" id="bot-token" dir="ltr" placeholder="123456:ABC-defGHI..." value="' + (b.bot_token_masked || '') + '"></div>'
+      + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>Channel ID</label><input type="text" id="bot-channel" dir="ltr" placeholder="-1001234567890" value="' + esc(b.channel_id || '') + '"></div>'
       + '<div class="schedule-editor">'
       + '<div class="schedule-title"><span>زمان‌بندی ارسال</span><small>فاصله اجرای خودکار را مشخص کنید</small></div>'
       + '<div class="schedule-fields">'
