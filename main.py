@@ -194,6 +194,8 @@ async def load_state():
                 NODES.update(data["nodes"])
             if isinstance(data.get("bot_config"), dict):
                 BOT_CONFIG.update(data["bot_config"])
+                if not BOT_CONFIG.get("channel_link") and BOT_CONFIG.get("target_channel_link"):
+                    BOT_CONFIG["channel_link"] = BOT_CONFIG.get("target_channel_link")
                 # never resume a bot loop on boot
                 BOT_CONFIG["running"] = False
             logger.info(f"State loaded: {len(LINKS)} links, {len(SUBS)} subs, {len(USERS)} users, {len(GROUPS)} groups, {len(IP_POOL)} ips, {len(INBOUNDS)} inbounds")
@@ -488,6 +490,7 @@ MAX_NODES = 10
 BOT_CONFIG: dict = {
     "bot_token": "",
     "channel_id": "",
+    "channel_link": "",
     "promotion_channel": "",
     "fixed_channel": "",
     "target_channel_link": "",
@@ -1774,7 +1777,20 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             return wcfgs[0]
         return ""
 
-    # ── NODE selection is now an attribute of Config inbounds. ──
+    # ── NODE inbound ──
+    # A Node inbound is a selector-only object. It is NOT a local Xray/relay
+    # listener and must never fall through to the normal VLESS generator.
+    # Return a config for the selected remote node when one is available.
+    if proto == "node":
+        node_ids = [str(x) for x in (inbound.get("enabled_node_ids") or [])] if inbound else []
+        for nid in node_ids:
+            node = NODES.get(nid)
+            if not node:
+                continue
+            cfg = _node_config_for_user(node, config_uuid, username)
+            if cfg:
+                return cfg
+        return ""
 
     # ── TELEGRAM PROXY ──
     if proto == "telegram":
@@ -2049,8 +2065,9 @@ def generate_custom_ip_configs(user_id: str, user: dict) -> dict:
             ib = INBOUNDS.get(iid_)
             if not ib:
                 continue
-            # Skip wireguard and telegram — not compatible with scanned IPs
-            if (ib.get("protocol") or "").lower() in ("wireguard", "telegram"):
+            # Skip wireguard, telegram and selector-only Node inbounds —
+            # they do not represent a local scanned-IP endpoint.
+            if (ib.get("protocol") or "").lower() in ("wireguard", "telegram", "node"):
                 continue
             for i, ip in enumerate(cf_ips[:10], 1):
                 try:
@@ -2068,8 +2085,9 @@ def generate_custom_ip_configs(user_id: str, user: dict) -> dict:
             ib = INBOUNDS.get(iid_)
             if not ib:
                 continue
-            # Skip wireguard and telegram — not compatible with scanned IPs
-            if (ib.get("protocol") or "").lower() in ("wireguard", "telegram"):
+            # Skip wireguard, telegram and selector-only Node inbounds —
+            # they do not represent a local scanned-IP endpoint.
+            if (ib.get("protocol") or "").lower() in ("wireguard", "telegram", "node"):
                 continue
             if not ib:
                 continue
@@ -9219,54 +9237,69 @@ async def get_bot_config(_=Depends(require_auth)):
 
 @app.post("/api/bot/setup")
 async def bot_setup(request: Request, _=Depends(require_auth)):
-    """Set up bot token + channel ID + optional promotion channel."""
+    """Set up bot token + public Telegram channel link."""
     body = await request.json()
-    token = (body.get("bot_token") or "").strip()
-    channel_id = (body.get("channel_id") or "").strip()
-    # The UI masks the existing bot token. Editing channel/promotion settings
-    # must not replace a valid token with the mask.
+    token = str(body.get("bot_token") or "").strip()
+    channel_link = str(body.get("channel_link") or "").strip()
     async with BOT_CONFIG_LOCK:
         existing_token = str(BOT_CONFIG.get("bot_token") or "")
     if not token and existing_token:
         token = existing_token
     if not token:
         raise HTTPException(status_code=400, detail="Bot Token is required")
-    if not channel_id:
-        raise HTTPException(status_code=400, detail="Channel ID is required")
-    # Validate token
+    if not channel_link:
+        raise HTTPException(status_code=400, detail="Channel link is required")
+
+    raw = channel_link
+    if raw.startswith(("http://", "https://")):
+        parsed = urllib.parse.urlparse(raw)
+        if parsed.netloc.lower() not in ("t.me","www.t.me","telegram.me","www.telegram.me"):
+            raise HTTPException(status_code=400, detail="Use a public Telegram channel link such as https://t.me/YourChannel")
+        path=(parsed.path or "").strip("/")
+        if path.startswith("+") or path.startswith("joinchat/"):
+            raise HTTPException(status_code=400, detail="Private invite links are not supported; use the channel's public @username link")
+        username=path.split("/",1)[0].lstrip("@")
+    elif raw.startswith("@"):
+        username=raw[1:].strip()
+    else:
+        username=raw.strip().lstrip("@")
+
+    if not re.fullmatch(r"[A-Za-z0-9_]{4,64}", username or ""):
+        raise HTTPException(status_code=400, detail="Invalid Telegram channel link. Example: https://t.me/YourChannel")
+
+    channel_id="@" + username
     from spider_features import validate_bot_token, check_bot_channel_access, tg_api_call
     try:
-        bot_info = await validate_bot_token(token)
+        bot_info=await validate_bot_token(token)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    # Check channel access
     try:
         await check_bot_channel_access(token, channel_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    target_channel_link = ""
-    try:
-        chat = await tg_api_call(token, "getChat", chat_id=channel_id)
-        username = str((chat.get("username") if isinstance(chat, dict) else "") or "").strip().lstrip("@")
-        if username:
-            target_channel_link = f"https://t.me/{username}"
-    except Exception:
-        target_channel_link = channel_id if str(channel_id).startswith(("http://", "https://", "@")) else ""
-    async with BOT_CONFIG_LOCK:
-        BOT_CONFIG["bot_token"] = token
-        BOT_CONFIG["channel_id"] = channel_id
-        BOT_CONFIG["promotion_channel"] = str(body.get("promotion_channel") or BOT_CONFIG.get("promotion_channel") or "").strip()
-        BOT_CONFIG["fixed_channel"] = str(body.get("fixed_channel") or BOT_CONFIG.get("fixed_channel") or "").strip()
-        BOT_CONFIG["target_channel_link"] = target_channel_link or BOT_CONFIG.get("target_channel_link", "")
-        BOT_CONFIG["last_error"] = ""
-    asyncio.create_task(save_state())
-    log_activity("bot", "ربات کانال تنظیم شد", "ok")
-    return {
-        "ok": True,
-        "bot_name": bot_info.get("username", ""),
-        "bot_id": bot_info.get("id", ""),
-    }
 
+    target_channel_link=f"https://t.me/{username}"
+    try:
+        chat=await tg_api_call(token,"getChat",chat_id=channel_id)
+        chat_username=str((chat.get("username") if isinstance(chat,dict) else "") or "").strip().lstrip("@")
+        if chat_username:
+            username=chat_username
+            channel_id="@"+username
+            target_channel_link=f"https://t.me/{username}"
+    except Exception:
+        pass
+
+    async with BOT_CONFIG_LOCK:
+        BOT_CONFIG["bot_token"]=token
+        BOT_CONFIG["channel_id"]=channel_id
+        BOT_CONFIG["channel_link"]=target_channel_link
+        BOT_CONFIG["promotion_channel"]=str(body.get("promotion_channel") or BOT_CONFIG.get("promotion_channel") or "").strip()
+        BOT_CONFIG["fixed_channel"]=str(body.get("fixed_channel") or BOT_CONFIG.get("fixed_channel") or "").strip()
+        BOT_CONFIG["target_channel_link"]=target_channel_link
+        BOT_CONFIG["last_error"]=""
+    asyncio.create_task(save_state())
+    log_activity("bot","ربات کانال تنظیم شد","ok")
+    return {"ok":True,"bot_name":bot_info.get("username",""),"bot_id":bot_info.get("id",""),"channel_link":target_channel_link}
 
 @app.post("/api/bot/schedule")
 async def bot_schedule(request: Request, _=Depends(require_auth)):

@@ -1161,16 +1161,10 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
           <div class="panel-h"><span class="glow" data-i18n="tab.scanner">اسکنر آی‌پی</span><span class="badge badge-g" style="margin-right:auto;animation:pulse 1.5s infinite"><span data-i18n="live">● LIVE</span></span></div>
 
           <!-- Sub-tab selector -->
-          <div class="scn-accordion" role="tablist" id="scanner-accordion">
-            <button class="scn-tab active" id="scn-tab-cf" onclick="scnSwitch('cf',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Cloudflare</button>
-            <button class="scn-tab" id="scn-tab-railway" onclick="scnSwitch('railway',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 19h10M4 19H3v-3l2-5h11l3 5v3h-1M5 11l1-7h9l1 7"/></svg> Railway</button>
-            <button class="scn-tab" id="scn-tab-tcp" onclick="scnSwitch('tcp',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 7a3 3 0 0 1-3 3 3 3 0 0 1 0 6 3 3 0 0 1-3-3"/><path d="M14 17a3 3 0 0 1 3-3 3 3 0 0 1 0-6 3 3 0 0 1 3 3"/></svg> TCP</button>
-            <button class="scn-tab" id="scn-tab-spoof" onclick="scnSwitch('spoof',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 6v7M12 14v2"/></svg> Spoof</button>
-            <button class="scn-tab" id="scn-tab-sni" onclick="scnSwitch('sni',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> SNI</button>
-          </div>
-
-          <!-- CLOUDFLARE PANE -->
-          <div class="scn-pane active" id="scn-pane-cf">
+<div class="scn-accordion" role="tablist" id="scanner-accordion">
+  <div class="scn-acc-item" data-scanner-item="cf">
+    <button class="scn-tab" id="scn-tab-cf" aria-expanded="false" aria-controls="scn-pane-cf" onclick="scnSwitch('cf',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Cloudflare</button>
+    <div class="scn-pane" id="scn-pane-cf">
             <div class="scn-cfg">
               <div class="f-g"><label data-i18n="ipCount">تعداد IP</label><input type="number" id="scn-cf-count" value="30" min="1" max="100"></div>
               <div class="f-g"><label data-i18n="targetPort">پورت هدف</label><select id="scn-cf-port"><option value="443">443</option><option value="2053">2053</option><option value="8443">8443</option><option value="2083">2083</option></select></div>
@@ -1193,9 +1187,10 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
               <div class="scn-saved-tags" id="scn-cf-saved-tags"><span class="scn-empty" data-i18n="notSaved">هنوز ذخیره‌ای نیست</span></div>
             </div>
           </div>
-
-          <!-- RAILWAY PANE -->
-          <div class="scn-pane" id="scn-pane-railway">
+  </div>
+  <div class="scn-acc-item" data-scanner-item="railway">
+    <button class="scn-tab" id="scn-tab-railway" aria-expanded="false" aria-controls="scn-pane-railway" onclick="scnSwitch('railway',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 19h10M4 19H3v-3l2-5h11l3 5v3h-1M5 11l1-7h9l1 7"/></svg> Railway</button>
+    <div class="scn-pane" id="scn-pane-railway">
             <div class="scn-cfg">
               <div class="f-g"><label data-i18n="ipCount">تعداد IP</label><input type="number" id="scn-rw-count" value="30" min="1" max="100"></div>
               <div class="f-g"><label data-i18n="targetPort">پورت هدف</label><select id="scn-rw-port"><option value="443">443</option><option value="8080">8080</option><option value="80">80</option></select></div>
@@ -1218,9 +1213,10 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
               <div class="scn-saved-tags" id="scn-rw-saved-tags"><span class="scn-empty" data-i18n="notSaved">هنوز ذخیره‌ای نیست</span></div>
             </div>
           </div>
-
-          <!-- TCP PANE -->
-          <div class="scn-pane" id="scn-pane-tcp">
+  </div>
+  <div class="scn-acc-item" data-scanner-item="tcp">
+    <button class="scn-tab" id="scn-tab-tcp" aria-expanded="false" aria-controls="scn-pane-tcp" onclick="scnSwitch('tcp',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 7a3 3 0 0 1-3 3 3 3 0 0 1 0 6 3 3 0 0 1-3-3"/><path d="M14 17a3 3 0 0 1 3-3 3 3 0 0 1 0-6 3 3 0 0 1 3 3"/></svg> TCP</button>
+    <div class="scn-pane" id="scn-pane-tcp">
             <div class="scn-hint px-hint" data-i18n="scnTcpTip">دامنه موردنظر را وارد کنید؛ IP دامنه (DNS) نمایش داده می‌شود و پینگ TCP آن به صورت زنده گزارش می‌شود. دامنه‌های Railway به صورت پیش‌فرض وجود دارند و قابل افزودن/حذف هستند.</div>
             <div class="scn-dom-add">
               <input type="text" id="scn-tcp-domain" placeholder="example.proxy.rlwy.net" dir="ltr">
@@ -1230,9 +1226,10 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
             <button class="btn btn-p" style="width:100%" onclick="scnRunTCP()"><span data-i18n="checkDomains">شروع بررسی دامنه‌ها</span></button>
             <div class="scn-result-list scn-list" id="scn-tcp-results" style="margin-top:12px"></div>
           </div>
-
-          <!-- SPOOF PANE -->
-          <div class="scn-pane" id="scn-pane-spoof">
+  </div>
+  <div class="scn-acc-item" data-scanner-item="spoof">
+    <button class="scn-tab" id="scn-tab-spoof" aria-expanded="false" aria-controls="scn-pane-spoof" onclick="scnSwitch('spoof',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 6v7M12 14v2"/></svg> Spoof</button>
+    <div class="scn-pane" id="scn-pane-spoof">
             <!-- Advanced Section: Domain input that populates all inbound domains -->
             <div class="panel" style="margin-bottom:14px">
               <div class="panel-h"><span class="glow">⚙️ پیشرفته</span></div>
@@ -1327,9 +1324,10 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
               </div>
             </div>
           </div>
-
-          <!-- SNI PANE -->
-          <div class="scn-pane" id="scn-pane-sni">
+  </div>
+  <div class="scn-acc-item" data-scanner-item="sni">
+    <button class="scn-tab" id="scn-tab-sni" aria-expanded="false" aria-controls="scn-pane-sni" onclick="scnSwitch('sni',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l-1 8z"/></svg> SNI</button>
+    <div class="scn-pane" id="scn-pane-sni">
             <div class="scn-cfg">
               <div class="f-g" style="flex:1.5">
                 <label>Endpoint / Target to test</label>
@@ -1367,6 +1365,9 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
               <div class="scn-saved-tags" id="scn-sni-results"></div>
             </div>
           </div>
+  </div>
+</div>
+
         </div>
       </div>
 
@@ -1461,6 +1462,23 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
           <div id="node-list" style="margin-top:14px"></div>
         </div>
       </div>
+
+<!-- ADD NODE MODAL -->
+<div class="modal" id="mod-add-node">
+  <div class="modal-c" style="max-width:520px">
+    <button type="button" class="modal-x" onclick="closeModal('mod-add-node')" aria-label="Close">×</button>
+    <div class="modal-t"><span class="glow">افزودن Node</span></div>
+    <form onsubmit="submitAddNode(event)">
+      <div class="f-g"><label>نام Node <span class="px-hint">(اختیاری)</span></label><input type="text" id="an-name" placeholder="Node 1"></div>
+      <div class="f-g"><label>API Key</label><input type="password" id="an-api-key" dir="ltr" placeholder="کلید API نود مقصد" required></div>
+      <div class="f-g"><label>آدرس Node</label><input type="url" id="an-url" dir="ltr" placeholder="https://node1.example.com" required></div>
+      <div class="modal-btns">
+        <button type="button" class="btn btn-g" onclick="closeModal('mod-add-node')">انصراف</button>
+        <button type="submit" class="btn btn-p" id="an-submit">افزودن Node</button>
+      </div>
+    </form>
+  </div>
+</div>
 
       <!-- BOT TAB -->
       <div class="tab-content hidden" id="tab-bot">
@@ -1787,7 +1805,7 @@ var I18N = {
     'tab.dash': 'Dashboard', 'tab.users': 'Manage Users', 'tab.inbounds': 'Manage Inbounds', 'tab.scanner': 'IP Scanner', 'tab.settings': 'Settings',
     'inboundFixedHint': 'Only the panel’s default inbounds are used. WS/TLS is ready automatically with the panel’s main domain; fill Reality’s domain & ports yourself (pbk is auto-generated).', 'inboundFixed': 'Adding inbounds is disabled — only the default inbounds.', 'inboundAuto': 'This inbound is automatic — nothing to configure.',
     'newUser': 'New User', 'newInbound': 'New Inbound', 'domain': 'Domain',
-    'loading': 'Loading...', 'detecting':'Detecting...', 'errDetecting':'Detection failed', 'workerLoadError':'Failed to load Worker', 'currentLabel':'Current:', 'lastRunLabel':'Last run:', 'node':'Node', 'bot':'Bot', 'channelBot':'Channel Bot Announcements', 'botStatus':'Bot Status', 'running':'Running', 'stopped':'Stopped', 'seconds':'Seconds', 'minutes':'Minutes', 'hours':'Hours', 'botLoadError':'Failed to load bot settings', 'botRequired':'Bot token and channel ID are required', 'intPortLabel':'Internal Port', 'noUsers': 'No users found', 'noInbounds': 'No inbounds found', 'errLoadUsers': 'Error loading users', 'errLoadInbounds': 'Error loading inbounds', 'errLoadStats': 'Error loading stats',
+    'loading': 'Loading...', 'detecting':'Detecting...', 'errDetecting':'Detection failed', 'workerLoadError':'Failed to load Worker', 'currentLabel':'Current:', 'lastRunLabel':'Last run:', 'node':'Node', 'bot':'Bot', 'channelBot':'Channel Bot Announcements', 'botStatus':'Bot Status', 'running':'Running', 'stopped':'Stopped', 'seconds':'Seconds', 'minutes':'Minutes', 'hours':'Hours', 'botLoadError':'Failed to load bot settings', 'botRequired':'Bot token and channel link are required', 'intPortLabel':'Internal Port', 'noUsers': 'No users found', 'noInbounds': 'No inbounds found', 'errLoadUsers': 'Error loading users', 'errLoadInbounds': 'Error loading inbounds', 'errLoadStats': 'Error loading stats',
     'live': '● LIVE', 'scnTip': 'Live scan of Cloudflare ranges. Working IPs are sorted and the first 10 are auto-saved.',
     'ipCount': 'IP Count', 'targetPort': 'Target Port', 'startScan': 'Start Scan', 'stop': 'Stop', 'scanning': 'Scanning...', 'scanStopped': 'Scan stopped',
     'found': 'IP Found', 'tried': 'Tested', 'bestPing': 'Best Ping', 'saved': 'Saved', 'savedFirst10': 'Saved (first 10 IPs)', 'clear': 'Clear', 'notSaved': 'Nothing saved yet', 'startPrompt': 'Press "Start Scan" to begin scanning', 'noHit': 'No responding IP found', 'saveCleared': 'Saved list cleared',
@@ -2161,6 +2179,7 @@ function switchTab(tab, el) {
     content.scrollTop = 0;
     content.scrollLeft = 0;
   }
+  if (tab === 'scanner') scnInitAccordion();
   target.classList.remove('hidden');
   target.style.setProperty('margin-top', '0px', 'important');
   target.style.setProperty('top', '0px', 'important');
@@ -3368,15 +3387,11 @@ function scnSwitch(which, btn) {
   document.querySelectorAll('#scanner-accordion .scn-acc-item').forEach(function(x) {
     x.classList.remove('open');
     var b = x.querySelector('.scn-tab');
-    var p = x.querySelector('.scn-pane');
     if (b) { b.classList.remove('active'); b.setAttribute('aria-expanded','false'); }
-    if (p) p.classList.remove('active');
   });
   if (!wasOpen && item) {
     item.classList.add('open');
     if (btn) { btn.classList.add('active'); btn.setAttribute('aria-expanded','true'); }
-    var pane = $id('scn-pane-' + which);
-    if (pane) pane.classList.add('active');
   }
   if (which === 'cf') scnLoadSaved('cf');
   if (which === 'railway') scnLoadSaved('railway');
@@ -3388,6 +3403,17 @@ function scnSwitch(which, btn) {
     spfLoadSpoofSettings();
   }
   if (which === 'sni') scnLoadSniResults();
+}
+
+function scnInitAccordion() {
+  // IP Scanner opens fully collapsed. The user must explicitly choose a scanner.
+  document.querySelectorAll('#scanner-accordion .scn-acc-item').forEach(function(item){
+    var b=item.querySelector('.scn-tab');
+    item.classList.remove('open');
+    if(b){ b.classList.remove('active'); b.setAttribute('aria-expanded','false'); }
+    var pane=item.querySelector('.scn-pane');
+    if(pane) pane.classList.remove('active');
+  });
 }
 
 function scnStop() { SCN_STOP = true; toast(t('scanStopped'), 'warn'); }
@@ -4257,9 +4283,11 @@ function initScannerAccordion(){
     item.appendChild(b);
     item.appendChild(p);
     b.type='button';
-    b.setAttribute('aria-expanded', b.classList.contains('active') ? 'true' : 'false');
-    // The inline onclick remains the single source of behavior.
-    if(b.classList.contains('active')) item.classList.add('open');
+    // Always start collapsed; the user must explicitly choose a scanner.
+    b.classList.remove('active');
+    b.setAttribute('aria-expanded', 'false');
+    item.classList.remove('open');
+    p.classList.remove('active');
   });
 }
 
@@ -4773,26 +4801,31 @@ async function loadNodes() {
   } catch(e) { toast(e.message || 'خطا در بارگذاری نودها', 'err'); }
 }
 
-async function openAddNode() {
-  var name = prompt('نام نود (اختیاری):');
-  if (name === null) return;
-  var apiKey = prompt('API Key نود مقصد را وارد کنید:');
-  if (!apiKey) { toast('API Key الزامی است', 'warn'); return; }
-  var url = prompt('آدرس نود (مثال: https://node1.panel.com):');
-  if (!url) { toast('آدرس نود الزامی است', 'warn'); return; }
-  try {
-    var r = await api('/api/nodes', {
-      method: 'POST',
-      body: JSON.stringify({ name: name, api_key: apiKey, url: url })
-    });
-    if (r && r.ok) {
-      toast('نود «' + (r.name || '') + '» اضافه شد', 'ok');
-      loadNodes();
-    }
-  } catch(e) { toast(e.message || 'خطا در اضافه کردن نود', 'err'); }
+function openAddNode() {
+  ['an-name','an-api-key','an-url'].forEach(function(id){ var e=$id(id); if(e) e.value=''; });
+  openModal('mod-add-node');
+  setTimeout(function(){ var e=$id('an-name'); if(e) e.focus(); }, 50);
 }
 
-async function deleteNode(id) {
+async function submitAddNode(ev) {
+  ev.preventDefault();
+  var btn=$id('an-submit');
+  var name=($id('an-name').value||'').trim();
+  var apiKey=($id('an-api-key').value||'').trim();
+  var url=($id('an-url').value||'').trim().replace(/\/$/,'');
+  if (!apiKey || !url) { toast('API Key و آدرس Node الزامی است', 'warn'); return; }
+  btn.disabled=true;
+  try {
+    var r=await api('/api/nodes',{method:'POST',body:JSON.stringify({name:name,api_key:apiKey,url:url})});
+    if (!r || !r.ok) throw new Error('خطا در اضافه کردن نود');
+    closeModal('mod-add-node');
+    toast('نود «'+(r.name||'')+'» اضافه شد','ok');
+    loadNodes();
+  } catch(e) { toast(e.message || 'خطا در اضافه کردن نود','err'); }
+  finally { btn.disabled=false; }
+}
+
+async function deleteNodeasync function deleteNode(id) {
   if (!confirm('آیا مطمئن هستید که می‌خواهید این نود را حذف کنید؟')) return;
   try {
     var card = document.querySelector('.node-card[data-node-id="' + id + '"]');
@@ -4819,7 +4852,7 @@ async function loadBotConfig() {
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
       + '<span class="set-lbl">' + t('botStatus') + '</span>' + statusBadge + '</div>'
       + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>' + t('botToken') + '</label><input type="password" id="bot-token" dir="ltr" placeholder="123456:ABC-defGHI..." value="' + (b.bot_token_masked || '') + '"></div>'
-      + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>' + t('channelId') + '</label><input type="text" id="bot-channel" dir="ltr" placeholder="-1001234567890" value="' + esc(b.channel_id || '') + '"></div>'
+      + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>' + t('Channel Link') + '</label><input type="text" id="bot-channel-link" dir="ltr" placeholder="https://t.me/YourChannel" value="' + esc(b.channel_link || b.target_channel_link || '') + '"></div>'
       + '<div class="schedule-editor">'
       + '<div class="schedule-title"><span>' + t('scheduleSend') + '</span><small>' + t('scheduleHint') + '</small></div>'
       + '<div class="schedule-fields">'
@@ -4844,23 +4877,20 @@ async function loadBotConfig() {
 
 async function botSetupSubmit() {
   var token = $id('bot-token').value.trim();
-  var channel = $id('bot-channel').value.trim();
-  var payload = {channel_id: channel};
+  var channel = $id('bot-channel-link').value.trim();
+  var payload = {channel_link: channel};
   if (token && token.indexOf('****') !== 0) payload.bot_token = token;
   if (!channel || (!payload.bot_token && !(token && token.indexOf('****') === 0))) {
     toast(t('botRequired'), 'warn'); return;
   }
   try {
-    var r = await api('/api/bot/setup', {
-      method: 'POST',
-      body: payload
-    });
+    var r = await api('/api/bot/setup', {method: 'POST', body: JSON.stringify(payload)});
     toast('ربات «' + (r.bot_name || '') + '» تنظیم شد', 'ok');
     loadBotConfig();
   } catch(e) { toast(e.message || 'خطا در تنظیم ربات', 'err'); }
 }
 
-async function botScheduleSubmit() {
+async function botScheduleSubmitasync function botScheduleSubmit() {
   var val = parseInt($id('bot-interval').value) || 10;
   var unit = $id('bot-interval-unit').value;
   try {
