@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Spider Panel v6</title>
+<title>Spider Panel v7</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -372,22 +372,22 @@ input,select,button,textarea{font-family:inherit}
 .px-noselected { color: var(--txt2); font-size: 12px; padding: 14px; text-align: center; }
 .px-loading { color: var(--txt2); font-size: 12px; padding: 18px; text-align: center; }
 
-/* v6 vertical accordion sections */
+/* v7 vertical accordion sections */
 .scn-accordion{display:flex;flex-direction:column;gap:8px;margin:12px 0}
 .scn-accordion .scn-acc-item{display:flex;flex-direction:column;width:100%;border:1px solid var(--border);border-radius:12px;background:var(--glass);overflow:hidden}
 .scn-accordion .scn-tab{width:100%;justify-content:space-between;border:0;border-radius:0;padding:12px 14px;text-align:right}
 .scn-accordion .scn-tab::after{content:'⌄';font-size:15px;opacity:.7;transition:transform .2s}
 .scn-accordion .scn-acc-item.open .scn-tab::after{transform:rotate(180deg)}
 .scn-accordion .scn-pane{border-top:1px solid var(--border);padding:12px;}
-.sp-v6-accordion{display:flex;flex-direction:column;gap:8px}
-.sp-v6-item{border:1px solid var(--border);border-radius:12px;background:var(--glass);overflow:hidden}
-.sp-v6-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 15px;background:transparent;border:0;color:var(--txt);cursor:pointer;text-align:right;font:inherit}
-.sp-v6-head:hover{background:rgba(255,255,255,.05)}
-.sp-v6-head .sp-v6-chevron{transition:transform .2s;font-size:15px;opacity:.7}
-.sp-v6-item.open .sp-v6-chevron{transform:rotate(180deg)}
-.sp-v6-body{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
-.sp-v6-item.open .sp-v6-body{display:block;animation:fadeIn .18s ease}
-/* v6 scanner accordion */
+.sp-v7-accordion{display:flex;flex-direction:column;gap:8px}
+.sp-v7-item{border:1px solid var(--border);border-radius:12px;background:var(--glass);overflow:hidden}
+.sp-v7-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 15px;background:transparent;border:0;color:var(--txt);cursor:pointer;text-align:right;font:inherit}
+.sp-v7-head:hover{background:rgba(255,255,255,.05)}
+.sp-v7-head .sp-v7-chevron{transition:transform .2s;font-size:15px;opacity:.7}
+.sp-v7-item.open .sp-v7-chevron{transform:rotate(180deg)}
+.sp-v7-body{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
+.sp-v7-item.open .sp-v7-body{display:block;animation:fadeIn .18s ease}
+/* v7 scanner accordion */
 .scn-accordion{display:flex;flex-direction:column;gap:9px;margin:14px 0}
 .scn-accordion .scn-acc-item{width:100%;border:1px solid var(--border);border-radius:14px;background:var(--bg2);overflow:hidden}
 .scn-accordion .scn-tab{display:flex;width:100%;align-items:center;justify-content:space-between;min-height:46px;padding:12px 15px;border:0;border-radius:0;background:transparent;color:var(--txt);cursor:pointer;text-align:right;font:inherit}
@@ -903,6 +903,7 @@ tr{animation:fadeIn .3s ease}
 .contact-bubble:hover{transform:translateY(-6px);border-color:var(--border-glow);box-shadow:var(--shadow-lg)}
 .contact-bubble:hover svg{transform:scale(1.15)}
 .contact-bubble.tg:hover svg{color:#229ED9}
+.contact-bubble.yt:hover svg{color:#ff0000}
 .contact-bubble.gh:hover svg{color:#a5a5a5}
 .contact-bubble.tg::after{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(34,158,217,.14),transparent 70%);opacity:0;transition:opacity .3s;pointer-events:none}
 .contact-bubble.gh::after{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(148,148,148,.14),transparent 70%);opacity:0;transition:opacity .3s;pointer-events:none}
@@ -1059,7 +1060,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
       <img src="/static/spider-logo.svg" alt="SPiDER" style="background:transparent;width:48px;height:48px;object-fit:contain">
       <div>
         <div class="sb-brand-t"><span>S</span>PIDER</div>
-        <div class="sb-brand-s">PANEL v6</div>
+        <div class="sb-brand-s">PANEL v7</div>
       </div>
     </div>
     <nav class="sb-nav">
@@ -1104,7 +1105,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
         <span data-i18n="logout">خروج</span>
       </div>
     </nav>
-    <div class="sb-foot"><span class="dot"></span> Spider Panel v6.0</div>
+    <div class="sb-foot"><span class="dot"></span> Spider Panel v7.0</div>
   </aside>
 
   <!-- MAIN -->
@@ -1164,7 +1165,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
             <button class="scn-tab active" id="scn-tab-cf" onclick="scnSwitch('cf',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Cloudflare</button>
             <button class="scn-tab" id="scn-tab-railway" onclick="scnSwitch('railway',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 19h10M4 19H3v-3l2-5h11l3 5v3h-1M5 11l1-7h9l1 7"/></svg> Railway</button>
             <button class="scn-tab" id="scn-tab-tcp" onclick="scnSwitch('tcp',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 7a3 3 0 0 1-3 3 3 3 0 0 1 0 6 3 3 0 0 1-3-3"/><path d="M14 17a3 3 0 0 1 3-3 3 3 0 0 1 0-6 3 3 0 0 1 3 3"/></svg> TCP</button>
-            <button class="scn-tab" id="scn-tab-spoof" onclick="scnSwitch('spoof',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 6v6M12 14v2"/></svg> Spoof</button>
+            <button class="scn-tab" id="scn-tab-spoof" onclick="scnSwitch('spoof',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 6v7M12 14v2"/></svg> Spoof</button>
             <button class="scn-tab" id="scn-tab-sni" onclick="scnSwitch('sni',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> SNI</button>
           </div>
 
@@ -1484,14 +1485,17 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
           <div class="panel-h"><span class="glow" data-i18n="contact">Contact Me</span></div>
           <p class="contact-sub" data-i18n="contactSub">برای پشتیبانی و همکاری با من در ارتباط باشید</p>
           <div class="contact-bubbles">
-            <a class="contact-bubble tg" href="https://t.me/amirsp1ider" target="_blank" rel="noopener" title="Telegram">
+            <a class="contact-bubble tg" href="https://t.me/amirsp1ider" target="_blank" rel="noopener" title="Telegram" aria-label="Telegram">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-              <span>Telegram</span>
+              <span data-i18n="contactTelegram">تلگرام</span>
             </a>
-            <a class="contact-bubble tg" href="https://t.me/SPiDER_VPN1" target="_blank" rel="noopener" title="Telegram">
+            <a class="contact-bubble tg" href="https://t.me/SPiDER_VPN1" target="_blank" rel="noopener" title="Telegram" aria-label="Telegram">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-              <span>Telegram</span>
-              <small>t.me/SPiDER_VPN1</small>
+              <span data-i18n="contactTelegram">تلگرام</span>
+            </a>
+            <a class="contact-bubble yt" href="https://www.youtube.com/@SPiDER_VPN1" target="_blank" rel="noopener" title="YouTube" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a3.005 3.005 0 0 0-2.116-2.117C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.382.569A3.005 3.005 0 0 0 .502 6.186C-.067 8.063-.067 12-.067 12s0 3.937.569 5.814a3.005 3.005 0 0 0 2.116 2.117C4.495 20.5 12 20.5 12 20.5s7.505 0 9.382-.569a3.005 3.005 0 0 0 2.116-2.117c.569-1.877.569-5.814.569-5.814s0-3.937-.569-5.814zM9.6 15.5v-7l6 3.5-6 3.5z"/></svg>
+              <span data-i18n="contactYoutube">یوتیوب</span>
             </a>
             <a class="contact-bubble gh" href="https://github.com/amirh00sain/SpiderPanel" target="_blank" rel="noopener" title="GitHub">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-.3.063-.61.095-.88.095-1.74 0-2.13-1.32-2.13-1.32-.285-.72-.695-1.313-1.238-1.673-.99-.675.06-.662.06-.662 1.08.06 1.65 1.065 1.65 1.065.96 1.65 2.52 1.173 3.135.897.097-.698.375-1.173.682-1.442-2.38-.27-4.875-1.19-4.875-5.31 0-1.173.42-2.133 1.11-2.883-.11-.27-.48-1.362.105-2.838 0 0 .907-.285 2.97 1.105.87-.24 1.8-.36 2.73-.36.93 0 1.86.12 2.73.36 2.06-1.39 2.97-1.105 2.97-1.105.586 1.476.216 2.568.105 2.838.69.75 1.11 1.71 1.11 2.883 0 4.13-2.5 5.035-4.885 5.31.385.33.72.98.72 1.975 0 1.425-.015 2.57-.015 2.92 0 .32.22.695.825.575C20.565 22.09 24 17.595 24 12.297 24 5.67 18.63.297 12 .297z"/></svg>
@@ -1719,8 +1723,8 @@ var selectedTheme = safeStorageGet('spider-theme', 'dark');
 var LANG = safeStorageGet('spider-lang', 'fa');
 var I18N = {
   fa: {
-    'dash': 'داشبورد', 'users': 'کاربران', 'inbounds': 'اینباندها', 'scanner': 'اسکنر IP', 'worker': 'Worker', 'settings': 'تنظیمات', 'contact': 'Contact Me', 'logout': 'خروج',
-    'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک Worker جدید با ساب‌دامین اختصاصی و KV اختصاصی ساخته شود. پنل مثل یک ریموت، کانفیگ‌ها را به Worker می‌فرستد.', 'cfToken': 'توکن API کلادفلر', 'cfTokenPermissions': 'این لینک سه دسترسی لازم پنل را از قبل انتخاب می‌کند: Workers Scripts، Workers KV Storage و Workers Routes.', 'getToken': 'گرفتن توکن', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت ریموت', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف Worker', 'workerUrl': 'Worker URL', 'lastSync': 'آخرین Sync', 'lastError': 'آخرین خطا', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'افزودن کشور', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'noProxyYet': 'هنوز کشوری اضافه نکرده‌اید', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال Sync...', 'synced': 'Sync شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'proxyCodePrompt': 'کد کشور (مثلا de):', 'proxyCountryPrompt': 'نام کشور:', 'proxyHostPrompt': 'آدرس Proxy IP (مثلا de.example.com):', 'proxyPortPrompt': 'پورت Proxy IP:', 'proxySaved': 'کشور ذخیره و Worker بروزرسانی شد', 'confirmDelProxy': 'این کشور حذف شود؟', 'proxyDeleted': 'کشور حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Worker با مسیر /route/{کد کشور} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'Worker جدید با نام تصادفی (spider-xxxxxx)، ساب‌دامین اختصاصی و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
+    'dash': 'داشبورد', 'users': 'کاربران', 'inbounds': 'اینباندها', 'scanner': 'اسکنر آی‌پی', 'worker': 'ورکر', 'settings': 'تنظیمات', 'contact': 'تماس با من', 'logout': 'خروج',
+    'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک Worker جدید با ساب‌دامین اختصاصی و KV اختصاصی ساخته شود. پنل مثل یک ریموت، کانفیگ‌ها را به Worker می‌فرستد.', 'cfToken': 'توکن API کلادفلر', 'cfTokenPermissions': 'این لینک سه دسترسی لازم پنل را از قبل انتخاب می‌کند: Workers Scripts، Workers KV Storage و Workers Routes.', 'getToken': 'گرفتن توکن', 'cfAccountId': 'شناسه حساب', 'cfWorkerName': 'نام ورکر', 'cfWorkerDomain': 'دامنه ورکر', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت راه‌دور', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف ورکر', 'workerUrl': 'آدرس ورکر', 'lastSync': 'آخرین همگام‌سازی', 'lastError': 'آخرین خطا', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'افزودن کشور', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'noProxyYet': 'هنوز کشوری اضافه نکرده‌اید', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال همگام‌سازی...', 'synced': 'همگام‌سازی شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'proxyCodePrompt': 'کد کشور (مثلا de):', 'proxyCountryPrompt': 'نام کشور:', 'proxyHostPrompt': 'آدرس Proxy IP (مثلا de.example.com):', 'proxyPortPrompt': 'پورت Proxy IP:', 'proxySaved': 'کشور ذخیره و Worker بروزرسانی شد', 'confirmDelProxy': 'این کشور حذف شود؟', 'proxyDeleted': 'کشور حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Worker با مسیر /route/{کد کشور} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'Worker جدید با نام تصادفی (spider-xxxxxx)، ساب‌دامین اختصاصی و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
     'tab.dash': 'داشبورد', 'tab.users': 'مدیریت کاربران', 'tab.inbounds': 'مدیریت اینباندها', 'tab.scanner': 'اسکنر آی‌پی', 'tab.settings': 'تنظیمات',
     'inboundFixedHint': 'فقط اینباندهای پیش‌فرض پنل استفاده می‌شوند. WS/TLS به‌صورت خودکار با دامنه اصلی پنل آماده است؛ Reality را با دامنه و پورت خودتان تکمیل کنید (کلید pbk به‌صورت خودکار ساخته می‌شود).', 'inboundFixed': 'افزودن اینباند غیرفعال است — فقط اینباندهای پیش‌فرض.', 'inboundAuto': 'این اینباند خودکار است و نیازی به تنظیم ندارد.',
     'newUser': 'کاربر جدید', 'newInbound': 'اینباند جدید', 'domain': 'دامنه',
@@ -1734,7 +1738,7 @@ var I18N = {
     'serverResources': 'Server Resources', 'settingsUi':'UI / ظاهر', 'settingsAdvanced':'Advanced / پیشرفته', 'appearance': 'تنظیمات ظاهری', 'themeMode': 'حالت نمایش', 'fixedTheme': 'فونت و رنگ هماهنگ با صفحه ساب + iOS است.', 'theme': 'تم', 'dark': 'تاریک', 'light': 'روشن', 'color': 'رنگ', 'lightMode': 'حالت روشن فعال شد', 'darkMode': 'حالت تاریک فعال شد',
     'red': 'قرمز', 'green': 'سبز', 'blue': 'آبی',
     'panelMusic': 'Panel Music', 'bgMusic': 'Background Music', 'toggleMusic': 'روشن/خاموش', 'changePassword': 'Change Password', 'curPass': 'رمز فعلی', 'newPass': 'رمز جدید', 'changePassBtn': 'تغییر رمز',
-    'contactSub': 'برای پشتیبانی و همکاری با من در ارتباط باشید',
+    'contactSub': 'برای پشتیبانی و همکاری با من در ارتباط باشید', 'contactTelegram': 'تلگرام', 'contactYoutube': 'یوتیوب',
     'createUser': 'ایجاد کاربر جدید', 'editUser': 'ویرایش کاربر', 'username': 'نام کاربری', 'conn': 'اتصال همزمان', 'volume': 'حجم', 'unit': 'واحد', 'expire': 'اعتبار', 'day': 'روز', 'month': 'ماه',
     'inboundsMulti': 'اینباندها (چندتایی)', 'noInboundOpt': 'اینباندی وجود ندارد',
     'inboundPickHint': 'برای هر اینباند، گزینه‌های مخصوصش نمایش داده می‌شود: Worker → انتخاب کشور؛ VLESS غیرپیش‌فرض → Cloudflare و Railway؛ Reality → بدون گزینه.',
@@ -1778,8 +1782,8 @@ var I18N = {
     'login': { 'signIn': 'Sign In' }
   },
   en: {
-    'dash': 'Dashboard', 'users': 'Users', 'inbounds': 'Inbounds', 'scanner': 'IP Scanner', 'worker': 'Worker', 'settings': 'Settings', 'contact': 'Contact Me', 'logout': 'Logout',
-    'workerSetupTip': 'Connect the panel to Cloudflare to create a brand-new Worker with its own dedicated subdomain and KV. The panel acts as a remote control, pushing configs to the Worker.', 'cfToken': 'Cloudflare API Token', 'cfTokenPermissions': 'This link preselects the three permissions required by the panel: Workers Scripts, Workers KV Storage, and Workers Routes.', 'getToken': 'Get Token', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'Worker URL', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'Add Country', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'noProxyYet': 'No country added yet', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'proxyCodePrompt': 'Country code (e.g. de):', 'proxyCountryPrompt': 'Country name:', 'proxyHostPrompt': 'Proxy IP host (e.g. de.example.com):', 'proxyPortPrompt': 'Proxy IP port:', 'proxySaved': 'Country saved, worker updated', 'confirmDelProxy': 'Delete this country?', 'proxyDeleted': 'Country deleted', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Worker domain with a /route/{code} path — traffic never crosses Railway.', 'workerAutoName': 'A new worker is created with a random name (spider-xxxxxx), its own subdomain and its own dedicated KV — no name entry needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
+    'dash': 'Dashboard', 'users': 'Users', 'inbounds': 'Inbounds', 'scanner': 'IP Scanner', 'worker': 'ورکر', 'settings': 'Settings', 'contact': 'تماس با من', 'logout': 'Logout',
+    'workerSetupTip': 'Connect the panel to Cloudflare to create a brand-new Worker with its own dedicated subdomain and KV. The panel acts as a remote control, pushing configs to the Worker.', 'cfToken': 'Cloudflare API Token', 'cfTokenPermissions': 'This link preselects the three permissions required by the panel: Workers Scripts, Workers KV Storage, and Workers Routes.', 'getToken': 'Get Token', 'cfAccountId': 'شناسه حساب', 'cfWorkerName': 'نام ورکر', 'cfWorkerDomain': 'دامنه ورکر', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'آدرس ورکر', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'Add Country', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'noProxyYet': 'No country added yet', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'proxyCodePrompt': 'Country code (e.g. de):', 'proxyCountryPrompt': 'Country name:', 'proxyHostPrompt': 'Proxy IP host (e.g. de.example.com):', 'proxyPortPrompt': 'Proxy IP port:', 'proxySaved': 'Country saved, worker updated', 'confirmDelProxy': 'Delete this country?', 'proxyDeleted': 'Country deleted', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Worker domain with a /route/{code} path — traffic never crosses Railway.', 'workerAutoName': 'A new worker is created with a random name (spider-xxxxxx), its own subdomain and its own dedicated KV — no name entry needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
     'tab.dash': 'Dashboard', 'tab.users': 'Manage Users', 'tab.inbounds': 'Manage Inbounds', 'tab.scanner': 'IP Scanner', 'tab.settings': 'Settings',
     'inboundFixedHint': 'Only the panel’s default inbounds are used. WS/TLS is ready automatically with the panel’s main domain; fill Reality’s domain & ports yourself (pbk is auto-generated).', 'inboundFixed': 'Adding inbounds is disabled — only the default inbounds.', 'inboundAuto': 'This inbound is automatic — nothing to configure.',
     'newUser': 'New User', 'newInbound': 'New Inbound', 'domain': 'Domain',
@@ -1793,7 +1797,7 @@ var I18N = {
     'serverResources': 'Server Resources', 'settingsUi':'UI / ظاهر', 'settingsAdvanced':'Advanced / پیشرفته', 'appearance': 'Appearance', 'themeMode': 'Display Mode', 'fixedTheme': 'Font & colors matched to the sub page + iOS.', 'theme': 'Theme', 'dark': 'Dark', 'light': 'Light', 'color': 'Color', 'lightMode': 'Light mode enabled', 'darkMode': 'Dark mode enabled',
     'red': 'Red', 'green': 'Green', 'blue': 'Blue',
     'panelMusic': 'Panel Music', 'bgMusic': 'Background Music', 'toggleMusic': 'On/Off', 'changePassword': 'Change Password', 'curPass': 'Current Password', 'newPass': 'New Password', 'changePassBtn': 'Change Password',
-    'contactSub': 'Get in touch with me for support and collaboration',
+    'contactSub': 'Get in touch with me for support and collaboration', 'contactTelegram': 'Telegram', 'contactYoutube': 'YouTube',
     'createUser': 'Create New User', 'editUser': 'Edit User', 'username': 'Username', 'conn': 'Concurrent Connections', 'volume': 'Traffic', 'unit': 'Unit', 'expire': 'Expiry', 'day': 'Day', 'month': 'Month',
     'inboundsMulti': 'Inbounds (multi-select)', 'noInboundOpt': 'No inbounds available',
     'inboundPickHint': 'Each inbound shows its own options: Worker → choose countries, TLS → scanned-IP switch, Reality → no extra options.',
@@ -1837,9 +1841,43 @@ var I18N = {
     'login': { 'signIn': 'Sign In' }
   }
 };
+function normalizeBilingualText(value) {
+  if (value == null) return value;
+  var text = String(value);
+  if (!/[\u0600-\u06ff]/.test(text) || !/[A-Za-z]/.test(text) || !/\s\/\s/.test(text)) return text;
+  var parts = text.split(/\s*\/\s*/).map(function(x){ return x.trim(); }).filter(Boolean);
+  var faParts = parts.filter(function(x){ return /[\u0600-\u06ff]/.test(x); });
+  var enParts = parts.filter(function(x){ return /[A-Za-z]/.test(x) && !/[\u0600-\u06ff]/.test(x); });
+  if (LANG === 'fa' && faParts.length) return faParts.join(' / ');
+  if (LANG === 'en' && enParts.length) return enParts.join(' / ');
+  return text;
+}
 function t(key) {
   var dict = I18N[LANG] || I18N.fa;
-  return dict[key] != null ? dict[key] : (I18N.fa[key] != null ? I18N.fa[key] : key);
+  var value = dict[key] != null ? dict[key] : (I18N.fa[key] != null ? I18N.fa[key] : key);
+  return normalizeBilingualText(value);
+}
+function cleanupMixedLanguageNodes(root) {
+  root = root || document.body;
+  var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  var nodes = [];
+  var n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  nodes.forEach(function(node) {
+    var text = node.nodeValue || '';
+    if (!/[\u0600-\u06ff]/.test(text) || !/[A-Za-z]/.test(text) || !/\s\/\s/.test(text)) return;
+    var parent = node.parentElement;
+    if (!parent || ['SCRIPT','STYLE','PRE','CODE','TEXTAREA'].indexOf(parent.tagName) >= 0) return;
+    node.nodeValue = normalizeBilingualText(text);
+  });
+  root.querySelectorAll && root.querySelectorAll('[title],[aria-label]').forEach(function(el) {
+    ['title','aria-label'].forEach(function(attr) {
+      var v = el.getAttribute(attr);
+      if (v && /[\u0600-\u06ff]/.test(v) && /[A-Za-z]/.test(v) && /\s\/\s/.test(v)) {
+        el.setAttribute(attr, normalizeBilingualText(v));
+      }
+    });
+  });
 }
 function applyLang() {
   document.documentElement.lang = LANG;
@@ -1859,6 +1897,15 @@ function applyLang() {
   if (typeof ALL_USERS !== 'undefined' && ALL_USERS.length) renderUsers();
   if (typeof ALL_IB !== 'undefined' && ALL_IB.length) renderInbounds();
   if ($id('dashboard-content') && $id('dashboard-content').innerHTML.indexOf('stat') > -1) loadDashboard();
+  cleanupMixedLanguageNodes(document.body);
+}
+if (!window.__spiderI18nObserver) {
+  window.__spiderI18nObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(m){
+      m.addedNodes && Array.prototype.forEach.call(m.addedNodes, function(n){ if (n.nodeType === 1) cleanupMixedLanguageNodes(n); });
+    });
+  });
+  if (document.body) window.__spiderI18nObserver.observe(document.body, {childList:true, subtree:true});
 }
 function toggleLang() {
   LANG = LANG === 'fa' ? 'en' : 'fa';
@@ -2211,15 +2258,15 @@ async function loadUsers() {
 function renderUsers() {
   var el = $id('users-list');
   if (!ALL_USERS.length) { el.innerHTML = '<div class="empty">' + t('noUsers') + '</div>'; return; }
-  var html = '<div class="sp-v6-accordion">';
+  var html = '<div class="sp-v7-accordion">';
   ALL_USERS.forEach(function(u, i) {
     var inboundName = u.inbound_name || (u.inbound_id ? u.inbound_id.substring(0,8) : t('default'));
-    html += '<div class="sp-v6-item" id="user-acc-' + esc(u.user_id) + '">';
-    html += '<button type="button" class="sp-v6-head" onclick="toggleV6Accordion(this)">';
+    html += '<div class="sp-v7-item" id="user-acc-' + esc(u.user_id) + '">';
+    html += '<button type="button" class="sp-v7-head" onclick="toggleV7Accordion(this)">';
     html += '<strong class="u-card-name">' + esc(u.username) + '</strong>';
-    html += '<span style="display:flex;align-items:center;gap:8px">' + _userStatus(u) + '<span class="sp-v6-chevron">⌄</span></span>';
+    html += '<span style="display:flex;align-items:center;gap:8px">' + _userStatus(u) + '<span class="sp-v7-chevron">⌄</span></span>';
     html += '</button>';
-    html += '<div class="sp-v6-body"><div class="u-card-traffic" style="padding-top:12px">' + _userTraffic(u) + '</div>';
+    html += '<div class="sp-v7-body"><div class="u-card-traffic" style="padding-top:12px">' + _userTraffic(u) + '</div>';
     html += '<div class="u-card-meta" style="margin-top:10px">';
     html += '<span><i>' + t('expiry') + '</i><b>' + _userExp(u) + '</b></span>';
     html += '<span><i>' + t('connTh') + '</i><b>' + (Number(u.concurrent_connections) === 0 ? '∞' : (u.concurrent_connections ?? '∞')) + '</b></span>';
@@ -2230,8 +2277,8 @@ function renderUsers() {
   html += '</div>'; el.innerHTML = html;
 }
 
-function toggleV6Accordion(btn) {
-  var item = btn.closest('.sp-v6-item'); if (!item) return;
+function toggleV7Accordion(btn) {
+  var item = btn.closest('.sp-v7-item'); if (!item) return;
   item.classList.toggle('open');
 }
 
@@ -2555,7 +2602,7 @@ async function loadInbounds() {
 function renderInbounds() {
   var el = $id('inbounds-list');
   if (!ALL_IB.length) { el.innerHTML = '<div class="empty">' + t('noInbounds') + '</div>'; return; }
-  var html = '<div class="sp-v6-accordion">';
+  var html = '<div class="sp-v7-accordion">';
   ALL_IB.forEach(function(ib) {
     var proto = (ib.protocol || 'vless').toLowerCase();
     var protoBadge = proto === 'reality' ? 'badge-p' : 'badge-b';
@@ -2569,7 +2616,7 @@ function renderInbounds() {
     }
     body += '<br>'+t('usersCount')+': '+esc(ib.users_count||0)+'</div>';
     body += '<div style="margin-top:10px;display:flex;gap:6px"><button class="btn btn-sm btn-b" onclick="editInbound(\''+ib.inbound_id+'\')">'+t('edit')+'</button><button class="btn btn-sm btn-r" onclick="deleteInbound(\''+ib.inbound_id+'\')">'+t('delete')+'</button></div>';
-    html += '<div class="sp-v6-item"><button type="button" class="sp-v6-head" onclick="toggleV6Accordion(this)"><strong>'+esc(ib.name)+'</strong><span style="display:flex;align-items:center;gap:8px"><span class="badge '+protoBadge+'">'+esc(proto.toUpperCase())+'</span><span class="sp-v6-chevron">⌄</span></span></button><div class="sp-v6-body">'+body+'</div></div>';
+    html += '<div class="sp-v7-item"><button type="button" class="sp-v7-head" onclick="toggleV7Accordion(this)"><strong>'+esc(ib.name)+'</strong><span style="display:flex;align-items:center;gap:8px"><span class="badge '+protoBadge+'">'+esc(proto.toUpperCase())+'</span><span class="sp-v7-chevron">⌄</span></span></button><div class="sp-v7-body">'+body+'</div></div>';
   });
   html += '</div>'; el.innerHTML=html;
 }
@@ -2934,7 +2981,7 @@ var iconLink = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stro
 var iconQr = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="18" y1="14" x2="18" y2="14.01"/><line x1="21" y1="14" x2="21" y2="14.01"/><line x1="14" y1="17" x2="14" y2="17.01"/><line x1="16" y1="17" x2="16" y2="21"/><line x1="14" y1="21" x2="21" y2="21"/></svg>';
 var iconEdit = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 var iconToggle = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>';
-var iconTrash = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+var iconTrash = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V7m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
 var iconCheck = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
 var iconRefresh = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>';
 
@@ -4139,12 +4186,12 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// v6 scanner accordion: pair each scanner button with its pane so each section
+// v7 scanner accordion: pair each scanner button with its pane so each section
 // expands vertically directly beneath its own header.
 function initScannerAccordion(){
   var host=document.getElementById('scanner-accordion');
-  if(!host || host.dataset.v6Ready) return;
-  host.dataset.v6Ready='1';
+  if(!host || host.dataset.v7Ready) return;
+  host.dataset.v7Ready='1';
   var ids=['cf','railway','tcp','spoof','sni'];
   ids.forEach(function(code){
     var b=$id('scn-tab-'+code), p=$id('scn-pane-'+code);

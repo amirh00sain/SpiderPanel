@@ -1017,6 +1017,7 @@ async def startup():
     )
     await load_state()
     # Auto-create default inbound if none exist
+    startup_state_changed = False
     async with INBOUNDS_LOCK:
         if not INBOUNDS:
             INBOUNDS["default"] = {
@@ -1026,21 +1027,39 @@ async def startup():
                 "network": "ws",
                 "security": "tls",
                 "domain": _safe_host(SETTINGS.get("domain"), get_host()),
-                "external_domain": "",
-                "sni": "",
-                "external_port": "",
+                "external_domain": _safe_host(SETTINGS.get("domain"), get_host()),
+                "sni": _safe_host(SETTINGS.get("domain"), get_host()),
+                "external_port": 443,
                 "fingerprint": "chrome",
                 "reality_settings": {},
                 "xhttp_settings": {},
+                "ws_settings": {"path": "/ws"},
+                "grpc_settings": {},
                 "created_at": datetime.now().isoformat(),
             }
-            asyncio.create_task(save_state())
+            startup_state_changed = True
             log_activity("inbound", "اینباند پیش‌فرض VLESS+WS ساخته شد", "ok")
         # Auto-create a default Reality+xhttp inbound (needs real Xray to serve)
         has_reality = any(
-            ib.get("network") == "xhttp" and ib.get("protocol") == "reality"
+            (ib.get("security") or "").lower() == "reality"
+            and (ib.get("protocol") or "").lower() == "vless"
             for ib in INBOUNDS.values()
         )
+        # Normalize the managed default TLS+WS inbound to the panel domain on every startup.
+        default_ib = INBOUNDS.get("default")
+        if default_ib and (default_ib.get("protocol") or "").lower() == "vless" and (default_ib.get("network") or "ws").lower() == "ws" and (default_ib.get("security") or "tls").lower() == "tls":
+            panel_host = _safe_host(SETTINGS.get("domain"), get_host())
+            before_default = (default_ib.get("port"), default_ib.get("domain"), default_ib.get("external_domain"), default_ib.get("sni"), default_ib.get("external_port"), (default_ib.get("ws_settings") or {}).get("path"))
+            default_ib["port"] = 443
+            default_ib["domain"] = panel_host
+            default_ib["external_domain"] = panel_host
+            default_ib["sni"] = panel_host
+            default_ib["external_port"] = 443
+            default_ib.setdefault("ws_settings", {})["path"] = (default_ib.get("ws_settings") or {}).get("path") or "/ws"
+            after_default = (default_ib.get("port"), default_ib.get("domain"), default_ib.get("external_domain"), default_ib.get("sni"), default_ib.get("external_port"), (default_ib.get("ws_settings") or {}).get("path"))
+            if before_default != after_default:
+                startup_state_changed = True
+
         if not has_reality:
             rs = _gen_reality_settings()
             # Reality inbound: domain + ports are LEFT EMPTY — the admin fills
@@ -1048,7 +1067,7 @@ async def startup():
             # keypair is auto-generated here so it's always ready.
             INBOUNDS["default-reality"] = {
                 "name": "Reality+XHTTP",
-                "protocol": "reality",
+                "protocol": "vless",
                 "port": 8443,
                 "network": "xhttp",
                 "security": "reality",
@@ -1066,7 +1085,7 @@ async def startup():
                 },
                 "created_at": datetime.now().isoformat(),
             }
-            asyncio.create_task(save_state())
+            startup_state_changed = True
             log_activity("inbound", "اینباند پیش‌فرض Reality+XHTTP ساخته شد", "ok")
         # the deployed Cloudflare Worker domain (address/host/sni auto-filled),
         # with BPB snispoofing. Only created once a worker is actually connected.
@@ -1091,8 +1110,11 @@ async def startup():
                 "grpc_settings": {},
                 "created_at": datetime.now().isoformat(),
             }
-            asyncio.create_task(save_state())
+            startup_state_changed = True
             log_activity("inbound", "اینباند پیش‌فرض Worker ساخته شد", "ok")
+
+    if startup_state_changed:
+        asyncio.create_task(save_state())
 
     # NODE inbound is created lazily after the first real node is added.
     # Clean up the legacy auto-created inbound when no nodes are registered.
@@ -1547,6 +1569,16 @@ def _safe_host(*candidates: str) -> str:
         if c and c.strip() not in bad:
             return c.strip()
     return get_host()
+
+def generate_inbound_name(existing=None) -> str:
+    """Generate a short human-readable inbound name when the user leaves it blank."""
+    used = {str(x or "").strip().casefold() for x in (existing or {}).values()} if isinstance(existing, dict) else set(existing or [])
+    for _ in range(100):
+        candidate = f"Inbound-{secrets.token_hex(3).upper()}"
+        if candidate.casefold() not in used:
+            return candidate
+    return f"Inbound-{uuid.uuid4().hex[:8].upper()}"
+
 
 def generate_uuid() -> str:
     """Generate a standard hyphenated UUID (RFC 4122) — required by VLESS clients
@@ -2372,7 +2404,7 @@ async def sub_ping_handler(identifier: str):
 async def graphical_link_subscription(uuid: str, request: Request):
     """Graphical subscription page for a user's config UUID.
 
-    v6 canonical URL: /link/{uuid}. The old /sub/{identifier} endpoint remains
+    v7 canonical URL: /link/{uuid}. The old /sub/{identifier} endpoint remains
     available for backward compatibility.
     """
     if not _is_valid_uuid(uuid):
@@ -2386,7 +2418,7 @@ async def graphical_link_subscription(uuid: str, request: Request):
 
 @app.get("/api/link/{uuid}")
 async def graphical_link_data(uuid: str):
-    """Public subscription data lookup by config UUID for v6 /link/{uuid}."""
+    """Public subscription data lookup by config UUID for v7 /link/{uuid}."""
     if not _is_valid_uuid(uuid):
         raise HTTPException(status_code=404, detail="Invalid subscription UUID")
     async with USERS_LOCK:
@@ -2399,7 +2431,7 @@ async def graphical_link_data(uuid: str):
 
 @app.get("/api/link/{uuid}/qr")
 async def graphical_link_qr(uuid: str):
-    """QR for the canonical v6 graphical subscription URL."""
+    """QR for the canonical v7 graphical subscription URL."""
     if not _is_valid_uuid(uuid):
         raise HTTPException(status_code=404, detail="Invalid subscription UUID")
     async with USERS_LOCK:
@@ -3299,7 +3331,7 @@ def _canonical_inbound_transport(body: dict, protocol: str, security: str) -> tu
 async def create_inbound(request: Request, _=Depends(require_auth)):
     """Create a new inbound."""
     body = await request.json()
-    name = (body.get("name") or "اینباند جدید").strip()[:60]
+    name = str(body.get("name") or "").strip()[:60]
     protocol = str(body.get("protocol") or "vless").lower()
     if protocol not in ("vless", "vmess", "trojan", "shadowsocks", "worker", "tunnel", "reverse", "telegram", "node"):
         raise HTTPException(status_code=400, detail="Invalid protocol")
@@ -3308,6 +3340,9 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
     inbound_type = str(body.get("inbound_type") or ("telegram" if protocol == "telegram" else "config")).lower()
     if inbound_type not in ("config", "telegram", "node"):
         raise HTTPException(status_code=400, detail="Invalid inbound type")
+    if not name:
+        # Blank inbound names are accepted and replaced with a unique random name.
+        name = generate_inbound_name(INBOUNDS)
     if inbound_type == "telegram" and protocol != "telegram":
         protocol = "telegram"
     if inbound_type == "node" and protocol != "node":
@@ -7864,7 +7899,7 @@ async def _sync_worker_proxies_from_source() -> dict:
                     if p.get("manual")
                 }
                 parsed.update(manual)
-                # v6 Worker country routes always target relay IPs on TCP 443.
+                # v7 Worker country routes always target relay IPs on TCP 443.
                 for _code, _loc in parsed.items():
                     _loc["port"] = 443
                 WORKER["proxies"] = parsed
@@ -7981,7 +8016,7 @@ async def worker_setup(request: Request, _=Depends(require_auth)):
         raise HTTPException(status_code=400, detail="could not resolve workers.dev subdomain")
 
     # 4. Generate a fresh random worker name — every setup creates a NEW worker.
-    # v6 always creates a fresh random Worker; the UI does not accept a custom name.
+    # v7 always creates a fresh random Worker; the UI does not accept a custom name.
     worker_name = "spider-" + secrets.token_hex(4)
     worker_domain = _worker_safe_domain(f"{worker_name}.{subdom}.workers.dev")
 

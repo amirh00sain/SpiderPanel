@@ -1,20 +1,13 @@
-# SpiderPanel Regression Test Report
+# SpiderPanel Regression Report
 
-Date: 2026-09-04
+Final validation after transport, node, worker/reverse, Cloudflare, inbound and UI fixes.
 
-## Automated tests
-- `pytest -q tests/test_inbounds.py tests/test_ui_static.py` — **12 passed**
-- Inline JavaScript extraction + `node --check` — **PASS**
-
-## Covered regressions
-- Root `/` redirects to `/spider`.
-- WireGuard keypair generation/persistence.
-- Telegram external/internal fields persistence.
-- TLS/Reality inbound creation.
-- Invalid port validation returns HTTP 400.
-- Custom Reality SNI and Target normalization/preservation.
-- Invalid Reality Target paths rejected.
-- Reality Xray config preserves custom `dest` and `serverNames`.
-- SNI scanner sends the selected SNI as TLS `server_hostname` to the selected endpoint/IP.
-- Fastest-SNI action can refresh from the source list when the saved-result file is empty.
-- UI contains the SNI Scanner endpoint field and updated scanner actions.
+- Python regression tests: 16 passed.
+- Python syntax: main.py, xhttp_siz10.py, relay_vless.py compiled successfully.
+- Frontend JavaScript: all inline script blocks in index.html and login.html passed `node --check`.
+- Worker copies: worker/_worker.js and root _worker.js are byte-identical.
+- XHTTP: stable per-user base path + X-Session/X-Seq metadata; legacy path compatibility retained.
+- WS / XHTTP / gRPC: separate settings and independent link generation.
+- Trojan: native Trojan-over-WebSocket handshake parsing on the shared WS relay; generated links use trojan://.
+- Node inbound: checkbox selection is authoritative; checked nodes receive the user, unchecked nodes are deleted.
+- Cloudflare token UI: no fake prefilled custom-permission URL; opens the official token page with explicit permission guidance.
