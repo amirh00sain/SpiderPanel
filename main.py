@@ -3668,9 +3668,20 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
                 ib["external_domain"] = wdom
                 ib["sni"] = ib.get("sni") or "www.hcaptcha.com"
         if "port" in body:
-            default_port = 51820 if (ib.get("protocol") or "").lower() == "wireguard" else (44344 if (ib.get("protocol") or "").lower() == "telegram" else None)
-            parsed = _parse_port(body["port"], default_port, "port")
-            ib["port"] = parsed if parsed is not None else ""  # "" = unconfigured (reality)
+            # The managed default VLESS + TLS + WebSocket inbound is a special
+            # exception: Xray/relay must always listen internally on TCP 443.
+            _is_managed_default_tls_ws = (
+                inbound_id == "default"
+                and (ib.get("protocol") or "").lower() == "vless"
+                and (ib.get("network") or "").lower() == "ws"
+                and (ib.get("security") or "").lower() == "tls"
+            )
+            if _is_managed_default_tls_ws:
+                ib["port"] = 443
+            else:
+                default_port = 51820 if (ib.get("protocol") or "").lower() == "wireguard" else (44344 if (ib.get("protocol") or "").lower() == "telegram" else None)
+                parsed = _parse_port(body["port"], default_port, "port")
+                ib["port"] = parsed if parsed is not None else ""  # "" = unconfigured (reality)
         if "network" in body:
             ib["network"] = str(body["network"]).lower()
         if "security" in body:
@@ -3862,9 +3873,31 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib.pop("sni", None)
             ib.pop("destination", None)
             ib.pop("server_name", None)
+    # Final invariant for the built-in default TLS+WS inbound.
+    # This is intentionally an exception to the user-configurable inbound port:
+    # internal/listener port and public/external port are both 443.
+    if (
+        inbound_id == "default"
+        and (ib.get("protocol") or "").lower() == "vless"
+        and (ib.get("network") or "").lower() == "ws"
+        and (ib.get("security") or "").lower() == "tls"
+    ):
+        ib["port"] = 443
+        ib["external_port"] = 443
+
     if (ib.get("protocol") or "").lower() not in ("telegram", "worker", "reality") and (ib.get("security") or "").lower() != "reality":
         ib["external_domain"] = ""
         ib["external_port"] = ""
+
+    # Re-apply the managed-default exception after generic external-port cleanup.
+    if (
+        inbound_id == "default"
+        and (ib.get("protocol") or "").lower() == "vless"
+        and (ib.get("network") or "").lower() == "ws"
+        and (ib.get("security") or "").lower() == "tls"
+    ):
+        ib["port"] = 443
+        ib["external_port"] = 443
 
     await save_state()
     log_activity("inbound", f"اینباند «{ib.get('name', inbound_id)}» ویرایش شد", "info")

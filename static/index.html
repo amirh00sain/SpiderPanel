@@ -1592,7 +1592,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
           <option value="trojan">Trojan</option>
           <option value="shadowsocks">Shadowsocks</option>
         </select></div>
-        <div class="f-g"><label data-i18n="intPortLabel">پورت داخلی</label><input type="number" id="ib-port" value="443" min="1" max="65535" dir="ltr"></div>
+        <div class="f-g"><label data-i18n="intPortLabel">پورت داخلی</label><input type="number" id="ib-port" value="443" min="1" max="65535" dir="ltr"><small id="ib-default-port-hint" class="px-hint hidden">اینباند پیش‌فرض TLS + WebSocket همیشه روی 443 گوش می‌دهد.</small></div>
       </div>
 
       <div id="ib-vless-security">
@@ -2713,6 +2713,23 @@ function onProtocolChange() {
   }
   onSecurityChange();
   onNetworkChange();
+  updateDefaultInboundPortLock();
+}
+
+function updateDefaultInboundPortLock() {
+  var iid = ($id('ib-id') && $id('ib-id').value || '').trim();
+  var proto = ($id('ib-protocol') && $id('ib-protocol').value || '').toLowerCase();
+  var net = ($id('ib-network') && $id('ib-network').value || '').toLowerCase();
+  var sec = ($id('ib-security') && $id('ib-security').value || '').toLowerCase();
+  var locked = iid === 'default' && proto === 'vless' && net === 'ws' && sec === 'tls';
+  var port = $id('ib-port'), hint = $id('ib-default-port-hint');
+  if (locked && port) {
+    port.value = '443';
+    port.readOnly = true;
+  } else if (port) {
+    port.readOnly = false;
+  }
+  if (hint) hint.classList.toggle('hidden', !locked);
 }
 
 function onSecurityChange() {
@@ -2728,6 +2745,7 @@ function onSecurityChange() {
   toggleById('ib-reality-fields', reality);
   toggleById('ib-vless-security', proto === 'vless');
   toggleById('ib-node-fields', $id('ib-type').value === 'node');
+  updateDefaultInboundPortLock();
   // Reality external address is visible only inside Reality and never for TLS.
 }
 
@@ -2797,7 +2815,7 @@ function openCreateInbound() {
   $id('ib-ss-method').value='2022-blake3-aes-256-gcm'; $id('ib-ss-pass').value='';
   $id('ib-tg-intport').value='44344'; $id('ib-tg-extport').value='443'; $id('ib-tg-domain').value=''; $id('ib-tg-promo').value='';
   $id('ib-submit').textContent='ایجاد / Create'; window.__EDIT_NODE_IDS = [];
-  onInboundTypeChange(); renderInboundNodeChecks((window.__NODES_CACHE||[]).map(function(n){return n.id;})); loadInboundNodes((window.__NODES_CACHE||[]).map(function(n){return n.id;}));
+  onInboundTypeChange(); updateDefaultInboundPortLock(); renderInboundNodeChecks((window.__NODES_CACHE||[]).map(function(n){return n.id;})); loadInboundNodes((window.__NODES_CACHE||[]).map(function(n){return n.id;}));
   openModal('mod-inbound');
 }
 
@@ -2820,7 +2838,7 @@ function editInbound(iid) {
     $id('ib-dest').value=rs.dest||rs.target||ib.destination||''; $id('ib-sni').value=rs.sni||rs.server_name||ib.sni||''; $id('ib-privkey').value=rs.private_key||''; $id('ib-pubkey').value=rs.public_key||''; $id('ib-shortids').value=rs.short_id||''; $id('ib-spiderx').value=rs.spiderx||'/';
     $id('ib-ss-method').value=ss.method||'2022-blake3-aes-256-gcm'; $id('ib-ss-pass').value=ss.password||'';
   }
-  $id('ib-submit').textContent='ذخیره / Save'; window.__EDIT_NODE_IDS=ib.enabled_node_ids||[]; onInboundTypeChange(); loadInboundNodes(window.__EDIT_NODE_IDS);
+  $id('ib-submit').textContent='ذخیره / Save'; window.__EDIT_NODE_IDS=ib.enabled_node_ids||[]; onInboundTypeChange(); updateDefaultInboundPortLock(); loadInboundNodes(window.__EDIT_NODE_IDS);
   openModal('mod-inbound');
 }
 
