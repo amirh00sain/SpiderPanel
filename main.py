@@ -3399,6 +3399,7 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
         port = _parse_port(body.get("port"), 51820, "listen_port")
         external_port = 0
     else:
+        # VLESS + TLS + WebSocket uses 443 as its default internal listener port.
         port = _parse_port(body.get("port"), 443, "port")
         external_port = _parse_port(body.get("external_port"), 443, "external_port")
 
@@ -3472,6 +3473,8 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
             if not tls_domain or not tls_sni:
                 raise HTTPException(status_code=400, detail="TLS Domain and SNI are required")
             network, ws_settings, xhttp_settings, grpc_settings = _canonical_inbound_transport(body, protocol, security)
+            if protocol == "vless" and network == "ws" and body.get("port") in (None, "", 0, "0"):
+                port = 443
             if network in ("ws", "xhttp") and not tls_host:
                 raise HTTPException(status_code=400, detail=f"{network.upper()} Host is required")
             domain = tls_domain

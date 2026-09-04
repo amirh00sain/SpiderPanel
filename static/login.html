@@ -131,34 +131,6 @@
             gap: 8px;
         }
         .error-msg.show { display: flex; }
-        html[data-theme="light"] [data-login-theme] {
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(0, 0, 0, 0.15);
-        }
-        html[data-theme="light"] [data-login-theme] h1,
-        html[data-theme="light"] [data-login-theme] input,
-        html[data-theme="light"] [data-login-theme] button span { color: #000000 !important; caret-color: #000000; }
-        html[data-theme="dark"] [data-login-theme] .input-glass {
-            background-color: rgba(0, 0, 0, 0.5) !important;
-            border-color: rgba(255, 255, 255, 0.15);
-            color: #e2e2e2;
-            caret-color: #e2e2e2;
-        }
-        html[data-theme="light"] [data-login-theme] .input-glass {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-color: rgba(0, 0, 0, 0.15);
-            color: #000000;
-        }
-        html[data-theme="light"] [data-login-theme] .input-glass:focus {
-            border-color: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
-        }
-        html[data-theme="light"] [data-login-theme] .glass-card { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); }
-        html[data-theme="light"] [data-login-theme] .text-on-surface-variant,
-        html[data-theme="light"] [data-login-theme] label,
-        html[data-theme="light"] [data-login-theme] span.material-symbols-outlined { color: #3a3a3e !important; }
-        html[data-theme="light"] body { background: #f2f2f7; }
-        html[data-theme="light"] #shader-canvas { display: none; }
         #shader-canvas {
             position: absolute;
             inset: 0;
@@ -187,12 +159,11 @@
 
 </style>
 <script>
-  document.documentElement.setAttribute('data-theme', localStorage.getItem('spider-theme') === 'light' ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', 'dark');
 </script>
 
 <style id="final-login-monochrome">
 html,body{background:#000!important;color:#fff!important}
-html[data-theme="light"],html[data-theme="light"] body{background:#fff!important;color:#000!important}
 .login-card,.glass-card{border-radius:32px!important;box-shadow:0 22px 55px rgba(0,0,0,.42)!important}
 #loginBtn,.btn-hover-effect,button,input{box-shadow:none!important;text-shadow:none!important;outline:none!important}
 #loginBtn:focus,input:focus{box-shadow:none!important}
@@ -316,3 +287,5 @@ document.getElementById('login-form').addEventListener('submit', async function(
 });
 </script>
 </body></html>
+
+<style>html[data-theme="light"],html[data-theme="light"] body,html,body{background:#131313!important;color:#e2e2e2!important} [data-login-theme]{background:rgba(19,19,19,.92)!important;border-color:rgba(255,255,255,.15)!important;color:#e2e2e2!important;border-radius:32px!important} [data-login-theme] input{background:rgba(0,0,0,.5)!important;color:#e2e2e2!important}</style>

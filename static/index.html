@@ -1374,7 +1374,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
       <div class="tab-content hidden" id="tab-worker">
         <div class="panel">
           <div class="panel-h" style="justify-content:space-between">
-            <span class="glow">⚡ <span data-i18n="worker">Worker</span></span>
+            <span class="glow"><span data-i18n="worker">ورکر</span></span>
             <span id="worker-badge" class="badge badge-g" style="margin-right:auto"></span>
           </div>
 
@@ -1382,7 +1382,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
           <div id="acc-worker" class="acc-group">
             <div class="acc-item" data-acc="worker">
               <div class="acc-head" onclick="accToggle('worker')">
-                <span class="glow" style="font-size:14px">⚡ Worker</span>
+                <span class="glow" style="font-size:14px" data-i18n="worker">ورکر</span>
                 <span class="acc-arrow" id="acc-arrow-worker">▼</span>
               </div>
               <div class="acc-body" id="acc-body-worker"></div>
@@ -1393,7 +1393,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
           <div id="acc-tunnel" class="acc-group" style="margin-top:10px">
             <div class="acc-item" data-acc="tunnel">
               <div class="acc-head" onclick="accToggle('tunnel')">
-                <span class="glow" style="font-size:14px">Link / لینک Tunnel</span>
+                <span class="glow" style="font-size:14px" data-i18n="tunnel">Tunnel</span>
                 <span class="acc-arrow" id="acc-arrow-tunnel">▼</span>
               </div>
               <div class="acc-body" id="acc-body-tunnel"></div>
@@ -1404,7 +1404,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
           <div id="acc-reverse" class="acc-group" style="margin-top:10px;margin-bottom:10px">
             <div class="acc-item" data-acc="reverse">
               <div class="acc-head" onclick="accToggle('reverse')">
-                <span class="glow" style="font-size:14px">Refresh / بروزرسانی Reverse</span>
+                <span class="glow" style="font-size:14px" data-i18n="reverse">Reverse</span>
                 <span class="acc-arrow" id="acc-arrow-reverse">▼</span>
               </div>
               <div class="acc-body" id="acc-body-reverse"></div>
@@ -1450,7 +1450,7 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
       <div class="tab-content hidden" id="tab-node">
         <div class="panel">
           <div class="panel-h" style="justify-content:space-between">
-            <span class="glow">نود / Node</span>
+            <span class="glow" data-i18n="node">نود</span>
             <span id="node-count" class="badge badge-g" style="margin-right:auto">0/10</span>
           </div>
           <div class="px-hint" data-i18n="nodeHint">نودهای ریموت را برای مدیریت یکپارچه اضافه کنید (حداکثر 10 نود)</div>
@@ -1465,12 +1465,12 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
       <!-- BOT TAB -->
       <div class="tab-content hidden" id="tab-bot">
         <div class="panel">
-          <div class="panel-h"><span class="glow">Bot / ربات <span data-i18n="bot">Bot</span></span></div>
+          <div class="panel-h"><span class="glow" data-i18n="bot">ربات</span></div>
           <!-- Channel Bot Accordion -->
           <div id="acc-bot" class="acc-group" style="margin-top:6px">
             <div class="acc-item" data-acc="bot">
               <div class="acc-head" onclick="accToggle('bot')">
-                <span class="glow" style="font-size:14px">Announcements / اطلاع‌رسانی Channel Bot</span>
+                <span class="glow" style="font-size:14px" data-i18n="channelBot">اطلاع‌رسانی ربات کانال</span>
                 <span class="acc-arrow" id="acc-arrow-bot">▼</span>
               </div>
               <div class="acc-body" id="acc-body-bot"></div>
@@ -1728,7 +1728,7 @@ var I18N = {
     'tab.dash': 'داشبورد', 'tab.users': 'مدیریت کاربران', 'tab.inbounds': 'مدیریت اینباندها', 'tab.scanner': 'اسکنر آی‌پی', 'tab.settings': 'تنظیمات',
     'inboundFixedHint': 'فقط اینباندهای پیش‌فرض پنل استفاده می‌شوند. WS/TLS به‌صورت خودکار با دامنه اصلی پنل آماده است؛ Reality را با دامنه و پورت خودتان تکمیل کنید (کلید pbk به‌صورت خودکار ساخته می‌شود).', 'inboundFixed': 'افزودن اینباند غیرفعال است — فقط اینباندهای پیش‌فرض.', 'inboundAuto': 'این اینباند خودکار است و نیازی به تنظیم ندارد.',
     'newUser': 'کاربر جدید', 'newInbound': 'اینباند جدید', 'domain': 'دامنه',
-    'loading': 'در حال بارگذاری...', 'detecting':'در حال شناسایی...', 'errDetecting':'خطا در تشخیص', 'workerLoadError':'خطا در بارگذاری ورکر', 'currentLabel':'فعلی:', 'lastRunLabel':'آخرین اجرا:', 'intPortLabel':'پورت داخلی', 'noUsers': 'هیچ کاربری وجود ندارد', 'noInbounds': 'هیچ اینباندی وجود ندارد', 'errLoadUsers': 'خطا در بارگذاری کاربران', 'errLoadInbounds': 'خطا در بارگذاری اینباندها', 'errLoadStats': 'خطا در بارگذاری آمار',
+    'loading': 'در حال بارگذاری...', 'detecting':'در حال شناسایی...', 'errDetecting':'خطا در تشخیص', 'workerLoadError':'خطا در بارگذاری ورکر', 'currentLabel':'فعلی:', 'lastRunLabel':'آخرین اجرا:', 'node':'نود', 'bot':'ربات', 'channelBot':'اطلاع‌رسانی ربات کانال', 'botStatus':'وضعیت ربات', 'running':'در حال اجرا', 'stopped':'متوقف', 'seconds':'ثانیه', 'minutes':'دقیقه', 'hours':'ساعت', 'botLoadError':'خطا در بارگذاری تنظیمات ربات', 'botRequired':'توکن و شناسه کانال الزامی هستند', 'intPortLabel':'پورت داخلی', 'noUsers': 'هیچ کاربری وجود ندارد', 'noInbounds': 'هیچ اینباندی وجود ندارد', 'errLoadUsers': 'خطا در بارگذاری کاربران', 'errLoadInbounds': 'خطا در بارگذاری اینباندها', 'errLoadStats': 'خطا در بارگذاری آمار',
     'live': '● LIVE', 'scnTip': 'اسکن زنده از رنج‌های Cloudflare. IPهای پاسخ‌دهنده مرتب و ۱۰ تای اول به صورت خودکار ذخیره می‌شوند.',
     'ipCount': 'تعداد IP', 'targetPort': 'پورت هدف', 'startScan': 'شروع اسکن', 'stop': 'توقف', 'scanning': 'در حال اسکن...', 'scanStopped': 'اسکن متوقف شد',
     'found': 'IP یافت شده', 'tried': 'تست شده', 'bestPing': 'بهترین پینگ', 'saved': 'ذخیره شده', 'savedFirst10': 'ذخیره شده (اولین ۱۰ آی‌پی)', 'clear': 'پاک کردن', 'notSaved': 'هنوز ذخیره‌ای نیست', 'startPrompt': 'برای شروع اسکن، دکمه «شروع اسکن» را بزنید', 'noHit': 'هیچ آی‌پی پاسخ‌دهنده‌ای یافت نشد', 'saveCleared': 'لیست ذخیره‌شده پاک شد',
@@ -1787,7 +1787,7 @@ var I18N = {
     'tab.dash': 'Dashboard', 'tab.users': 'Manage Users', 'tab.inbounds': 'Manage Inbounds', 'tab.scanner': 'IP Scanner', 'tab.settings': 'Settings',
     'inboundFixedHint': 'Only the panel’s default inbounds are used. WS/TLS is ready automatically with the panel’s main domain; fill Reality’s domain & ports yourself (pbk is auto-generated).', 'inboundFixed': 'Adding inbounds is disabled — only the default inbounds.', 'inboundAuto': 'This inbound is automatic — nothing to configure.',
     'newUser': 'New User', 'newInbound': 'New Inbound', 'domain': 'Domain',
-    'loading': 'Loading...', 'detecting':'Detecting...', 'errDetecting':'Detection failed', 'workerLoadError':'Failed to load Worker', 'currentLabel':'Current:', 'lastRunLabel':'Last run:', 'intPortLabel':'Internal Port', 'noUsers': 'No users found', 'noInbounds': 'No inbounds found', 'errLoadUsers': 'Error loading users', 'errLoadInbounds': 'Error loading inbounds', 'errLoadStats': 'Error loading stats',
+    'loading': 'Loading...', 'detecting':'Detecting...', 'errDetecting':'Detection failed', 'workerLoadError':'Failed to load Worker', 'currentLabel':'Current:', 'lastRunLabel':'Last run:', 'node':'Node', 'bot':'Bot', 'channelBot':'Channel Bot Announcements', 'botStatus':'Bot Status', 'running':'Running', 'stopped':'Stopped', 'seconds':'Seconds', 'minutes':'Minutes', 'hours':'Hours', 'botLoadError':'Failed to load bot settings', 'botRequired':'Bot token and channel ID are required', 'intPortLabel':'Internal Port', 'noUsers': 'No users found', 'noInbounds': 'No inbounds found', 'errLoadUsers': 'Error loading users', 'errLoadInbounds': 'Error loading inbounds', 'errLoadStats': 'Error loading stats',
     'live': '● LIVE', 'scnTip': 'Live scan of Cloudflare ranges. Working IPs are sorted and the first 10 are auto-saved.',
     'ipCount': 'IP Count', 'targetPort': 'Target Port', 'startScan': 'Start Scan', 'stop': 'Stop', 'scanning': 'Scanning...', 'scanStopped': 'Scan stopped',
     'found': 'IP Found', 'tried': 'Tested', 'bestPing': 'Best Ping', 'saved': 'Saved', 'savedFirst10': 'Saved (first 10 IPs)', 'clear': 'Clear', 'notSaved': 'Nothing saved yet', 'startPrompt': 'Press "Start Scan" to begin scanning', 'noHit': 'No responding IP found', 'saveCleared': 'Saved list cleared',
@@ -2720,6 +2720,10 @@ function onSecurityChange() {
   var sec = ($id('ib-security').value || 'tls').toLowerCase();
   var reality = proto === 'vless' && sec === 'reality';
   var tls = ['vless','vmess','trojan'].includes(proto) && sec === 'tls';
+  // Default VLESS + TLS + WebSocket listener port is always 443.
+  if (proto === 'vless' && sec === 'tls' && $id('ib-network') && $id('ib-network').value === 'ws' && $id('ib-port')) {
+    if (!$id('ib-port').value) $id('ib-port').value = '443';
+  }
   toggleById('ib-tls-fields', tls);
   toggleById('ib-reality-fields', reality);
   toggleById('ib-vless-security', proto === 'vless');
@@ -4788,14 +4792,14 @@ async function loadBotConfig() {
     var body = $id('acc-body-bot');
     if (!body) return;
     var statusBadge = b.running
-      ? '<span class="node-badge active">● Running</span>'
-      : '<span class="node-badge offline">● Stopped</span>';
+      ? '<span class="node-badge active">● ' + t('running') + '</span>'
+      : '<span class="node-badge offline">● ' + t('stopped') + '</span>';
     var intervalOpts = ['seconds', 'minutes', 'hours'].map(function(u) {
-      return '<option value="' + u + '"' + (b.interval_unit === u ? ' selected' : '') + '>' + (u === 'seconds' ? 'Seconds' : u === 'minutes' ? 'Minutes' : 'Hours') + '</option>';
+      return '<option value="' + u + '"' + (b.interval_unit === u ? ' selected' : '') + '>' + t(u) + '</option>';
     }).join('');
     body.innerHTML = '<div class="acc-body-inner">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-      + '<span class="set-lbl">وضعیت ربات</span>' + statusBadge + '</div>'
+      + '<span class="set-lbl">' + t('botStatus') + '</span>' + statusBadge + '</div>'
       + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>' + t('botToken') + '</label><input type="password" id="bot-token" dir="ltr" placeholder="123456:ABC-defGHI..." value="' + (b.bot_token_masked || '') + '"></div>'
       + '<div class="f-g bot-glass-field" style="margin-bottom:12px"><label>' + t('channelId') + '</label><input type="text" id="bot-channel" dir="ltr" placeholder="-1001234567890" value="' + esc(b.channel_id || '') + '"></div>'
       + '<div class="schedule-editor">'
@@ -4816,7 +4820,7 @@ async function loadBotConfig() {
       + '</div>';
   } catch(e) {
     var b2 = $id('acc-body-bot');
-    if (b2) b2.innerHTML = '<div class="acc-body-inner"><div class="empty">خطا در بارگذاری تنظیمات ربات</div></div>';
+    if (b2) b2.innerHTML = '<div class="acc-body-inner"><div class="empty">' + t('botLoadError') + '</div></div>';
   }
 }
 
@@ -4826,7 +4830,7 @@ async function botSetupSubmit() {
   var payload = {channel_id: channel};
   if (token && token.indexOf('****') !== 0) payload.bot_token = token;
   if (!channel || (!payload.bot_token && !(token && token.indexOf('****') === 0))) {
-    toast('Token و Channel ID الزامی هستند', 'warn'); return;
+    toast(t('botRequired'), 'warn'); return;
   }
   try {
     var r = await api('/api/bot/setup', {
