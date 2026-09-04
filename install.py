@@ -106,37 +106,21 @@ def install_requirements() -> None:
     log("Upgrading pip/setuptools/wheel...")
     run(str(PYTHON), "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel")
 
-    log("Installing requirements from PyPI...")
-    # Use the normal PyPI index explicitly. This avoids the dependency-index
-    # selection issue seen with uv on some hosted builders.
-    try:
-        run(
-            str(PYTHON),
-            "-m",
-            "pip",
-            "install",
-            "--disable-pip-version-check",
-            "--no-cache-dir",
-            "--index-url",
-            "https://pypi.org/simple",
-            "--only-binary=:all:",
-            "-r",
-            str(REQUIREMENTS),
-        )
-    except SystemExit:
-        log("Binary-only install was not possible; retrying with normal pip resolution...")
-        run(
-            str(PYTHON),
-            "-m",
-            "pip",
-            "install",
-            "--disable-pip-version-check",
-            "--no-cache-dir",
-            "--index-url",
-            "https://pypi.org/simple",
-            "-r",
-            str(REQUIREMENTS),
-        )
+    log("Installing requirements from PyPI (normal pip)...")
+    # Use the public PyPI index explicitly. Do not use uv or provider-specific
+    # package registries, because some builders have incomplete mirrors.
+    run(
+        str(PYTHON),
+        "-m",
+        "pip",
+        "install",
+        "--disable-pip-version-check",
+        "--no-cache-dir",
+        "--index-url",
+        "https://pypi.org/simple",
+        "-r",
+        str(REQUIREMENTS),
+    )
 
     STAMP.write_text(wanted + "\n", encoding="utf-8")
     log("Python dependencies installed successfully.")
