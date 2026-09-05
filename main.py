@@ -3301,8 +3301,13 @@ async def http_proxy(target_url: str, request: Request):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/api/inbounds")
-async def list_inbounds(_=Depends(require_auth)):
-    """List all inbounds."""
+async def list_inbounds(_=Depends(require_panel_or_node)):
+    """List inbounds for the panel UI and for authenticated node sync.
+
+    Remote panel-to-node replication authenticates with X-API-Key rather than
+    the browser session cookie, so this endpoint must accept the same trusted
+    panel/node authentication as /api/users and /api/server-info.
+    """
     async with INBOUNDS_LOCK:
         snap = dict(INBOUNDS)
     result = []
@@ -9119,11 +9124,15 @@ async def _create_user_on_nodes(config_uuid: str, user_data: dict, only_node_id:
             inbound_id = "default"
             async with httpx.AsyncClient(timeout=15) as client:
                 ir = await client.get(f"{url}/api/inbounds", headers={"X-API-Key": api_key})
-                if ir.status_code == 200:
-                    remote_inbounds = ir.json().get("inbounds") or []
-                    selectable = [x for x in remote_inbounds if str(x.get("protocol") or "").lower() not in ("worker", "tunnel", "reverse", "telegram", "wireguard", "node")]
-                    if selectable:
-                        inbound_id = selectable[0].get("inbound_id") or "default"
+                if ir.status_code == 401:
+                    raise RuntimeError("node authentication rejected API key on /api/inbounds")
+                if ir.status_code >= 400:
+                    detail = (ir.text or "").strip()[:160]
+                    raise RuntimeError(f"node /api/inbounds returned HTTP {ir.status_code}: {detail}")
+                remote_inbounds = ir.json().get("inbounds") or []
+                selectable = [x for x in remote_inbounds if str(x.get("protocol") or "").lower() not in ("worker", "tunnel", "reverse", "telegram", "wireguard", "node")]
+                if selectable:
+                    inbound_id = selectable[0].get("inbound_id") or "default"
                 payload = {
                     "username": user_data.get("username", ""),
                     "password": secrets.token_urlsafe(12),
