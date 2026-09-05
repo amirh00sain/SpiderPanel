@@ -2726,8 +2726,25 @@ function renderInbounds() {
       body += t('domain')+': '+esc(ib.external_domain||'—')+'<br>'+t('port')+': '+esc(ib.port||'443')+'<br>'+t('secNetwork')+': '+esc(ib.network||'tcp')+' | '+t('security')+': '+esc(ib.security||'none');
     }
     body += '<br>'+t('usersCount')+': '+esc(ib.users_count||0)+'</div>';
-    body += '<div style="margin-top:10px;display:flex;gap:6px"><button class="btn btn-sm btn-b" onclick="editInbound(\''+ib.inbound_id+'\')">'+t('edit')+'</button><button class="btn btn-sm btn-r" onclick="deleteInbound(\''+ib.inbound_id+'\')">'+t('delete')+'</button></div>';
-    html += '<div class="sp-v7-item"><button type="button" class="sp-v7-head" onclick="toggleV7Accordion(this)"><strong>'+esc(ib.name)+'</strong><span style="display:flex;align-items:center;gap:8px"><span class="badge '+protoBadge+'">'+esc(proto.toUpperCase())+'</span><span class="sp-v7-chevron">⌄</span></span></button><div class="sp-v7-body">'+body+'</div></div>';
+    var isManagedDefault = ib.inbound_id === 'default' &&
+      proto === 'vless' && (ib.network || 'ws').toLowerCase() === 'ws' &&
+      (ib.security || 'tls').toLowerCase() === 'tls';
+    if (isManagedDefault) {
+      body = '<div style="font-size:11px;color:var(--txt2);line-height:1.9;padding-top:12px">' +
+        '<strong style="color:var(--accent)">TLS Connection</strong><br>' +
+        'Panel Domain: <span dir="ltr">' + esc(ib.domain || '—') + '</span><br>' +
+        'Public Port: <span dir="ltr">443</span><br>' +
+        'Internal Port: <span dir="ltr">443</span><br>' +
+        'Transport: WebSocket (WS)<br>' +
+        'Security: TLS<br>' +
+        'WS Path: <span dir="ltr">/ws/{uuid}</span><br>' +
+        t('usersCount') + ': ' + esc(ib.users_count || 0) +
+        '</div>' +
+        '<div class="px-hint" style="margin-top:10px">این اینباند پیش‌فرض سیستمی است؛ دامنه پنل و پورت 443 به‌صورت خودکار تنظیم می‌شوند و قابل ویرایش نیستند.</div>';
+    } else {
+      body += '<div style="margin-top:10px;display:flex;gap:6px"><button class="btn btn-sm btn-b" onclick="editInbound(\''+ib.inbound_id+'\')">'+t('edit')+'</button><button class="btn btn-sm btn-r" onclick="deleteInbound(\''+ib.inbound_id+'\')">'+t('delete')+'</button></div>';
+    }
+    html += '<div class="sp-v7-item"><button type="button" class="sp-v7-head" onclick="toggleV7Accordion(this)"><strong>'+esc(ib.name)+'</strong><span style="display:flex;align-items:center;gap:8px"><span class="badge '+protoBadge+'">'+esc(proto.toUpperCase())+'</span>'+(isManagedDefault?'<span class="badge badge-b">FIXED</span>':'')+'<span class="sp-v7-chevron">⌄</span></span></button><div class="sp-v7-body">'+body+'</div></div>';
   });
   html += '</div>'; el.innerHTML=html;
 }

@@ -194,8 +194,6 @@ async def load_state():
                 NODES.update(data["nodes"])
             if isinstance(data.get("bot_config"), dict):
                 BOT_CONFIG.update(data["bot_config"])
-                if not BOT_CONFIG.get("channel_link") and BOT_CONFIG.get("target_channel_link"):
-                    BOT_CONFIG["channel_link"] = BOT_CONFIG.get("target_channel_link")
                 # never resume a bot loop on boot
                 BOT_CONFIG["running"] = False
             logger.info(f"State loaded: {len(LINKS)} links, {len(SUBS)} subs, {len(USERS)} users, {len(GROUPS)} groups, {len(IP_POOL)} ips, {len(INBOUNDS)} inbounds")
@@ -490,7 +488,6 @@ MAX_NODES = 10
 BOT_CONFIG: dict = {
     "bot_token": "",
     "channel_id": "",
-    "channel_link": "",
     "promotion_channel": "",
     "fixed_channel": "",
     "target_channel_link": "",
@@ -1030,14 +1027,15 @@ async def startup():
                 "network": "ws",
                 "security": "tls",
                 "domain": _safe_host(SETTINGS.get("domain"), get_host()),
-                "external_domain": "",
-                "sni": "",
-                "external_port": "",
+                "external_domain": _safe_host(SETTINGS.get("domain"), get_host()),
+                "sni": _safe_host(SETTINGS.get("domain"), get_host()),
+                "external_port": 443,
                 "fingerprint": "chrome",
                 "reality_settings": {},
                 "xhttp_settings": {},
+                "ws_settings": {"path": "/ws"},
+                "grpc_settings": {},
                 "created_at": datetime.now().isoformat(),
-                "system_managed": True,
             }
             startup_state_changed = True
             log_activity("inbound", "اینباند پیش‌فرض VLESS+WS ساخته شد", "ok")
@@ -1047,31 +1045,18 @@ async def startup():
             and (ib.get("protocol") or "").lower() == "vless"
             for ib in INBOUNDS.values()
         )
-        # Normalize the built-in default TLS+WS inbound to the same schema as
-        # SpiderPanel-main. This is intentionally an exception: it is always
-        # VLESS + WebSocket + TLS on internal/public port 443 and follows the
-        # panel domain automatically. User-created inbounds are unaffected.
+        # Normalize the managed default TLS+WS inbound to the panel domain on every startup.
         default_ib = INBOUNDS.get("default")
         if default_ib and (default_ib.get("protocol") or "").lower() == "vless" and (default_ib.get("network") or "ws").lower() == "ws" and (default_ib.get("security") or "tls").lower() == "tls":
             panel_host = _safe_host(SETTINGS.get("domain"), get_host())
-            before_default = json.dumps(default_ib, sort_keys=True, ensure_ascii=False)
-            default_ib["name"] = default_ib.get("name") or "VLESS+WS پیش‌فرض"
-            default_ib["protocol"] = "vless"
+            before_default = (default_ib.get("port"), default_ib.get("domain"), default_ib.get("external_domain"), default_ib.get("sni"), default_ib.get("external_port"), (default_ib.get("ws_settings") or {}).get("path"))
             default_ib["port"] = 443
-            default_ib["network"] = "ws"
-            default_ib["security"] = "tls"
             default_ib["domain"] = panel_host
-            default_ib["external_domain"] = ""
-            default_ib["sni"] = ""
-            default_ib["external_port"] = ""
-            default_ib["fingerprint"] = "chrome"
-            default_ib["reality_settings"] = {}
-            default_ib["xhttp_settings"] = {}
-            default_ib.pop("tls_settings", None)
-            default_ib.pop("ws_settings", None)
-            default_ib.pop("grpc_settings", None)
-            default_ib["system_managed"] = True
-            after_default = json.dumps(default_ib, sort_keys=True, ensure_ascii=False)
+            default_ib["external_domain"] = panel_host
+            default_ib["sni"] = panel_host
+            default_ib["external_port"] = 443
+            default_ib.setdefault("ws_settings", {})["path"] = (default_ib.get("ws_settings") or {}).get("path") or "/ws"
+            after_default = (default_ib.get("port"), default_ib.get("domain"), default_ib.get("external_domain"), default_ib.get("sni"), default_ib.get("external_port"), (default_ib.get("ws_settings") or {}).get("path"))
             if before_default != after_default:
                 startup_state_changed = True
 
@@ -1221,17 +1206,7 @@ async def startup():
     # port (443 can only be used once). Non-default inbounds that collide with
     # an earlier one are moved to the next free port (80xx range).
     _seen_ports: dict = {}
-    # Reserve 443 for the built-in default first, regardless of dictionary order.
-    if _is_managed_default_inbound("default", INBOUNDS.get("default")):
-        _def = INBOUNDS["default"]
-        if int(_def.get("port") or 0) != 443 or int(_def.get("external_port") or 0) != 443:
-            _def["port"] = 443
-            _def["external_port"] = 443
-            _changed = True
-        _seen_ports[443] = True
-    for _iid, _ib in INBOUNDS.items():
-        if _iid == "default" and _is_managed_default_inbound(_iid, _ib):
-            continue
+    for _ib in INBOUNDS.values():
         _p = int(_ib.get("port") or 0)
         if _p and _p in _seen_ports:
             _np = _p + 1
@@ -1242,8 +1217,7 @@ async def startup():
                 _ib["external_port"] = _np
             _changed = True
             logger.info("Inbound «%s» moved to free port %s (was %s)", _ib.get("name"), _np, _p)
-        if _p:
-            _seen_ports[int(_ib.get("port") or 0)] = True
+        _seen_ports[int(_ib.get("port") or 0)] = True
 
     # Reality migration: every reality inbound must carry a WORKING pbk/sid —
     # a pbk that is actually the public half of the private key Xray will use.
@@ -1754,19 +1728,6 @@ def generate_short_id() -> str:
     """Generate a shorter ID for user management."""
     return secrets.token_hex(6)
 
-def _is_managed_default_inbound(inbound_id: str, inbound: dict | None = None) -> bool:
-    """Return True only for the built-in VLESS+WS default inbound.
-
-    This inbound is a hard exception: every port value exposed/used for it must
-    remain 443. Custom/new inbounds are never affected by this rule.
-    """
-    return inbound_id == "default" and (
-        inbound is None
-        or (str(inbound.get("protocol") or "").lower() == "vless"
-            and str(inbound.get("network") or "").lower() == "ws"
-            and str(inbound.get("security") or "").lower() == "tls")
-    )
-
 def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr: str = None, remark_tag: str = None) -> str:
     """Build a VLESS config string for one inbound of a user.
 
@@ -1806,14 +1767,6 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             addr_ip, addr_port = addr, "443"
         addr_ip, addr_port = addr_ip.strip(), addr_port.strip()
 
-    # Built-in default VLESS+WS is a hard 443 exception. Even scanned/custom
-    # address inputs must not introduce another port for this inbound.
-    if _is_managed_default_inbound(inbound_id, inbound):
-        addr_port = "443"
-        if inbound is not None:
-            inbound["port"] = 443
-            inbound["external_port"] = 443
-
     # ── WORKER (multi-location via Cloudflare Worker) ──
     if proto == "worker":
         wcfgs = _worker_configs(user_id, user, inbound, "", remark_tag, addr_ip, addr_port)
@@ -1821,20 +1774,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             return wcfgs[0]
         return ""
 
-    # ── NODE inbound ──
-    # A Node inbound is a selector-only object. It is NOT a local Xray/relay
-    # listener and must never fall through to the normal VLESS generator.
-    # Return a config for the selected remote node when one is available.
-    if proto == "node":
-        node_ids = [str(x) for x in (inbound.get("enabled_node_ids") or [])] if inbound else []
-        for nid in node_ids:
-            node = NODES.get(nid)
-            if not node:
-                continue
-            cfg = _node_config_for_user(node, config_uuid, username)
-            if cfg:
-                return cfg
-        return ""
+    # ── NODE selection is now an attribute of Config inbounds. ──
 
     # ── TELEGRAM PROXY ──
     if proto == "telegram":
@@ -2109,9 +2049,8 @@ def generate_custom_ip_configs(user_id: str, user: dict) -> dict:
             ib = INBOUNDS.get(iid_)
             if not ib:
                 continue
-            # Skip wireguard, telegram and selector-only Node inbounds —
-            # they do not represent a local scanned-IP endpoint.
-            if (ib.get("protocol") or "").lower() in ("wireguard", "telegram", "node"):
+            # Skip wireguard and telegram — not compatible with scanned IPs
+            if (ib.get("protocol") or "").lower() in ("wireguard", "telegram"):
                 continue
             for i, ip in enumerate(cf_ips[:10], 1):
                 try:
@@ -2129,9 +2068,8 @@ def generate_custom_ip_configs(user_id: str, user: dict) -> dict:
             ib = INBOUNDS.get(iid_)
             if not ib:
                 continue
-            # Skip wireguard, telegram and selector-only Node inbounds —
-            # they do not represent a local scanned-IP endpoint.
-            if (ib.get("protocol") or "").lower() in ("wireguard", "telegram", "node"):
+            # Skip wireguard and telegram — not compatible with scanned IPs
+            if (ib.get("protocol") or "").lower() in ("wireguard", "telegram"):
                 continue
             if not ib:
                 continue
@@ -3461,7 +3399,6 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
         port = _parse_port(body.get("port"), 51820, "listen_port")
         external_port = 0
     else:
-        # VLESS + TLS + WebSocket uses 443 as its default internal listener port.
         port = _parse_port(body.get("port"), 443, "port")
         external_port = _parse_port(body.get("external_port"), 443, "external_port")
 
@@ -3535,8 +3472,6 @@ async def create_inbound(request: Request, _=Depends(require_auth)):
             if not tls_domain or not tls_sni:
                 raise HTTPException(status_code=400, detail="TLS Domain and SNI are required")
             network, ws_settings, xhttp_settings, grpc_settings = _canonical_inbound_transport(body, protocol, security)
-            if protocol == "vless" and network == "ws" and body.get("port") in (None, "", 0, "0"):
-                port = 443
             if network in ("ws", "xhttp") and not tls_host:
                 raise HTTPException(status_code=400, detail=f"{network.upper()} Host is required")
             domain = tls_domain
@@ -3730,20 +3665,9 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
                 ib["external_domain"] = wdom
                 ib["sni"] = ib.get("sni") or "www.hcaptcha.com"
         if "port" in body:
-            # The managed default VLESS + TLS + WebSocket inbound is a special
-            # exception: Xray/relay must always listen internally on TCP 443.
-            _is_managed_default_tls_ws = (
-                inbound_id == "default"
-                and (ib.get("protocol") or "").lower() == "vless"
-                and (ib.get("network") or "").lower() == "ws"
-                and (ib.get("security") or "").lower() == "tls"
-            )
-            if _is_managed_default_tls_ws:
-                ib["port"] = 443
-            else:
-                default_port = 51820 if (ib.get("protocol") or "").lower() == "wireguard" else (44344 if (ib.get("protocol") or "").lower() == "telegram" else None)
-                parsed = _parse_port(body["port"], default_port, "port")
-                ib["port"] = parsed if parsed is not None else ""  # "" = unconfigured (reality)
+            default_port = 51820 if (ib.get("protocol") or "").lower() == "wireguard" else (44344 if (ib.get("protocol") or "").lower() == "telegram" else None)
+            parsed = _parse_port(body["port"], default_port, "port")
+            ib["port"] = parsed if parsed is not None else ""  # "" = unconfigured (reality)
         if "network" in body:
             ib["network"] = str(body["network"]).lower()
         if "security" in body:
@@ -3812,12 +3736,8 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         if "spoof_ip" in body:
             ib["spoof_ip"] = str(body["spoof_ip"]).strip()
         if "external_port" in body:
-            # The built-in default TLS+WS inbound always uses external/public 443.
-            if _is_managed_default_inbound(inbound_id, ib):
-                ib["external_port"] = 443
-            else:
-                _ev = str(body["external_port"] or "").strip()
-                ib["external_port"] = int(_ev) if _ev else ""
+            _ev = str(body["external_port"] or "").strip()
+            ib["external_port"] = int(_ev) if _ev else ""
         if "fingerprint" in body:
             ib["fingerprint"] = str(body["fingerprint"]).strip()
         if "reality_settings" in body and isinstance(body["reality_settings"], dict):
@@ -3939,21 +3859,9 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib.pop("sni", None)
             ib.pop("destination", None)
             ib.pop("server_name", None)
-    # Final invariant for the built-in default TLS+WS inbound.
-    # This is intentionally an exception to the user-configurable inbound port:
-    # internal/listener port and public/external port are both 443.
-    if _is_managed_default_inbound(inbound_id, ib):
-        ib["port"] = 443
-        ib["external_port"] = 443
-
     if (ib.get("protocol") or "").lower() not in ("telegram", "worker", "reality") and (ib.get("security") or "").lower() != "reality":
         ib["external_domain"] = ""
         ib["external_port"] = ""
-
-    # Re-apply the managed-default exception after generic external-port cleanup.
-    if _is_managed_default_inbound(inbound_id, ib):
-        ib["port"] = 443
-        ib["external_port"] = 443
 
     await save_state()
     log_activity("inbound", f"اینباند «{ib.get('name', inbound_id)}» ویرایش شد", "info")
@@ -4039,8 +3947,6 @@ async def delete_inbound(inbound_id: str, _=Depends(require_auth)):
         ib = INBOUNDS.get(inbound_id)
         if not ib:
             raise HTTPException(status_code=404, detail="inbound not found")
-        if inbound_id == "default" or ib.get("system_managed"):
-            raise HTTPException(status_code=403, detail="اینباند پیش‌فرض سیستمی است و قابل حذف نیست")
         ib = INBOUNDS.pop(inbound_id, None)
         name = ib.get("name", inbound_id)
     # Stop Telegram Proxy if this was a telegram inbound
@@ -4395,7 +4301,6 @@ async def create_user(request: Request, _=Depends(require_panel_or_node)):
     asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
     # NODE inbound: replicate the user to all registered nodes (same UUID).
     node_results = []
-    user = USERS.get(user_id) or {}
     selected = await _selected_node_ids_for_user(user)
     if selected:
         node_results = await _sync_user_to_selected_nodes(config_uuid, {"username": username}, selected)
@@ -9277,69 +9182,54 @@ async def get_bot_config(_=Depends(require_auth)):
 
 @app.post("/api/bot/setup")
 async def bot_setup(request: Request, _=Depends(require_auth)):
-    """Set up bot token + public Telegram channel link."""
+    """Set up bot token + channel ID + optional promotion channel."""
     body = await request.json()
-    token = str(body.get("bot_token") or "").strip()
-    channel_link = str(body.get("channel_link") or "").strip()
+    token = (body.get("bot_token") or "").strip()
+    channel_id = (body.get("channel_id") or "").strip()
+    # The UI masks the existing bot token. Editing channel/promotion settings
+    # must not replace a valid token with the mask.
     async with BOT_CONFIG_LOCK:
         existing_token = str(BOT_CONFIG.get("bot_token") or "")
     if not token and existing_token:
         token = existing_token
     if not token:
         raise HTTPException(status_code=400, detail="Bot Token is required")
-    if not channel_link:
-        raise HTTPException(status_code=400, detail="Channel link is required")
-
-    raw = channel_link
-    if raw.startswith(("http://", "https://")):
-        parsed = urllib.parse.urlparse(raw)
-        if parsed.netloc.lower() not in ("t.me","www.t.me","telegram.me","www.telegram.me"):
-            raise HTTPException(status_code=400, detail="Use a public Telegram channel link such as https://t.me/YourChannel")
-        path=(parsed.path or "").strip("/")
-        if path.startswith("+") or path.startswith("joinchat/"):
-            raise HTTPException(status_code=400, detail="Private invite links are not supported; use the channel's public @username link")
-        username=path.split("/",1)[0].lstrip("@")
-    elif raw.startswith("@"):
-        username=raw[1:].strip()
-    else:
-        username=raw.strip().lstrip("@")
-
-    if not re.fullmatch(r"[A-Za-z0-9_]{4,64}", username or ""):
-        raise HTTPException(status_code=400, detail="Invalid Telegram channel link. Example: https://t.me/YourChannel")
-
-    channel_id="@" + username
+    if not channel_id:
+        raise HTTPException(status_code=400, detail="Channel ID is required")
+    # Validate token
     from spider_features import validate_bot_token, check_bot_channel_access, tg_api_call
     try:
-        bot_info=await validate_bot_token(token)
+        bot_info = await validate_bot_token(token)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # Check channel access
     try:
         await check_bot_channel_access(token, channel_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-    target_channel_link=f"https://t.me/{username}"
+    target_channel_link = ""
     try:
-        chat=await tg_api_call(token,"getChat",chat_id=channel_id)
-        chat_username=str((chat.get("username") if isinstance(chat,dict) else "") or "").strip().lstrip("@")
-        if chat_username:
-            username=chat_username
-            channel_id="@"+username
-            target_channel_link=f"https://t.me/{username}"
+        chat = await tg_api_call(token, "getChat", chat_id=channel_id)
+        username = str((chat.get("username") if isinstance(chat, dict) else "") or "").strip().lstrip("@")
+        if username:
+            target_channel_link = f"https://t.me/{username}"
     except Exception:
-        pass
-
+        target_channel_link = channel_id if str(channel_id).startswith(("http://", "https://", "@")) else ""
     async with BOT_CONFIG_LOCK:
-        BOT_CONFIG["bot_token"]=token
-        BOT_CONFIG["channel_id"]=channel_id
-        BOT_CONFIG["channel_link"]=target_channel_link
-        BOT_CONFIG["promotion_channel"]=str(body.get("promotion_channel") or BOT_CONFIG.get("promotion_channel") or "").strip()
-        BOT_CONFIG["fixed_channel"]=str(body.get("fixed_channel") or BOT_CONFIG.get("fixed_channel") or "").strip()
-        BOT_CONFIG["target_channel_link"]=target_channel_link
-        BOT_CONFIG["last_error"]=""
+        BOT_CONFIG["bot_token"] = token
+        BOT_CONFIG["channel_id"] = channel_id
+        BOT_CONFIG["promotion_channel"] = str(body.get("promotion_channel") or BOT_CONFIG.get("promotion_channel") or "").strip()
+        BOT_CONFIG["fixed_channel"] = str(body.get("fixed_channel") or BOT_CONFIG.get("fixed_channel") or "").strip()
+        BOT_CONFIG["target_channel_link"] = target_channel_link or BOT_CONFIG.get("target_channel_link", "")
+        BOT_CONFIG["last_error"] = ""
     asyncio.create_task(save_state())
-    log_activity("bot","ربات کانال تنظیم شد","ok")
-    return {"ok":True,"bot_name":bot_info.get("username",""),"bot_id":bot_info.get("id",""),"channel_link":target_channel_link}
+    log_activity("bot", "ربات کانال تنظیم شد", "ok")
+    return {
+        "ok": True,
+        "bot_name": bot_info.get("username", ""),
+        "bot_id": bot_info.get("id", ""),
+    }
+
 
 @app.post("/api/bot/schedule")
 async def bot_schedule(request: Request, _=Depends(require_auth)):
