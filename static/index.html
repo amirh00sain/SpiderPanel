@@ -2839,6 +2839,15 @@ function onSecurityChange() {
   var sec = ($id('ib-security').value || 'tls').toLowerCase();
   var reality = proto === 'vless' && sec === 'reality';
   var tls = ['vless','vmess','trojan'].includes(proto) && sec === 'tls';
+  // Reality is not a WebSocket/TLS listener in this panel. Keep the form
+  // on a valid Reality transport automatically so Create cannot submit an
+  // unsupported `network=ws` combination.
+  if (reality && $id('ib-network')) {
+    var currentNet = ($id('ib-network').value || '').toLowerCase();
+    if (!['tcp','xhttp','grpc'].includes(currentNet)) $id('ib-network').value = 'tcp';
+    if ($id('ib-extport') && !$id('ib-extport').value) $id('ib-extport').value = '443';
+    if ($id('ib-port') && !$id('ib-port').value) $id('ib-port').value = '443';
+  }
   // Default VLESS + TLS + WebSocket listener port is always 443.
   if (proto === 'vless' && sec === 'tls' && $id('ib-network') && $id('ib-network').value === 'ws' && $id('ib-port')) {
     if (!$id('ib-port').value) $id('ib-port').value = '443';
@@ -2969,8 +2978,39 @@ async function submitInbound(e) {
         body.domain=sd; body.external_domain=sd; body.sni=ssni; body.fingerprint=$id('ib-fingerprint').value;
         body.tls_settings={domain:sd,sni:ssni,host:body.network==='ws'?$id('ib-ws-host').value.trim():body.network==='xhttp'?$id('ib-xhttp-host').value.trim():'',fingerprint:body.fingerprint};
       } else {
-        body.external_domain=$id('ib-extdomain').value.trim(); body.external_port=parseInt($id('ib-extport').value,10); body.destination=$id('ib-dest').value.trim(); body.server_name=$id('ib-sni').value.trim();
-        body.reality_settings={private_key:$id('ib-privkey').value.trim(),public_key:$id('ib-pubkey').value.trim(),short_id:$id('ib-shortids').value.trim(),spiderx:$id('ib-spiderx').value.trim()||'/',dest:body.destination,target:body.destination,sni:body.server_name,server_name:body.server_name,server_names:[body.server_name]};
+        // Reality creation is self-contained: if the user did not press the
+        // key/short-id buttons first, generate the required values now.
+        var extDomain = $id('ib-extdomain').value.trim();
+        var extPort = parseInt($id('ib-extport').value,10) || 443;
+        var dest = $id('ib-dest').value.trim();
+        var rsni = $id('ib-sni').value.trim();
+        if (!extDomain || !dest || !rsni) {
+          toast('Reality: دامنه خارجی، Target و SNI الزامی هستند / External Domain, Target and SNI are required','warn');
+          btn.disabled=false; btn.textContent=iid?'ذخیره / Save':'ایجاد / Create'; return;
+        }
+        var priv = $id('ib-privkey').value.trim();
+        var pub = $id('ib-pubkey').value.trim();
+        if (!priv) {
+          var kr = await api('/api/tools/generate-reality-keys', {method:'POST'});
+          priv = kr.private_key || ''; pub = kr.public_key || '';
+          if (kr.short_id && !$id('ib-shortids').value.trim()) $id('ib-shortids').value = kr.short_id;
+        }
+        if (!priv) {
+          toast('تولید کلید Reality ناموفق بود / Reality key generation failed','err');
+          btn.disabled=false; btn.textContent=iid?'ذخیره / Save':'ایجاد / Create'; return;
+        }
+        var sid = $id('ib-shortids').value.trim();
+        if (!sid) {
+          var b = new Uint8Array(5);
+          if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(b);
+          else for (var si=0;si<b.length;si++) b[si]=Math.floor(Math.random()*256);
+          sid = Array.from(b,function(x){return x.toString(16).padStart(2,'0');}).join('');
+          $id('ib-shortids').value = sid;
+        }
+        $id('ib-privkey').value = priv; $id('ib-pubkey').value = pub;
+        body.network = ['tcp','xhttp','grpc'].includes(body.network) ? body.network : 'tcp';
+        body.external_domain = extDomain; body.external_port = extPort; body.destination = dest; body.server_name = rsni;
+        body.reality_settings={private_key:priv,public_key:pub,short_id:sid,spiderx:$id('ib-spiderx').value.trim()||'/',dest:dest,target:dest,sni:rsni,server_name:rsni,server_names:[rsni]};
       }
     } else {
       body.security='tls';

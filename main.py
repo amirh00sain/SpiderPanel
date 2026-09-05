@@ -4412,16 +4412,28 @@ async def create_user(request: Request, _=Depends(require_panel_or_node)):
     selected = await _selected_node_ids_for_user(user)
     if selected:
         node_results = await _sync_user_to_selected_nodes(config_uuid, {"username": username}, selected)
+    # Node inbound is selector-only: configs are produced by the selected
+    # remote nodes. Do not run the local config generator for a Node inbound.
+    primary_ib = INBOUNDS.get(inbound_id) if inbound_id else None
+    primary_is_node = bool(primary_ib and (primary_ib.get("inbound_type") or "config").lower() == "node")
+    response_config = "" if primary_is_node else generate_user_config(user_id, USERS[user_id], inbound_id)
+    if primary_is_node:
+        # _sync_user_to_selected_nodes may return the generated remote config.
+        for nr in node_results:
+            if nr.get("config"):
+                response_config = nr["config"]
+                break
     return {
         "user_id": user_id,
         **USERS[user_id],
         "password_hash": None,
         "config_url": f"https://{host}/api/users/{user_id}/config",
         "qr_url": f"https://{host}/api/users/{user_id}/qr",
-        "subscription_url": f"https://{host}/subs/{config_uuid}",
-        "config": generate_user_config(user_id, USERS[user_id], inbound_id),
+        "subscription_url": f"https://{host}/api/users/{user_id}/subscription",
+        "config": response_config,
         "nodes_sync": node_results,
     }
+
 
 @app.patch("/api/users/{user_id}/toggle")
 async def toggle_user(user_id: str, _=Depends(require_auth)):
