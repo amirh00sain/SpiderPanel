@@ -1024,20 +1024,18 @@ async def startup():
     async with INBOUNDS_LOCK:
         if not INBOUNDS:
             INBOUNDS["default"] = {
-                "name": "VLESS+WS پیش‌فرض",
+                 "name": "VLESS+WS پیش‌فرض",
                 "protocol": "vless",
                 "port": 443,
                 "network": "ws",
                 "security": "tls",
                 "domain": _safe_host(SETTINGS.get("domain"), get_host()),
-                "external_domain": _safe_host(SETTINGS.get("domain"), get_host()),
-                "sni": _safe_host(SETTINGS.get("domain"), get_host()),
-                "external_port": 443,
+                "external_domain": "",
+                "sni": "",
+                "external_port": "",
                 "fingerprint": "chrome",
                 "reality_settings": {},
                 "xhttp_settings": {},
-                "ws_settings": {"path": "/ws"},
-                "grpc_settings": {},
                 "created_at": datetime.now().isoformat(),
             }
             startup_state_changed = True
@@ -1103,8 +1101,8 @@ async def startup():
                 "security": "tls",
                 "domain": _wdom_now,
                 "external_domain": _wdom_now,
-                "sni": "www.hcaptcha.com",
-                "spoof_ip": "8.6.112.4",
+                "sni": "",
+                "spoof_ip": "",
                 "external_port": 443,
                 "fingerprint": "chrome",
                 "reality_settings": {},
