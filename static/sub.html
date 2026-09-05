@@ -1461,8 +1461,19 @@ body{background:var(--bg);color:var(--text)}
 [data-theme=dark] .sub-copy-btn{background:#fff;color:#000}
 [data-theme=light] .sub-copy-btn{background:#000;color:#fff}
 </style>
+
+<style>
+.sub-boot-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:var(--bg,#07120e);transition:opacity .28s ease,visibility .28s ease}
+.sub-boot-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.sub-boot-card{display:flex;flex-direction:column;align-items:center;gap:13px;padding:28px 32px;border:1px solid var(--border,#1a3328);border-radius:22px;background:var(--card,#0f1f18);box-shadow:0 20px 55px rgba(0,0,0,.5)}
+.sub-boot-spinner{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:var(--cyan,#34d399);animation:subBootSpin .75s linear infinite}
+.sub-boot-text{color:var(--text,#e6f5ee);font-weight:800;font-size:13px}
+.sub-boot-sub{color:var(--muted,#7a9a8a);font-size:11px}
+@keyframes subBootSpin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
+<div class="sub-boot-loader" id="sub-boot-loader"><div class="sub-boot-card"><div class="sub-boot-spinner"></div><div class="sub-boot-text">در حال بارگذاری اشتراک</div><div class="sub-boot-sub">لطفاً صبر کنید...</div></div></div>
 <div class="container">
   <div class="hero-bar">
     <div class="hero-top">
@@ -2244,10 +2255,12 @@ body{background:var(--bg);color:var(--text)}
       if (!r.ok) throw new Error(r.status === 404 ? (lang === 'fa' ? 'کاربر پیدا نشد' : 'User not found') : (lang === 'fa' ? 'خطای سرور' : 'Server error'));
       var d = await r.json();
       applyData(d);
+      var boot=document.getElementById('sub-boot-loader'); if(boot) boot.classList.add('hidden');
     } catch (e) {
       var list = document.getElementById('configList');
       if (list) list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px">' + esc(e.message) + '</div>';
       setText('statusTitle', lang === 'fa' ? 'خطا در دریافت اطلاعات' : 'Failed to load');
+      var bootErr=document.getElementById('sub-boot-loader'); if(bootErr) bootErr.classList.add('hidden');
       console.warn('sub load failed:', e);
     }
   }

@@ -1002,9 +1002,20 @@ html[data-theme="dark"] .btn-p{background:#fff!important;color:#000!important}
 html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
 .settings-accordion .panel.inner-settings{margin:12px 0 0;padding:16px;background:var(--bg2);box-shadow:none;border-radius:12px}
 .acc-item,.acc-item:hover{box-shadow:none!important}
+
+/* ===== Global boot/loading overlay ===== */
+.spider-boot-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(7,18,14,.98);backdrop-filter:blur(10px);transition:opacity .28s ease,visibility .28s ease}
+.spider-boot-loader.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.spider-boot-loader-card{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:210px;padding:26px 30px;border:1px solid var(--border,#1a3328);border-radius:22px;background:rgba(15,31,24,.96);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.spider-boot-spinner{width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:var(--accent,#34d399);border-right-color:var(--accent2,#6ee7b7);animation:spiderBootSpin .75s linear infinite}
+.spider-boot-text{font-size:13px;font-weight:800;color:var(--text,#e6f5ee);text-align:center}
+.spider-boot-sub{font-size:11px;color:var(--muted,#7a9a8a);text-align:center}
+@keyframes spiderBootSpin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
+<div class="spider-boot-loader" id="spider-boot-loader" aria-live="polite"><div class="spider-boot-loader-card"><div class="spider-boot-spinner"></div><div class="spider-boot-text">در حال بارگذاری پنل</div><div class="spider-boot-sub">لطفاً تا کامل شدن اطلاعات صبر کنید...</div></div></div>
+
 
 <canvas id="particles"></canvas>
 
@@ -2090,12 +2101,12 @@ async function checkAuth() {
   window.location.href = '/login';
 }
 
-function showLogin() { $id('login-wrap').style.display = 'flex'; $id('app-wrap').classList.remove('active'); }
+function showLogin() { setBootLoading(false); $id('login-wrap').style.display = 'flex'; $id('app-wrap').classList.remove('active'); }
 function showApp() {
   $id('login-wrap').style.display = 'none';
   $id('app-wrap').classList.add('active');
-  loadAll();
   updateGreeting();
+  loadAll();
 }
 
 async function doLogin() {
@@ -2216,14 +2227,22 @@ function closeSidebar() { $id('sidebar').classList.remove('open'); $id('sidebar-
 function toggleSidebar() { $id('sidebar').classList.contains('open') ? closeSidebar() : openSidebar(); }
 
 // ─── Load All ───
+function setBootLoading(show, text) {
+  var el = $id('spider-boot-loader');
+  if (!el) return;
+  var tx = el.querySelector('.spider-boot-text');
+  if (tx && text) tx.textContent = text;
+  el.classList.toggle('is-hidden', !show);
+}
+
 async function loadAll() {
-  loadDashboard();
-  loadUsers();
-  loadInbounds();
-  loadProxyCountries();
+  setBootLoading(true, 'در حال بارگذاری پنل');
+  var tasks = [loadDashboard(), loadUsers(), loadInbounds(), loadProxyCountries()];
   // Keep the worker proxy pool warm so the create-user country dropdowns work
   // even before the Worker tab is opened.
-  if (typeof loadWorker === 'function') loadWorker();
+  if (typeof loadWorker === 'function') tasks.push(loadWorker());
+  await Promise.allSettled(tasks);
+  setBootLoading(false);
 }
 
 // ─── Dashboard ───
@@ -4825,7 +4844,7 @@ async function submitAddNode(ev) {
   finally { btn.disabled=false; }
 }
 
-async function deleteNodeasync function deleteNode(id) {
+async function deleteNode(id) {
   if (!confirm('آیا مطمئن هستید که می‌خواهید این نود را حذف کنید؟')) return;
   try {
     var card = document.querySelector('.node-card[data-node-id="' + id + '"]');
@@ -4890,7 +4909,7 @@ async function botSetupSubmit() {
   } catch(e) { toast(e.message || 'خطا در تنظیم ربات', 'err'); }
 }
 
-async function botScheduleSubmitasync function botScheduleSubmit() {
+async function botScheduleSubmit() {
   var val = parseInt($id('bot-interval').value) || 10;
   var unit = $id('bot-interval-unit').value;
   try {
@@ -4914,11 +4933,8 @@ async function botStop() {
 // Hook loadAll to include new data
 var _origLoadAll = loadAll;
 loadAll = async function() {
-  _origLoadAll();
-  loadServerInfo();
-  loadApiKey();
-  loadNodes();
-  loadBotConfig();
+  await _origLoadAll();
+  await Promise.allSettled([loadServerInfo(), loadApiKey(), loadNodes(), loadBotConfig()]);
 };
 
 // Hook switchTab to lazy-load accordion/tab content

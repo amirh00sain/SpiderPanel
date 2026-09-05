@@ -168,6 +168,15 @@ html,body{background:#000!important;color:#fff!important}
 #loginBtn,.btn-hover-effect,button,input{box-shadow:none!important;text-shadow:none!important;outline:none!important}
 #loginBtn:focus,input:focus{box-shadow:none!important}
 </style>
+
+<style>
+.login-boot-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#131313;transition:opacity .25s ease,visibility .25s ease}
+.login-boot-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.login-boot-card{display:flex;flex-direction:column;align-items:center;gap:13px;padding:28px 32px;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:rgba(19,19,19,.96);box-shadow:0 20px 55px rgba(0,0,0,.5)}
+.login-boot-spinner{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:#fff;animation:loginBootSpin .75s linear infinite}
+.login-boot-text{color:#f2f4f7;font-weight:700;font-size:13px}
+@keyframes loginBootSpin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex items-center justify-center relative">
 
@@ -253,6 +262,7 @@ html,body{background:#000!important;color:#fff!important}
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function(){ var l=document.getElementById('login-boot-loader'); if(l) l.classList.add('hidden'); });
 document.getElementById('login-form').addEventListener('submit', async function(e) {
   e.preventDefault();
   var btn = document.getElementById('loginBtn');
@@ -263,6 +273,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
 
   errDiv.classList.remove('show');
   btn.disabled = true;
+  var boot=document.getElementById('login-boot-loader'); if(boot) boot.classList.remove('hidden');
   btnText.classList.add('hidden');
   btnSpinner.classList.remove('hidden');
 
@@ -281,6 +292,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
     errText.textContent = ex.message;
     errDiv.classList.add('show');
     btn.disabled = false;
+    var bootErr=document.getElementById('login-boot-loader'); if(bootErr) bootErr.classList.add('hidden');
     btnText.classList.remove('hidden');
     btnSpinner.classList.add('hidden');
   }
