@@ -1420,99 +1420,9 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
 /* ===== Usage chart card ===== */
 
-
-/* ===== Dashboard-aligned monochrome theme ===== */
-:root{
-  --bg:#090a0c;--bg2:#0e1013;--card:#0e1013;--border:rgba(255,255,255,.10);--text:#f3f4f6;--muted:#a7adb7;
-  --cyan:#f3f4f6;--magenta:#ffffff;--gold:#f3f4f6;--orange:#d1d5db;--success:#f3f4f6;--danger:#ff6b6b;
-  --accent:#dfe3e8;--accent2:#ffffff;--accent3:#d1d5db;--btn-text:#0a0a0c;
-  --sub-bg:#0e1013;--sub-border:rgba(255,255,255,.10);--input-bg:#121416;--shadow:0 6px 18px rgba(0,0,0,.32);--shadow-lg:0 18px 48px rgba(0,0,0,.52);
-}
-[data-theme=light]{
-  --bg:#f2f2f7;--bg2:#ffffff;--card:#ffffff;--border:rgba(0,0,0,.10);--text:#000000;--muted:#3a3a3e;
-  --cyan:#000000;--magenta:#000000;--gold:#000000;--orange:#000000;--success:#000000;--danger:#b91c1c;
-  --accent:#000000;--accent2:#000000;--accent3:#000000;--btn-text:#ffffff;
-  --sub-bg:#ffffff;--sub-border:rgba(0,0,0,.10);--input-bg:#ffffff;--shadow:0 6px 18px rgba(0,0,0,.08);--shadow-lg:0 16px 40px rgba(0,0,0,.10);
-}
-body{background:var(--bg);color:var(--text)}
-.hero-bar,.sub-card,.card,.account-card,.expire-card{box-shadow:var(--shadow);background:var(--card);border-color:var(--border)}
-.hero-bar{background:var(--card);}
-.hero-bar::before,.tilt-shine{display:none}
-.brand-title{background:#fff;color:#fff;filter:none;animation:none;-webkit-text-fill-color:transparent;-webkit-text-stroke:0}
-[data-theme=light] .brand-title{background:#000;color:#000;-webkit-text-fill-color:transparent}
-.brand-sub,.sub-label,.account-title{background:none;color:var(--text);-webkit-text-fill-color:initial}
-.brand-line{background:var(--text);opacity:.5}
-.brand-pill{color:var(--text);background:var(--bg2);border-color:var(--border);backdrop-filter:none}
-.sub-card:hover,.card:hover,.sub-card,.card{box-shadow:var(--shadow)}
-.sub-copy-btn{background:var(--text);color:var(--btn-text);box-shadow:none}
-.sub-copy-btn:hover{box-shadow:none}
-.ctrl-btn:hover{border-color:var(--text);color:var(--text);box-shadow:var(--shadow)}
-.badge.on{color:var(--text);border-color:var(--border);background:transparent}
-.badge{background:var(--bg2)}
-.chip.active{background:var(--text);color:var(--btn-text);border-color:var(--text);box-shadow:none}
-.chip:hover{box-shadow:none;border-color:var(--text);color:var(--text)}
-.config-card{background:var(--card);border-color:var(--border);box-shadow:var(--shadow)}
-.config-card:hover{box-shadow:var(--shadow-lg);border-color:var(--text);transform:translateY(-1px)}
-.icon-btn{box-shadow:none}
-.icon-btn:hover{box-shadow:var(--shadow)}
-.search-box{background:var(--card);border-color:var(--border);box-shadow:none}
-.search-box:focus-within{border-color:var(--text);box-shadow:none}
-.wave-bg{background:none !important}
-[data-theme=dark] .sub-copy-btn{background:#fff;color:#000}
-[data-theme=light] .sub-copy-btn{background:#000;color:#fff}
-</style>
-
-<style>
-.sub-boot-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:var(--bg,#07120e);transition:opacity .28s ease,visibility .28s ease}
-.sub-boot-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
-.sub-boot-card{display:flex;flex-direction:column;align-items:center;gap:13px;padding:28px 32px;border:1px solid var(--border,#1a3328);border-radius:22px;background:var(--card,#0f1f18);box-shadow:0 20px 55px rgba(0,0,0,.5)}
-.sub-boot-text{color:var(--text,#e6f5ee);font-weight:800;font-size:13px}
-.sub-boot-sub{color:var(--muted,#7a9a8a);font-size:11px}
 </style>
 </head>
 <body>
-<div class="sub-boot-loader" id="sub-boot-loader"><div class="sub-boot-card"><svg xmlns="http://www.w3.org/2000/svg" class="ven-loader" viewBox="0 0 64 64" width="96" height="96" fill="none" role="img" aria-label="Loading">
-  <style>
-    .ven-loader { color: #f5f5f7; --rate: 1; }
-    .ven-loader .ven { --dur: 2.6s; --n: 9; }
-    .ven-loader .ven-slat {
-      fill: url(#ven-face);
-      transform-box: fill-box;
-      transform-origin: center;
-      animation: ven-turn calc(var(--dur) * var(--rate, 1)) infinite;
-      animation-delay: calc(var(--i) * var(--dur) * var(--rate, 1) / var(--n) * -1);
-    }
-    @keyframes ven-turn {
-      0% { transform: scaleY(1); opacity: 1; animation-timing-function: ease-in; }
-      50% { transform: scaleY(.02); opacity: .5; animation-timing-function: ease-out; }
-      100% { transform: scaleY(1); opacity: 1; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .ven-loader .ven-slat {
-        animation: none;
-        transform: scaleY(calc(.15 + .85 * (1 - var(--i) / var(--n))));
-      }
-    }
-  </style>
-  <defs>
-    <clipPath id="ven-disc"><circle cx="32" cy="32" r="32"/></clipPath>
-    <linearGradient id="ven-face" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="currentColor" stop-opacity=".55"/>
-      <stop offset="100%" stop-color="currentColor" stop-opacity=".08"/>
-    </linearGradient>
-  </defs>
-  <g class="ven" clip-path="url(#ven-disc)">
-    <rect class="ven-slat" x="-2" y="0.00" width="68" height="7.11" style="--i:0;--rest:0.0"/>
-    <rect class="ven-slat" x="-2" y="7.11" width="68" height="7.11" style="--i:1;--rest:40.0"/>
-    <rect class="ven-slat" x="-2" y="14.22" width="68" height="7.11" style="--i:2;--rest:80.0"/>
-    <rect class="ven-slat" x="-2" y="21.33" width="68" height="7.11" style="--i:3;--rest:120.0"/>
-    <rect class="ven-slat" x="-2" y="28.44" width="68" height="7.11" style="--i:4;--rest:160.0"/>
-    <rect class="ven-slat" x="-2" y="35.56" width="68" height="7.11" style="--i:5;--rest:200.0"/>
-    <rect class="ven-slat" x="-2" y="42.67" width="68" height="7.11" style="--i:6;--rest:240.0"/>
-    <rect class="ven-slat" x="-2" y="49.78" width="68" height="7.11" style="--i:7;--rest:280.0"/>
-    <rect class="ven-slat" x="-2" y="56.89" width="68" height="7.11" style="--i:8;--rest:320.0"/>
-  </g>
-</svg><div class="sub-boot-text">در حال بارگذاری اشتراک</div><div class="sub-boot-sub">لطفاً صبر کنید...</div></div></div>
 <div class="container">
   <div class="hero-bar">
     <div class="hero-top">
@@ -1679,17 +1589,15 @@ body{background:var(--bg);color:var(--text)}
 
   <div class="actions-grid">
     <button class="btn btn-primary" id="copyAllBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg><span data-i18n="copyAll">کپی همه کانفیگ‌ها</span></button>
-    <button class="btn btn-ghost" id="copySubTextBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v7h6"/></svg><span data-i18n="copySubText">کپی متن ساب</span></button>
+    <button class="btn btn-ghost" id="copySubTextBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg><span data-i18n="copySubText">کپی متن ساب</span></button>
   </div>
 
   <div class="filter-bar">
     <div class="chip-row">
       <span class="chip active" data-filter="all" data-i18n="all">همه</span>
-      <span class="chip" data-filter="telegram" data-i18n="filterTelegram">تلگرام</span>
-      <span class="chip" data-filter="vless">VLESS</span>
-      <span class="chip" data-filter="vmess">VMess</span>
-      <span class="chip" data-filter="trojan">Trojan</span>
-      <span class="chip" data-filter="shadowsocks">Shadowsocks</span>
+      <span class="chip" data-filter="proxy">Proxy</span>
+      <span class="chip" data-filter="wireguard">WireGuard</span>
+      <span class="chip" data-filter="tls">TLS</span>
       <span class="chip" data-filter="reality">Reality</span>
     </div>
     <div class="search-box">
@@ -1743,7 +1651,7 @@ body{background:var(--bg);color:var(--text)}
 <script>
 (function(){
   "use strict";
-  // v7 canonical graphical subscription URL: /link/{uuid}.
+  // v6 canonical graphical subscription URL: /link/{uuid}.
   // The UUID is the subscription identity; usernames are no longer used in the public URL.
   var SUB_UUID = window.location.pathname.split('/').filter(Boolean).pop();
   var uname = SUB_UUID;
@@ -1756,41 +1664,11 @@ body{background:var(--bg);color:var(--text)}
   var SUB_ID = '';
 
   var i18n = {
-    fa: {title:"ایستگاه فضایی اشتراک",tagline:"مرکز فرماندهی کانفیگ‌های شما",badgeActive:"✅ فعال",badgeUnlimited:"📅 نامحدود",badgeConfigs:"کانفیگ",statusOnline:"آنلاین",followUs:"ما را دنبال کنید",teamWord:"تیم",subLabel:"لینک سابسکریپشن",copyLink:"کپی لینک",accountTitle:"اطلاعات اکانت",sId:"شناسه اشتراک",lastConn:"آخرین اتصال",justNow:"همین الان",dlExact:"حجم دانلود",ulExact:"حجم آپلود",totalLimit:"سقف کل",totalUsed:"مجموع مصرف",usernameLbl:"نام کاربری",connLimit:"اتصال مجاز",connActive:"اتصال فعلی",trafficPercent:"درصد مصرف ترافیک",speedTitle:"سرعت عالی",speedPeriod:"24 ساعت گذشته",usageChart:"نمودار مصرف",lastUpdate:"آخرین بروزرسانی:",usage:"مصرف شده",remaining:"حجم باقی‌مانده",left:"باقی‌مانده",total:"کل",used:"مصرف‌شده",remain:"حجم باقی‌مانده",expireLabel:"⏱ انقضا",unlimited:"∞ نامحدود",noExpire:"بدون تاریخ انقضا",min:"دقیقه",hour:"ساعت",day:"روز",copyAll:"کپی همه کانفیگ‌ها",copySubText:"کپی متن ساب",all:"همه",filterTelegram:"تلگرام",filterVless:"VLESS",filterVmess:"VMess",filterTrojan:"Trojan",filterShadowsocks:"Shadowsocks",filterReality:"Reality",filterOther:"سایر",search:"جستجو در کانفیگ‌ها...",yourConfigs:"کانفیگ‌های شما",qrHint:"اسکن کنید تا کانفیگ اضافه شود",close:"بستن",toastSub:"لینک ساب کپی شد",toastAll:"همه کانفیگ‌ها کپی شدند",toastCfg:"کانفیگ کپی شد",toastId:"شناسه کپی شد",toastSubText:"متن ساب کپی شد",toastErr:"خطا در کپی",connectedActive:"متصل و فعال",secureReady:"اتصال امن شما آماده استفاده است",quickConnect:"اتصال سریع",usageChart:"نمودار مصرف",chartUpdated:"آخرین بروزرسانی: ۱۴۰۴/۰۶/۲۲ - ۱۲:۳۰"},
-    en: {title:"Space Subscription Station",tagline:"Command Center for Your Configs",badgeActive:"✅ Active",badgeUnlimited:"📅 Unlimited",badgeConfigs:"Configs",statusOnline:"Online",followUs:"Follow us",teamWord:"Team",subLabel:"Subscription Link",copyLink:"Copy Link",accountTitle:"Account Info",sId:"Subscription ID",lastConn:"Last Connection",justNow:"Just now",dlExact:"Download",ulExact:"Upload",totalLimit:"Total Limit",totalUsed:"Total Used",usernameLbl:"Username",connLimit:"Allowed Connections",connActive:"Active Connections",trafficPercent:"Traffic Usage",speedTitle:"Excellent Speed",speedPeriod:"Last 24 hours",usageChart:"Usage Chart",lastUpdate:"Last update:",usage:"Used",remaining:"Remaining Volume",left:"Left",total:"Total",used:"Used",remain:"Remaining",expireLabel:"⏱ Expiration",unlimited:"∞ Unlimited",noExpire:"No expiration date",min:"Min",hour:"Hour",day:"Day",copyAll:"Copy All Configs",copySubText:"Copy Sub Text",all:"All",filterTelegram:"Telegram",filterVless:"VLESS",filterVmess:"VMess",filterTrojan:"Trojan",filterShadowsocks:"Shadowsocks",filterReality:"Reality",filterOther:"Other",search:"Search configs...",yourConfigs:"Your Configs",qrHint:"Scan to add the config",close:"Close",toastSub:"Subscription link copied",toastAll:"All configs copied",toastCfg:"Config copied",toastId:"ID copied",toastSubText:"Sub text copied",toastErr:"Copy failed",connectedActive:"Connected & Active",secureReady:"Your secure connection is ready",quickConnect:"Quick Connect",usageChart:"Usage Chart",chartUpdated:"Last update: 2025-09-13 - 12:30"}
+    fa: {title:"ایستگاه فضایی اشتراک",tagline:"مرکز فرماندهی کانفیگ‌های شما",badgeActive:"✅ فعال",badgeUnlimited:"📅 نامحدود",badgeConfigs:"کانفیگ",statusOnline:"آنلاین",followUs:"ما را دنبال کنید",teamWord:"تیم",subLabel:"لینک سابسکریپشن",copyLink:"کپی لینک",accountTitle:"اطلاعات اکانت",sId:"شناسه اشتراک",lastConn:"آخرین اتصال",justNow:"همین الان",dlExact:"حجم دانلود",ulExact:"حجم آپلود",totalLimit:"سقف کل",totalUsed:"مجموع مصرف",usernameLbl:"نام کاربری",connLimit:"اتصال مجاز",connActive:"اتصال فعلی",trafficPercent:"درصد مصرف ترافیک",speedTitle:"سرعت عالی",speedPeriod:"24 ساعت گذشته",usageChart:"نمودار مصرف",lastUpdate:"آخرین بروزرسانی:",usage:"مصرف شده",remaining:"حجم باقی‌مانده",left:"باقی‌مانده",total:"کل",used:"مصرف‌شده",remain:"حجم باقی‌مانده",expireLabel:"⏱ انقضا",unlimited:"∞ نامحدود",noExpire:"بدون تاریخ انقضا",min:"دقیقه",hour:"ساعت",day:"روز",copyAll:"کپی همه کانفیگ‌ها",copySubText:"کپی متن ساب",all:"همه",search:"جستجو در کانفیگ‌ها...",yourConfigs:"کانفیگ‌های شما",qrHint:"اسکن کنید تا کانفیگ اضافه شود",close:"بستن",toastSub:"لینک ساب کپی شد",toastAll:"همه کانفیگ‌ها کپی شدند",toastCfg:"کانفیگ کپی شد",toastId:"شناسه کپی شد",toastSubText:"متن ساب کپی شد",toastErr:"خطا در کپی",connectedActive:"متصل و فعال",secureReady:"اتصال امن شما آماده استفاده است",quickConnect:"اتصال سریع",usageChart:"نمودار مصرف",chartUpdated:"آخرین بروزرسانی: ۱۴۰۴/۰۶/۲۲ - ۱۲:۳۰"},
+    en: {title:"Space Subscription Station",tagline:"Command Center for Your Configs",badgeActive:"✅ Active",badgeUnlimited:"📅 Unlimited",badgeConfigs:"Configs",statusOnline:"Online",followUs:"Follow us",teamWord:"Team",subLabel:"Subscription Link",copyLink:"Copy Link",accountTitle:"Account Info",sId:"Subscription ID",lastConn:"Last Connection",justNow:"Just now",dlExact:"Download",ulExact:"Upload",totalLimit:"Total Limit",totalUsed:"Total Used",usernameLbl:"Username",connLimit:"Allowed Connections",connActive:"Active Connections",trafficPercent:"Traffic Usage",speedTitle:"Excellent Speed",speedPeriod:"Last 24 hours",usageChart:"Usage Chart",lastUpdate:"Last update:",usage:"Used",remaining:"Remaining Volume",left:"Left",total:"Total",used:"Used",remain:"Remaining",expireLabel:"⏱ Expiration",unlimited:"∞ Unlimited",noExpire:"No expiration date",min:"Min",hour:"Hour",day:"Day",copyAll:"Copy All Configs",copySubText:"Copy Sub Text",all:"All",search:"Search configs...",yourConfigs:"Your Configs",qrHint:"Scan to add the config",close:"Close",toastSub:"Subscription link copied",toastAll:"All configs copied",toastCfg:"Config copied",toastId:"ID copied",toastSubText:"Sub text copied",toastErr:"Copy failed",connectedActive:"Connected & Active",secureReady:"Your secure connection is ready",quickConnect:"Quick Connect",usageChart:"Usage Chart",chartUpdated:"Last update: 2025-09-13 - 12:30"}
   };
 
   var lang = localStorage.getItem("spider-lang") || "fa";
-
-  function normalizeBilingualText(value) {
-    if (value == null) return value;
-    var text = String(value);
-    if (!/[\u0600-\u06ff]/.test(text) || !/[A-Za-z]/.test(text) || !/\s\/\s/.test(text)) return text;
-    var parts = text.split(/\s*\/\s*/).map(function(x){ return x.trim(); }).filter(Boolean);
-    var faParts = parts.filter(function(x){ return /[\u0600-\u06ff]/.test(x) && !/[A-Za-z]/.test(x); });
-    var enParts = parts.filter(function(x){ return /[A-Za-z]/.test(x) && !/[\u0600-\u06ff]/.test(x); });
-    return lang === 'fa' && faParts.length ? faParts[0] : (lang === 'en' && enParts.length ? enParts[0] : text);
-  }
-
-  function cleanupMixedLanguageNodes(rootEl) {
-    rootEl = rootEl || document.body;
-    var walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
-    var nodes = [], n;
-    while ((n = walker.nextNode())) nodes.push(n);
-    nodes.forEach(function(node){
-      var text = node.nodeValue || '';
-      if (!/[\u0600-\u06ff]/.test(text) || !/[A-Za-z]/.test(text) || !/\s\/\s/.test(text)) return;
-      var parent = node.parentElement;
-      if (!parent || ['SCRIPT','STYLE','PRE','CODE','TEXTAREA'].indexOf(parent.tagName) >= 0) return;
-      node.nodeValue = normalizeBilingualText(text);
-    });
-    rootEl.querySelectorAll && rootEl.querySelectorAll('[title],[aria-label]').forEach(function(el){
-      ['title','aria-label'].forEach(function(attr){
-        var v = el.getAttribute(attr);
-        if (v && /[\u0600-\u06ff]/.test(v) && /[A-Za-z]/.test(v) && /\s\/\s/.test(v)) el.setAttribute(attr, normalizeBilingualText(v));
-      });
-    });
-  }
 
   function applyLang(l) {
     lang = l;
@@ -1808,7 +1686,6 @@ body{background:var(--bg);color:var(--text)}
       var k = el.getAttribute("data-i18n-placeholder");
       if (t[k]) el.placeholder = t[k];
     });
-    cleanupMixedLanguageNodes(document.body);
   }
 
   function tr(k) {
@@ -1819,9 +1696,12 @@ body{background:var(--bg);color:var(--text)}
   var root = document.documentElement;
   var savedTheme = localStorage.getItem("spider-theme");
   // Default dark — light theme is dimmed; pure white hurt eyes
-  if (savedTheme !== "light" && savedTheme !== "dark") savedTheme = "dark";
-  root.setAttribute("data-theme", savedTheme);
-  localStorage.setItem("spider-theme", savedTheme);
+  if (savedTheme === "light") {
+    root.removeAttribute("data-theme");
+  } else {
+    root.setAttribute("data-theme", "dark");
+    if (!savedTheme) localStorage.setItem("spider-theme", "dark");
+  }
 
   function applySvgTheme() {
     var isDark = root.getAttribute("data-theme") === "dark";
@@ -1832,9 +1712,13 @@ body{background:var(--bg);color:var(--text)}
   }
   function toggleTheme() {
     root.classList.add("theme-switching");
-    var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    root.setAttribute("data-theme", next);
-    localStorage.setItem("spider-theme", next);
+    if (root.getAttribute("data-theme") === "dark") {
+      root.removeAttribute("data-theme");
+      localStorage.setItem("spider-theme", "light");
+    } else {
+      root.setAttribute("data-theme", "dark");
+      localStorage.setItem("spider-theme", "dark");
+    }
     applySvgTheme();
     setTimeout(function(){ root.classList.remove("theme-switching"); }, 100);
   }
@@ -2068,12 +1952,6 @@ body{background:var(--bg);color:var(--text)}
     });
   }
 
-  if (!window.__spiderSubI18nObserver) {
-    window.__spiderSubI18nObserver = new MutationObserver(function(mutations){
-      mutations.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes || [], function(n){ if (n.nodeType === 1) cleanupMixedLanguageNodes(n); }); });
-    });
-    if (document.body) window.__spiderSubI18nObserver.observe(document.body, {childList:true, subtree:true});
-  }
   applyLang(lang);
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", bind);
@@ -2109,26 +1987,17 @@ body{background:var(--bg);color:var(--text)}
 
   function dataProtoKey(link) {
     var l = String(link || '').trim().toLowerCase();
-    if (l.indexOf('https://t.me/proxy?') === 0 || l.indexOf('tg://proxy') === 0 || l.indexOf('mtproto://') === 0 || l.indexOf('telegram://') === 0) return 'telegram';
+    if (l.indexOf('https://t.me/proxy?') === 0 || l.indexOf('tg://proxy') === 0 || l.indexOf('mtproto://') === 0 || l.indexOf('telegram://') === 0) return 'proxy';
+    if (l.indexOf('wireguard://') === 0 || l.indexOf('wg://') === 0 || l.indexOf('peer.') === 0 && l.indexOf('amnezia') >= 0) return 'wireguard';
     if (l.indexOf('security=reality') >= 0) return 'reality';
-    if (l.indexOf('vless://') === 0) return 'vless';
-    if (l.indexOf('vmess://') === 0) return 'vmess';
-    if (l.indexOf('trojan://') === 0) return 'trojan';
-    if (l.indexOf('ss://') === 0) return 'shadowsocks';
+    if (l.indexOf('security=tls') >= 0 || l.indexOf('&tls=1') >= 0) return 'tls';
+    if (/^(vless|vmess|trojan|ss|socks|hysteria2|tuic):\/\//.test(l)) return 'proxy';
     return 'other';
   }
 
   function categoryTitle(key) {
-    var keys = {
-      telegram: 'filterTelegram',
-      vless: 'filterVless',
-      vmess: 'filterVmess',
-      trojan: 'filterTrojan',
-      shadowsocks: 'filterShadowsocks',
-      reality: 'filterReality',
-      other: 'filterOther'
-    };
-    return tr(keys[key] || 'filterOther');
+    var titles = { proxy: lang === 'fa' ? 'Proxy' : 'Proxy', wireguard: 'WireGuard', tls: 'VLESS / TLS / WS', reality: 'VLESS / Reality', other: lang === 'fa' ? 'سایر' : 'Other' };
+    return titles[key] || titles.other;
   }
 
   function renderConfigs() {
@@ -2136,7 +2005,7 @@ body{background:var(--bg);color:var(--text)}
     if (!list) return;
     list.innerHTML = '';
     var iconColors = ['var(--cyan)', 'var(--magenta)', 'var(--gold)', 'var(--orange)', 'var(--success)'];
-    var groups = {telegram:[], vless:[], vmess:[], trojan:[], shadowsocks:[], reality:[], other:[]};
+    var groups = {proxy:[], wireguard:[], tls:[], reality:[], other:[]};
     CONFIG_LINKS.forEach(function(link, i) { groups[dataProtoKey(link)].push({link:link, i:i}); });
     Object.keys(groups).forEach(function(key) {
       var entries = groups[key];
@@ -2294,12 +2163,10 @@ body{background:var(--bg);color:var(--text)}
       if (!r.ok) throw new Error(r.status === 404 ? (lang === 'fa' ? 'کاربر پیدا نشد' : 'User not found') : (lang === 'fa' ? 'خطای سرور' : 'Server error'));
       var d = await r.json();
       applyData(d);
-      var boot=document.getElementById('sub-boot-loader'); if(boot) boot.classList.add('hidden');
     } catch (e) {
       var list = document.getElementById('configList');
       if (list) list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px">' + esc(e.message) + '</div>';
       setText('statusTitle', lang === 'fa' ? 'خطا در دریافت اطلاعات' : 'Failed to load');
-      var bootErr=document.getElementById('sub-boot-loader'); if(bootErr) bootErr.classList.add('hidden');
       console.warn('sub load failed:', e);
     }
   }

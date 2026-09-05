@@ -353,54 +353,18 @@ async function socks5Connect(proxy, targetHost, targetPort) {
     return conn;
   } catch (e) { try { conn.socket.close(); } catch(_){} return null; }
 }
-function buildVlessConnectHeader(uuid, address, port) {
-  const raw = String(uuid || '').replace(/-/g, '').toLowerCase();
-  if (!/^[0-9a-f]{32}$/.test(raw)) throw new Error('bad relay uuid');
-  const uuidBytes = new Uint8Array(16);
-  for (let i = 0; i < 16; i++) uuidBytes[i] = parseInt(raw.slice(i * 2, i * 2 + 2), 16);
-  let addrBytes, atype;
-  if (/^\\d{1,3}(?:\\.\\d{1,3}){3}$/.test(String(address))) {
-    atype = 1;
-    addrBytes = new Uint8Array(String(address).split('.').map(x => Number(x)));
-  } else {
-    atype = 2;
-    const b = new TextEncoder().encode(String(address));
-    if (b.length > 255) throw new Error('target host too long');
-    addrBytes = new Uint8Array(1 + b.length);
-    addrBytes[0] = b.length;
-    addrBytes.set(b, 1);
-  }
-  const out = new Uint8Array(1 + 16 + 1 + 1 + 2 + 1 + addrBytes.length);
-  let p = 0;
-  out[p++] = 0;
-  out.set(uuidBytes, p); p += 16;
-  out[p++] = 0; // addons length
-  out[p++] = 1; // TCP command
-  out[p++] = (Number(port) >> 8) & 255;
-  out[p++] = Number(port) & 255;
-  out[p++] = atype;
-  out.set(addrBytes, p);
-  return out;
-}
-
-async function connectViaProxy(proxyEntry, targetHost, targetPort, loc, relayUuid) {
+async function connectViaProxy(proxyEntry, targetHost, targetPort, loc) {
   const proxy = parseProxyEntry(proxyEntry, loc && Number(loc.port) ? Number(loc.port) : undefined);
   if (!proxy) return null;
   if (proxy.protocol === 'socks5' || proxy.protocol === 'socks4') return socks5Connect(proxy,targetHost,targetPort);
   if (proxy.protocol === 'relay') {
-    // ProxyIP-Daily entries are VLESS relays: connect to the relay and send a
-    // fresh VLESS TCP request header for the real target before forwarding the
-    // client's payload.
+    // Raw VLESS relay (Cloudflare-clean IP): plain TCP stream to ip:443 — the
+    // client's own TLS ClientHello flows through and the edge routes by SNI.
     const conn = await openSocket(proxy.hostname, proxy.port);
     if (!conn) return null;
-    try {
-      if (!relayUuid) throw new Error('relay uuid missing');
-      await conn.writer.write(buildVlessConnectHeader(relayUuid, targetHost, targetPort));
-      return conn;
-    } catch (e) {
-      try { conn.socket.close(); } catch (_) {}
-      return null;
-    }
+    // A successful TCP open is enough; these relays never send a greeting, and
+    // reading first would swallow part of the client's TLS handshake bytes.
+    return conn;
   }
   return httpConnect(proxy,targetHost,targetPort);
 }
@@ -422,7 +386,7 @@ async function connectOutbound(env, country, user, targetHost, targetPort) {
     candidates = [String(user.proxy_ip || '').trim()].filter(Boolean);
   }
   for (const entry of candidates) {
-    const conn = await connectViaProxy(entry, targetHost, targetPort, loc, user.uuid);
+    const conn = await connectViaProxy(entry, targetHost, targetPort, loc);
     if (conn) return conn;
   }
   // Every ranked candidate failed — the cached ranking is stale. Re-race
@@ -432,7 +396,7 @@ async function connectOutbound(env, country, user, targetHost, targetPort) {
     const fresh = await rankCountryProxies(loc);
     const rest = fresh.filter(e => !candidates.includes(e));
     for (const entry of rest) {
-      const conn = await connectViaProxy(entry, targetHost, targetPort, loc, user.uuid);
+      const conn = await connectViaProxy(entry, targetHost, targetPort, loc);
       if (conn) return conn;
     }
   }
@@ -498,7 +462,7 @@ async function handleVlessWs(request, env, country, preUser) {
         // but ONLY when the client didn't request a specific country — a
         // /route/{country}/{uuid} request must never exit from another country's IP.
         const anyEntry = await getAnyProxy(env);
-        if (anyEntry) conn = await connectViaProxy(anyEntry, h.address, h.port, null, user.uuid);
+        if (anyEntry) conn = await connectViaProxy(anyEntry, h.address, h.port);
       }
       if (!conn) {
         // Only permit direct mode when the target is not the Worker itself.
