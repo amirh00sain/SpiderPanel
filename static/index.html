@@ -3024,7 +3024,7 @@ async function submitInbound(e) {
     else if(body.network==='grpc') body.grpc_settings={serviceName:$id('ib-grpc-svc').value.trim(),authority:$id('ib-grpc-authority').value.trim()};
   }
   try { await api('/api/inbounds'+(iid?'/'+iid:''),{method:iid?'PATCH':'POST',body:body}); toast(iid?'ذخیره شد / Saved':'ایجاد شد / Created','ok'); closeModal('mod-inbound'); loadInbounds(); }
-  catch(e){toast(e.message||'خطا / Error','err');} finally {btn.disabled=false; btn.textContent=iid?'ذخیره / Save':'ایجاد / Create';}
+  catch(e){toast(e.message||'خطا / Error','err'); console.error('Inbound save failed:', e);} finally {btn.disabled=false; btn.textContent=iid?'ذخیره / Save':'ایجاد / Create';}
 }
 
 async function deleteInbound(iid) {
