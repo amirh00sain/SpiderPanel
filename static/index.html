@@ -718,7 +718,8 @@ tr{animation:fadeIn .3s ease}
 /* Modal - Glass */
 .modal{
   position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);
-  z-index:200;display:none;align-items:center;justify-content:center;padding:20px;
+  z-index:10000;display:none;align-items:center;justify-content:center;padding:20px;
+  width:100vw;height:100vh;
 }
 .modal.show{display:flex;animation:fadeIn .2s ease}
 .modal-c{
@@ -927,7 +928,8 @@ tr{animation:fadeIn .3s ease}
   .stat{padding:14px 10px}.stat-v{font-size:20px}.stat-l{font-size:10px}
   .topbar{padding:10px 14px}.content{padding:12px}
   .panel{padding:14px;border-radius:12px}
-  .modal-c{padding:18px;border-radius:16px}
+  .modal-c{padding:18px;border-radius:16px;width:min(520px, calc(100vw - 24px));max-width:calc(100vw - 24px);margin:0 auto}
+  #mod-add-node .modal-c{width:min(520px, calc(100vw - 24px));max-width:calc(100vw - 24px);}
   .btn{padding:10px 14px;font-size:12px}
   .btn-sm{padding:6px 10px;font-size:11px}
   td,th{padding:8px 6px;font-size:11px}
@@ -3060,7 +3062,16 @@ async function uploadRestore(input) {
 }
 
 // ─── Modal ───
-function openModal(id) { $id(id).classList.add('show'); }
+// Modals must live directly under <body>.  When a modal is nested inside
+// .content (which has overflow/stacking behavior), position:fixed can be
+// clipped or rendered underneath the fixed sidebar.  Portal every modal to
+// the document body before it is shown.
+function portalModalsToBody() {
+  document.querySelectorAll('.modal').forEach(function(m) {
+    if (m.parentElement !== document.body) document.body.appendChild(m);
+  });
+}
+function openModal(id) { portalModalsToBody(); $id(id).classList.add('show'); }
 function closeModal(id) { $id(id).classList.remove('show'); }
 // Inject an X close button into every modal header and wire backdrop-click +
 // Escape-key close so modals can be dismissed easily (QR modal included).
@@ -3081,7 +3092,8 @@ document.addEventListener('keydown', function(ev) {
     document.querySelectorAll('.modal.show').forEach(function(m) { closeModal(m.id); });
   }
 });
-document.addEventListener('DOMContentLoaded', wireModalCloseButtons);
+document.addEventListener('DOMContentLoaded', function(){ portalModalsToBody(); wireModalCloseButtons(); });
+portalModalsToBody();
 wireModalCloseButtons();
 
 // ─── DOM Helper ───
