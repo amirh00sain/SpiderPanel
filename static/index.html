@@ -1699,7 +1699,13 @@ html[data-theme="light"] .btn-p{background:#000!important;color:#fff!important}
         </div>
         <button type="button" class="btn btn-sm btn-b" onclick="generateRealityKeysUI()" style="width:100%;margin-bottom:10px">Generate Reality Keys / تولید کلید Reality</button>
         <div class="f-r">
-          <div class="f-g"><label>Short ID / شناسه کوتاه</label><input type="text" id="ib-shortids" dir="ltr"></div>
+          <div class="f-g">
+            <label>Short ID / شناسه کوتاه</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="text" id="ib-shortids" dir="ltr" autocomplete="off" spellcheck="false" style="flex:1">
+              <button type="button" class="btn btn-sm btn-b" onclick="generateShortId()" title="Generate Short ID / ساخت شناسه" aria-label="Generate Short ID">+ تولید</button>
+            </div>
+          </div>
           <div class="f-g"><label>SpiderX / مسیر SpiderX</label><input type="text" id="ib-spiderx" dir="ltr" value="/"></div>
         </div>
       </div>
@@ -2868,17 +2874,20 @@ async function generateRealityKeysUI() {
 }
 
 async function generateShortId() {
-  var iid = $id('ib-id').value;
-  if (!iid) {
-    var hex = ''; for(var i=0;i<10;i++) hex += '0123456789abcdef'[Math.floor(Math.random()*16)];
-    $id('ib-shortids').value = hex;
-    toast(t('shortIdGen'), 'ok');
-    return;
-  }
+  var iid = (($id('ib-id') && $id('ib-id').value) || '').trim();
   try {
-    var r = await api('/api/inbounds/' + iid + '/generate-short-id', {method: 'POST'});
-    $id('ib-shortids').value = r.short_id || '';
-    toast(t('shortIdNew'), 'ok');
+    if (iid) {
+      var r = await api('/api/inbounds/' + encodeURIComponent(iid) + '/generate-short-id', {method: 'POST'});
+      if (!r || !r.short_id) throw new Error('Short ID generation failed');
+      $id('ib-shortids').value = r.short_id;
+    } else {
+      var bytes = new Uint8Array(5);
+      if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
+      else for (var i=0;i<bytes.length;i++) bytes[i] = Math.floor(Math.random()*256);
+      var hex = Array.from(bytes, function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+      $id('ib-shortids').value = hex;
+    }
+    toast(iid ? t('shortIdNew') : t('shortIdGen'), 'ok');
   } catch(e) { toast(t('toast.err'), 'err'); }
 }
 

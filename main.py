@@ -4035,8 +4035,10 @@ async def generate_inbound_short_id(inbound_id: str, _=Depends(require_auth)):
         ib = INBOUNDS.get(inbound_id)
         if not ib:
             raise HTTPException(status_code=404, detail="inbound not found")
-        if ib.get("protocol") != "reality":
-            raise HTTPException(status_code=400, detail="inbound is not Reality protocol")
+        protocol = str(ib.get("protocol") or "").lower()
+        security = str(ib.get("security") or "").lower()
+        if not (protocol == "reality" or (protocol == "vless" and security == "reality")):
+            raise HTTPException(status_code=400, detail="inbound is not a Reality inbound")
         rs = ib.setdefault("reality_settings", {})
         rs["short_id"] = secrets.token_hex(5)[:10]
     await save_state()
