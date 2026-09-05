@@ -107,17 +107,20 @@
     "default": {
       "name": "VLESS+WS پیش‌فرض",
       "protocol": "vless",
-      "port": 8080,
+      "port": 443,
       "network": "ws",
       "security": "tls",
       "domain": "localhost",
-      "external_domain": "",
-      "sni": "",
-      "external_port": "",
+      "external_domain": "localhost",
+      "sni": "localhost",
+      "external_port": 443,
       "fingerprint": "chrome",
       "reality_settings": {},
       "xhttp_settings": {},
-      "created_at": "2026-08-23T15:24:47.807297"
+      "created_at": "2026-08-23T15:24:47.807297",
+      "ws_settings": {
+        "path": "/ws"
+      }
     },
     "default-reality": {
       "name": "Reality+XHTTP پیش‌فرض",

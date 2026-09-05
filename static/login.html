@@ -131,34 +131,6 @@
             gap: 8px;
         }
         .error-msg.show { display: flex; }
-        html[data-theme="light"] [data-login-theme] {
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(0, 0, 0, 0.15);
-        }
-        html[data-theme="light"] [data-login-theme] h1,
-        html[data-theme="light"] [data-login-theme] input,
-        html[data-theme="light"] [data-login-theme] button span { color: #000000 !important; caret-color: #000000; }
-        html[data-theme="dark"] [data-login-theme] .input-glass {
-            background-color: rgba(0, 0, 0, 0.5) !important;
-            border-color: rgba(255, 255, 255, 0.15);
-            color: #e2e2e2;
-            caret-color: #e2e2e2;
-        }
-        html[data-theme="light"] [data-login-theme] .input-glass {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-color: rgba(0, 0, 0, 0.15);
-            color: #000000;
-        }
-        html[data-theme="light"] [data-login-theme] .input-glass:focus {
-            border-color: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
-        }
-        html[data-theme="light"] [data-login-theme] .glass-card { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); }
-        html[data-theme="light"] [data-login-theme] .text-on-surface-variant,
-        html[data-theme="light"] [data-login-theme] label,
-        html[data-theme="light"] [data-login-theme] span.material-symbols-outlined { color: #3a3a3e !important; }
-        html[data-theme="light"] body { background: #f2f2f7; }
-        html[data-theme="light"] #shader-canvas { display: none; }
         #shader-canvas {
             position: absolute;
             inset: 0;
@@ -166,13 +138,88 @@
             height: 100%;
             z-index: 0;
         }
+
+        /* Sharp, restrained login surface */
+        body { background:#090a0c !important; }
+        .glass-card {
+            background:rgba(17,19,22,.96) !important;
+            border:1px solid rgba(255,255,255,.11) !important;
+            border-radius:10px !important;
+            box-shadow:0 22px 55px rgba(0,0,0,.48) !important;
+            backdrop-filter:none !important;
+            -webkit-backdrop-filter:none !important;
+        }
+        .login-card { border-radius:32px !important; box-shadow:0 22px 55px rgba(0,0,0,.42) !important; }
+        .login-title { background:none !important; -webkit-text-fill-color:#f2f4f7 !important; color:#f2f4f7 !important; }
+        .input-glass { border-radius:7px !important; background:#0c0e11 !important; border-color:rgba(255,255,255,.12) !important; box-shadow:none !important; }
+        .input-glass:focus { border-color:rgba(255,255,255,.32) !important; box-shadow:0 0 0 3px rgba(255,255,255,.05) !important; }
+        #loginBtn { border-radius:7px !important; min-height:44px; box-shadow:0 9px 24px rgba(0,0,0,.28); }
+        .error-msg { border-radius:7px !important; }
+        .login-card::before,.login-card::after { display:none !important; }
+
 </style>
 <script>
-  document.documentElement.setAttribute('data-theme', localStorage.getItem('spider-theme') === 'light' ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', 'dark');
 </script>
+
+<style id="final-login-monochrome">
+html,body{background:#000!important;color:#fff!important}
+.login-card,.glass-card{border-radius:32px!important;box-shadow:0 22px 55px rgba(0,0,0,.42)!important}
+#loginBtn,.btn-hover-effect,button,input{box-shadow:none!important;text-shadow:none!important;outline:none!important}
+#loginBtn:focus,input:focus{box-shadow:none!important}
+</style>
+
+<style>
+.login-boot-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#131313;transition:opacity .25s ease,visibility .25s ease}
+.login-boot-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.login-boot-card{display:flex;flex-direction:column;align-items:center;gap:13px;padding:28px 32px;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:rgba(19,19,19,.96);box-shadow:0 20px 55px rgba(0,0,0,.5)}
+.login-boot-text{color:#f2f4f7;font-weight:700;font-size:13px}
+</style>
 </head>
 <body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex items-center justify-center relative">
 
+<div class="login-boot-loader" id="login-boot-loader" aria-live="polite"><div class="login-boot-card"><svg xmlns="http://www.w3.org/2000/svg" class="ven-loader" viewBox="0 0 64 64" width="96" height="96" fill="none" role="img" aria-label="Loading">
+  <style>
+    .ven-loader { color: #f5f5f7; --rate: 1; }
+    .ven-loader .ven { --dur: 2.6s; --n: 9; }
+    .ven-loader .ven-slat {
+      fill: url(#ven-face);
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: ven-turn calc(var(--dur) * var(--rate, 1)) infinite;
+      animation-delay: calc(var(--i) * var(--dur) * var(--rate, 1) / var(--n) * -1);
+    }
+    @keyframes ven-turn {
+      0% { transform: scaleY(1); opacity: 1; animation-timing-function: ease-in; }
+      50% { transform: scaleY(.02); opacity: .5; animation-timing-function: ease-out; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ven-loader .ven-slat {
+        animation: none;
+        transform: scaleY(calc(.15 + .85 * (1 - var(--i) / var(--n))));
+      }
+    }
+  </style>
+  <defs>
+    <clipPath id="ven-disc"><circle cx="32" cy="32" r="32"/></clipPath>
+    <linearGradient id="ven-face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="currentColor" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="currentColor" stop-opacity=".08"/>
+    </linearGradient>
+  </defs>
+  <g class="ven" clip-path="url(#ven-disc)">
+    <rect class="ven-slat" x="-2" y="0.00" width="68" height="7.11" style="--i:0;--rest:0.0"/>
+    <rect class="ven-slat" x="-2" y="7.11" width="68" height="7.11" style="--i:1;--rest:40.0"/>
+    <rect class="ven-slat" x="-2" y="14.22" width="68" height="7.11" style="--i:2;--rest:80.0"/>
+    <rect class="ven-slat" x="-2" y="21.33" width="68" height="7.11" style="--i:3;--rest:120.0"/>
+    <rect class="ven-slat" x="-2" y="28.44" width="68" height="7.11" style="--i:4;--rest:160.0"/>
+    <rect class="ven-slat" x="-2" y="35.56" width="68" height="7.11" style="--i:5;--rest:200.0"/>
+    <rect class="ven-slat" x="-2" y="42.67" width="68" height="7.11" style="--i:6;--rest:240.0"/>
+    <rect class="ven-slat" x="-2" y="49.78" width="68" height="7.11" style="--i:7;--rest:280.0"/>
+    <rect class="ven-slat" x="-2" y="56.89" width="68" height="7.11" style="--i:8;--rest:320.0"/>
+  </g>
+</svg><div class="login-boot-text">در حال بارگذاری ورود</div><div style="color:#9aa0a8;font-size:11px">لطفاً صبر کنید...</div></div></div>
 <!-- Shader Background -->
 <canvas id="shader-canvas"></canvas>
 <script>
@@ -227,9 +274,6 @@
 <div class="glass-card rounded-3xl w-full max-w-md p-stack-lg mx-margin-mobile flex flex-col gap-stack-lg shadow-2xl shadow-black/50 z-10" data-login-theme>
   <!-- Header -->
   <div class="flex flex-col items-center gap-stack-sm text-center">
-    <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-2">
-      <span class="material-symbols-outlined text-black" style="font-size: 28px;">cloud</span>
-    </div>
     <img src="/static/spider-logo.svg" alt="SPiDER" style="width:64px;height:64px;object-fit:contain;margin:0 auto 12px;display:block">
         <h1 class="font-headline-lg text-headline-lg text-on-surface">SPIDER PANEL</h1>
     <p class="font-body-sm text-body-sm text-on-surface-variant">High Performance Panel</p>
@@ -258,6 +302,7 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function(){ var l=document.getElementById('login-boot-loader'); if(l) l.classList.add('hidden'); });
 document.getElementById('login-form').addEventListener('submit', async function(e) {
   e.preventDefault();
   var btn = document.getElementById('loginBtn');
@@ -268,6 +313,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
 
   errDiv.classList.remove('show');
   btn.disabled = true;
+  var boot=document.getElementById('login-boot-loader'); if(boot) boot.classList.remove('hidden');
   btnText.classList.add('hidden');
   btnSpinner.classList.remove('hidden');
 
@@ -286,9 +332,12 @@ document.getElementById('login-form').addEventListener('submit', async function(
     errText.textContent = ex.message;
     errDiv.classList.add('show');
     btn.disabled = false;
+    var bootErr=document.getElementById('login-boot-loader'); if(bootErr) bootErr.classList.add('hidden');
     btnText.classList.remove('hidden');
     btnSpinner.classList.add('hidden');
   }
 });
 </script>
 </body></html>
+
+<style>html[data-theme="light"],html[data-theme="light"] body,html,body{background:#131313!important;color:#e2e2e2!important} [data-login-theme]{background:rgba(19,19,19,.92)!important;border-color:rgba(255,255,255,.15)!important;color:#e2e2e2!important;border-radius:32px!important} [data-login-theme] input{background:rgba(0,0,0,.5)!important;color:#e2e2e2!important}</style>
