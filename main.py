@@ -1209,7 +1209,17 @@ async def startup():
     # port (443 can only be used once). Non-default inbounds that collide with
     # an earlier one are moved to the next free port (80xx range).
     _seen_ports: dict = {}
-    for _ib in INBOUNDS.values():
+    # Reserve 443 for the built-in default first, regardless of dictionary order.
+    if _is_managed_default_inbound("default", INBOUNDS.get("default")):
+        _def = INBOUNDS["default"]
+        if int(_def.get("port") or 0) != 443 or int(_def.get("external_port") or 0) != 443:
+            _def["port"] = 443
+            _def["external_port"] = 443
+            _changed = True
+        _seen_ports[443] = True
+    for _iid, _ib in INBOUNDS.items():
+        if _iid == "default" and _is_managed_default_inbound(_iid, _ib):
+            continue
         _p = int(_ib.get("port") or 0)
         if _p and _p in _seen_ports:
             _np = _p + 1
@@ -1220,7 +1230,8 @@ async def startup():
                 _ib["external_port"] = _np
             _changed = True
             logger.info("Inbound «%s» moved to free port %s (was %s)", _ib.get("name"), _np, _p)
-        _seen_ports[int(_ib.get("port") or 0)] = True
+        if _p:
+            _seen_ports[int(_ib.get("port") or 0)] = True
 
     # Reality migration: every reality inbound must carry a WORKING pbk/sid —
     # a pbk that is actually the public half of the private key Xray will use.
@@ -1731,6 +1742,19 @@ def generate_short_id() -> str:
     """Generate a shorter ID for user management."""
     return secrets.token_hex(6)
 
+def _is_managed_default_inbound(inbound_id: str, inbound: dict | None = None) -> bool:
+    """Return True only for the built-in VLESS+WS default inbound.
+
+    This inbound is a hard exception: every port value exposed/used for it must
+    remain 443. Custom/new inbounds are never affected by this rule.
+    """
+    return inbound_id == "default" and (
+        inbound is None
+        or (str(inbound.get("protocol") or "").lower() == "vless"
+            and str(inbound.get("network") or "").lower() == "ws"
+            and str(inbound.get("security") or "").lower() == "tls")
+    )
+
 def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr: str = None, remark_tag: str = None) -> str:
     """Build a VLESS config string for one inbound of a user.
 
@@ -1769,6 +1793,14 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         else:
             addr_ip, addr_port = addr, "443"
         addr_ip, addr_port = addr_ip.strip(), addr_port.strip()
+
+    # Built-in default VLESS+WS is a hard 443 exception. Even scanned/custom
+    # address inputs must not introduce another port for this inbound.
+    if _is_managed_default_inbound(inbound_id, inbound):
+        addr_port = "443"
+        if inbound is not None:
+            inbound["port"] = 443
+            inbound["external_port"] = 443
 
     # ── WORKER (multi-location via Cloudflare Worker) ──
     if proto == "worker":
@@ -3768,8 +3800,12 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         if "spoof_ip" in body:
             ib["spoof_ip"] = str(body["spoof_ip"]).strip()
         if "external_port" in body:
-            _ev = str(body["external_port"] or "").strip()
-            ib["external_port"] = int(_ev) if _ev else ""
+            # The built-in default TLS+WS inbound always uses external/public 443.
+            if _is_managed_default_inbound(inbound_id, ib):
+                ib["external_port"] = 443
+            else:
+                _ev = str(body["external_port"] or "").strip()
+                ib["external_port"] = int(_ev) if _ev else ""
         if "fingerprint" in body:
             ib["fingerprint"] = str(body["fingerprint"]).strip()
         if "reality_settings" in body and isinstance(body["reality_settings"], dict):
@@ -3894,12 +3930,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
     # Final invariant for the built-in default TLS+WS inbound.
     # This is intentionally an exception to the user-configurable inbound port:
     # internal/listener port and public/external port are both 443.
-    if (
-        inbound_id == "default"
-        and (ib.get("protocol") or "").lower() == "vless"
-        and (ib.get("network") or "").lower() == "ws"
-        and (ib.get("security") or "").lower() == "tls"
-    ):
+    if _is_managed_default_inbound(inbound_id, ib):
         ib["port"] = 443
         ib["external_port"] = 443
 
@@ -3908,12 +3939,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         ib["external_port"] = ""
 
     # Re-apply the managed-default exception after generic external-port cleanup.
-    if (
-        inbound_id == "default"
-        and (ib.get("protocol") or "").lower() == "vless"
-        and (ib.get("network") or "").lower() == "ws"
-        and (ib.get("security") or "").lower() == "tls"
-    ):
+    if _is_managed_default_inbound(inbound_id, ib):
         ib["port"] = 443
         ib["external_port"] = 443
 

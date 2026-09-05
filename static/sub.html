@@ -1466,14 +1466,53 @@ body{background:var(--bg);color:var(--text)}
 .sub-boot-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:var(--bg,#07120e);transition:opacity .28s ease,visibility .28s ease}
 .sub-boot-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
 .sub-boot-card{display:flex;flex-direction:column;align-items:center;gap:13px;padding:28px 32px;border:1px solid var(--border,#1a3328);border-radius:22px;background:var(--card,#0f1f18);box-shadow:0 20px 55px rgba(0,0,0,.5)}
-.sub-boot-spinner{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:var(--cyan,#34d399);animation:subBootSpin .75s linear infinite}
 .sub-boot-text{color:var(--text,#e6f5ee);font-weight:800;font-size:13px}
 .sub-boot-sub{color:var(--muted,#7a9a8a);font-size:11px}
-@keyframes subBootSpin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<div class="sub-boot-loader" id="sub-boot-loader"><div class="sub-boot-card"><div class="sub-boot-spinner"></div><div class="sub-boot-text">در حال بارگذاری اشتراک</div><div class="sub-boot-sub">لطفاً صبر کنید...</div></div></div>
+<div class="sub-boot-loader" id="sub-boot-loader"><div class="sub-boot-card"><svg xmlns="http://www.w3.org/2000/svg" class="ven-loader" viewBox="0 0 64 64" width="96" height="96" fill="none" role="img" aria-label="Loading">
+  <style>
+    .ven-loader { color: #f5f5f7; --rate: 1; }
+    .ven-loader .ven { --dur: 2.6s; --n: 9; }
+    .ven-loader .ven-slat {
+      fill: url(#ven-face);
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: ven-turn calc(var(--dur) * var(--rate, 1)) infinite;
+      animation-delay: calc(var(--i) * var(--dur) * var(--rate, 1) / var(--n) * -1);
+    }
+    @keyframes ven-turn {
+      0% { transform: scaleY(1); opacity: 1; animation-timing-function: ease-in; }
+      50% { transform: scaleY(.02); opacity: .5; animation-timing-function: ease-out; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ven-loader .ven-slat {
+        animation: none;
+        transform: scaleY(calc(.15 + .85 * (1 - var(--i) / var(--n))));
+      }
+    }
+  </style>
+  <defs>
+    <clipPath id="ven-disc"><circle cx="32" cy="32" r="32"/></clipPath>
+    <linearGradient id="ven-face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="currentColor" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="currentColor" stop-opacity=".08"/>
+    </linearGradient>
+  </defs>
+  <g class="ven" clip-path="url(#ven-disc)">
+    <rect class="ven-slat" x="-2" y="0.00" width="68" height="7.11" style="--i:0;--rest:0.0"/>
+    <rect class="ven-slat" x="-2" y="7.11" width="68" height="7.11" style="--i:1;--rest:40.0"/>
+    <rect class="ven-slat" x="-2" y="14.22" width="68" height="7.11" style="--i:2;--rest:80.0"/>
+    <rect class="ven-slat" x="-2" y="21.33" width="68" height="7.11" style="--i:3;--rest:120.0"/>
+    <rect class="ven-slat" x="-2" y="28.44" width="68" height="7.11" style="--i:4;--rest:160.0"/>
+    <rect class="ven-slat" x="-2" y="35.56" width="68" height="7.11" style="--i:5;--rest:200.0"/>
+    <rect class="ven-slat" x="-2" y="42.67" width="68" height="7.11" style="--i:6;--rest:240.0"/>
+    <rect class="ven-slat" x="-2" y="49.78" width="68" height="7.11" style="--i:7;--rest:280.0"/>
+    <rect class="ven-slat" x="-2" y="56.89" width="68" height="7.11" style="--i:8;--rest:320.0"/>
+  </g>
+</svg><div class="sub-boot-text">در حال بارگذاری اشتراک</div><div class="sub-boot-sub">لطفاً صبر کنید...</div></div></div>
 <div class="container">
   <div class="hero-bar">
     <div class="hero-top">
