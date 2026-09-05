@@ -573,21 +573,10 @@ async def require_panel_or_node(request: Request):
     token = request.cookies.get(SESSION_COOKIE)
     if await is_valid_session(token):
         return token
-    key = str(request.headers.get("X-API-Key") or request.headers.get("X-Node-Key") or (request.headers.get("Authorization") or "").removeprefix("Bearer ") or request.query_params.get("api_key") or "").strip()
+    key = str(request.headers.get("X-API-Key") or request.query_params.get("api_key") or "").strip()
     if key and PANEL_API_KEY and secrets.compare_digest(key, PANEL_API_KEY):
         return key
     raise HTTPException(status_code=401, detail="unauthorized")
-
-
-def _node_auth_headers(api_key: str) -> dict:
-    """Send the node key through several common proxy-preserving headers."""
-    key = str(api_key or "").strip()
-    return {
-        "X-API-Key": key,
-        "X-Node-Key": key,
-        "Authorization": f"Bearer {key}",
-        "Content-Type": "application/json",
-    }
 
 # ── Reality + Xray helpers ─────────────────────────────────────────────────────
 def _gen_ml_dsa65(seed: bytes) -> str:
@@ -3313,12 +3302,7 @@ async def http_proxy(target_url: str, request: Request):
 
 @app.get("/api/inbounds")
 async def list_inbounds(_=Depends(require_panel_or_node)):
-    """List inbounds for the panel UI and for authenticated node sync.
-
-    Remote panel-to-node replication authenticates with X-API-Key rather than
-    the browser session cookie, so this endpoint must accept the same trusted
-    panel/node authentication as /api/users and /api/server-info.
-    """
+    """List all inbounds."""
     async with INBOUNDS_LOCK:
         snap = dict(INBOUNDS)
     result = []
@@ -4051,10 +4035,8 @@ async def generate_inbound_short_id(inbound_id: str, _=Depends(require_auth)):
         ib = INBOUNDS.get(inbound_id)
         if not ib:
             raise HTTPException(status_code=404, detail="inbound not found")
-        protocol = str(ib.get("protocol") or "").lower()
-        security = str(ib.get("security") or "").lower()
-        if not (protocol == "reality" or (protocol == "vless" and security == "reality")):
-            raise HTTPException(status_code=400, detail="inbound is not a Reality inbound")
+        if ib.get("protocol") != "reality":
+            raise HTTPException(status_code=400, detail="inbound is not Reality protocol")
         rs = ib.setdefault("reality_settings", {})
         rs["short_id"] = secrets.token_hex(5)[:10]
     await save_state()
@@ -4428,28 +4410,16 @@ async def create_user(request: Request, _=Depends(require_panel_or_node)):
     selected = await _selected_node_ids_for_user(user)
     if selected:
         node_results = await _sync_user_to_selected_nodes(config_uuid, {"username": username}, selected)
-    # Node inbound is selector-only: configs are produced by the selected
-    # remote nodes. Do not run the local config generator for a Node inbound.
-    primary_ib = INBOUNDS.get(inbound_id) if inbound_id else None
-    primary_is_node = bool(primary_ib and (primary_ib.get("inbound_type") or "config").lower() == "node")
-    response_config = "" if primary_is_node else generate_user_config(user_id, USERS[user_id], inbound_id)
-    if primary_is_node:
-        # _sync_user_to_selected_nodes may return the generated remote config.
-        for nr in node_results:
-            if nr.get("config"):
-                response_config = nr["config"]
-                break
     return {
         "user_id": user_id,
         **USERS[user_id],
         "password_hash": None,
         "config_url": f"https://{host}/api/users/{user_id}/config",
         "qr_url": f"https://{host}/api/users/{user_id}/qr",
-        "subscription_url": f"https://{host}/api/users/{user_id}/subscription",
-        "config": response_config,
+        "subscription_url": f"https://{host}/subs/{config_uuid}",
+        "config": generate_user_config(user_id, USERS[user_id], inbound_id),
         "nodes_sync": node_results,
     }
-
 
 @app.patch("/api/users/{user_id}/toggle")
 async def toggle_user(user_id: str, _=Depends(require_auth)):
@@ -8939,18 +8909,6 @@ async def _refresh_node_user_configs(user_ids=None):
 
 # ── NODE Management ──────────────────────────────────────────────────────────
 
-@app.get("/api/node/handshake")
-async def node_handshake(_=Depends(require_panel_or_node)):
-    """Explicit health/handshake endpoint for panel-to-node communication."""
-    return {
-        "ok": True,
-        "service": "SpiderPanel-Node",
-        "panel_api": True,
-        "timestamp": datetime.now().isoformat(),
-        "inbounds_count": len(INBOUNDS),
-        "users_count": len(USERS),
-    }
-
 @app.get("/api/nodes")
 async def list_nodes(_=Depends(require_auth)):
     """List all registered nodes."""
@@ -8992,21 +8950,20 @@ async def add_node(request: Request, _=Depends(require_auth)):
         raise HTTPException(status_code=400, detail="آدرس نود الزامی است")
     from spider_features import detect_server_info, code_to_flag, node_region_prefix
     try:
-        async with httpx.AsyncClient(timeout=12, follow_redirects=True) as client:
-            r = await client.get(f"{url}/api/node/handshake", headers=_node_auth_headers(api_key))
+        async with httpx.AsyncClient(timeout=10) as client:
+            # Try to verify by calling the node's /api/server-info
+            r = await client.get(f"{url}/api/server-info", headers={"X-API-Key": api_key})
             if r.status_code != 200:
-                r = await client.get(f"{url}/api/server-info", headers=_node_auth_headers(api_key), params={"api_key": api_key})
-            if r.status_code != 200:
-                detail = (r.text or "").strip()[:160]
-                raise RuntimeError(f"HTTP {r.status_code}: {detail}")
+                # Try alternative auth
+                r = await client.get(f"{url}/api/server-info", params={"api_key": api_key})
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"خطا در اتصال به نود: {str(e)[:160]}")
+        raise HTTPException(status_code=400, detail=f"خطا در اتصال به نود: {str(e)[:100]}")
     # Get the server info from this node for region naming
     node_country_flag = ""
     node_info = {}
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            r = await client.get(f"{url}/api/server-info", headers=_node_auth_headers(api_key))
+            r = await client.get(f"{url}/api/server-info", headers={"X-API-Key": api_key})
             if r.status_code == 200:
                 node_info = r.json()
                 node_country_flag = node_info.get("country_flag", "")
@@ -9063,53 +9020,6 @@ async def delete_node(node_id: str, _=Depends(require_auth)):
     return {"ok": True, "deleted": node_id}
 
 
-# ── Dedicated node sync API ──────────────────────────────────────────────────
-@app.post("/api/node/sync-user")
-async def node_sync_user(request: Request, _=Depends(require_panel_or_node)):
-    """Create/update a user on a node without invoking the node-selection logic recursively."""
-    body = await request.json()
-    config_uuid = str(body.get("config_uuid") or "").strip()
-    username = str(body.get("username") or "").strip()
-    inbound_id = str(body.get("inbound_id") or "").strip()
-    if not config_uuid or not _is_valid_uuid(config_uuid):
-        raise HTTPException(status_code=400, detail="Invalid config_uuid")
-    if not username:
-        raise HTTPException(status_code=400, detail="username is required")
-    # Pick the first real local inbound when the master did not specify one.
-    if not inbound_id or inbound_id not in INBOUNDS or (INBOUNDS.get(inbound_id, {}).get("inbound_type") or "config").lower() != "config":
-        inbound_id = next((iid for iid, ib in INBOUNDS.items() if (ib.get("inbound_type") or "config").lower() == "config" and str(ib.get("protocol") or "").lower() not in ("worker","tunnel","reverse","telegram","node")), "")
-    if not inbound_id:
-        raise HTTPException(status_code=409, detail="Node has no usable config inbound")
-    payload = {
-        "username": username,
-        "password": str(body.get("password") or secrets.token_urlsafe(12)),
-        "config_uuid": config_uuid,
-        "traffic_limit_gb": float(body.get("traffic_limit_gb") or 0),
-        "expire_days": int(body.get("expire_days") or 0),
-        "concurrent_connections": int(body.get("concurrent_connections") or 0),
-        "inbound_id": inbound_id,
-        "inbound_ids": [inbound_id],
-        "server": str(body.get("server") or "Node")[:40],
-    }
-    # Directly reuse the authoritative create-user implementation. Because the
-    # selected inbound is local-only here, this cannot recurse back to nodes.
-    raw = json.dumps(payload).encode()
-    sent = False
-    async def receive():
-        nonlocal sent
-        if not sent:
-            sent = True
-            return {"type": "http.request", "body": raw, "more_body": False}
-        return {"type": "http.disconnect"}
-    scope = {
-        "type": "http", "method": "POST", "path": "/api/users",
-        "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(raw)).encode())],
-        "query_string": b"", "scheme": "https", "server": ("node", 443),
-        "client": ("panel", 0), "root_path": "", "http_version": "1.1",
-    }
-    result = await create_user(Request(scope, receive), PANEL_API_KEY)
-    return {"ok": True, "user": result}
-
 # ── Delete user from all nodes ───────────────────────────────────────────────
 async def _delete_user_from_nodes(config_uuid: str):
     """Best-effort: delete a user (by config_uuid) from all active nodes.
@@ -9126,7 +9036,7 @@ async def _delete_user_from_nodes(config_uuid: str):
             async with httpx.AsyncClient(timeout=8) as client:
                 r = await client.delete(
                     f"{url}/api/users/{config_uuid}",
-                    headers=_node_auth_headers(api_key),
+                    headers={"X-API-Key": api_key},
                 )
                 ok = r.status_code in (200, 204)
                 results.append({"node": node.get("name", nid), "ok": ok, "status": r.status_code})
@@ -9193,27 +9103,22 @@ async def _create_user_on_nodes(config_uuid: str, user_data: dict, only_node_id:
             continue
         try:
             inbound_id = "default"
-            async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-                h = _node_auth_headers(api_key)
-                # Explicit handshake first; this prevents an opaque 500 later.
-                hr = await client.get(f"{url}/api/node/handshake", headers=h)
-                if hr.status_code == 401:
-                    raise RuntimeError("Node rejected API key (401). Generate/copy the Node API key again.")
-                if hr.status_code >= 400:
-                    detail = (hr.text or "").strip()[:180]
-                    raise RuntimeError(f"Node handshake HTTP {hr.status_code}: {detail}")
-                ir = await client.get(f"{url}/api/inbounds", headers=h)
-                if ir.status_code == 401:
-                    raise RuntimeError("Node API key is not accepted on /api/inbounds")
-                if ir.status_code >= 400:
-                    detail = (ir.text or "").strip()[:180]
-                    raise RuntimeError(f"Node /api/inbounds HTTP {ir.status_code}: {detail}")
-                remote_inbounds = ir.json().get("inbounds") or []
-                selectable = [x for x in remote_inbounds if str(x.get("protocol") or "").lower() not in ("worker", "tunnel", "reverse", "telegram", "wireguard", "node")]
-                if selectable:
-                    inbound_id = selectable[0].get("inbound_id") or ""
-                if not inbound_id:
-                    raise RuntimeError("Node has no usable Config inbound. Create a normal VLESS/VMess/Trojan inbound on the node first.")
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+                ir = await client.get(f"{url}/api/inbounds", headers={"X-API-Key": api_key, "Accept": "application/json"})
+                if ir.status_code == 200:
+                    try:
+                        remote_data = ir.json()
+                        remote_inbounds = remote_data.get("inbounds") or [] if isinstance(remote_data, dict) else []
+                        selectable = [x for x in remote_inbounds if isinstance(x, dict) and str(x.get("protocol") or "").lower() not in ("worker", "tunnel", "reverse", "telegram", "wireguard", "node")]
+                        if selectable:
+                            inbound_id = str(selectable[0].get("inbound_id") or "default")
+                    except Exception:
+                        # A legacy/older node may return a non-JSON response for this
+                        # informational request; creation can still proceed on its
+                        # default inbound, exactly like the old v8 flow.
+                        pass
+                elif ir.status_code not in (401, 403, 404):
+                    logger.warning("node %s /api/inbounds returned %s", node.get("name", nid), ir.status_code)
                 payload = {
                     "username": user_data.get("username", ""),
                     "password": secrets.token_urlsafe(12),
@@ -9223,15 +9128,31 @@ async def _create_user_on_nodes(config_uuid: str, user_data: dict, only_node_id:
                     "concurrent_connections": 0,
                     "inbound_id": inbound_id,
                 }
-                r = await client.post(f"{url}/api/node/sync-user", headers=h, json=payload)
+                r = await client.post(
+                    f"{url}/api/users",
+                    headers={"X-API-Key": api_key, "Content-Type": "application/json", "Accept": "application/json"},
+                    json=payload,
+                )
             ok = r.status_code in (200, 201, 409)
             detail = ""
             remote_cfg = ""
             if r.status_code in (200, 201):
-                try: remote_cfg = str(r.json().get("config") or "").strip()
-                except Exception: pass
+                try:
+                    data = r.json()
+                    if isinstance(data, dict):
+                        remote_cfg = str(data.get("config") or "").strip()
+                except Exception:
+                    pass
             elif r.status_code == 409:
                 detail = "already exists"
+            elif not ok:
+                # Keep the node failure attached to the node result instead of
+                # throwing a panel-side 500.
+                try:
+                    err_data = r.json()
+                    detail = str(err_data.get("detail") or err_data.get("message") or "remote node rejected request") if isinstance(err_data, dict) else f"HTTP {r.status_code}"
+                except Exception:
+                    detail = f"HTTP {r.status_code}"
             if not remote_cfg:
                 remote_cfg = _node_config_for_user(node, config_uuid, user_data.get("username", config_uuid))
             if remote_cfg:
