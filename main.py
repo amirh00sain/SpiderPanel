@@ -1115,8 +1115,8 @@ async def startup():
                 "security": "tls",
                 "domain": _wdom_now,
                 "external_domain": _wdom_now,
-                "sni": "www.hcaptcha.com",
-                "spoof_ip": "8.6.112.4",
+                "sni": "",
+                "spoof_ip": "",
                 "external_port": 443,
                 "fingerprint": "chrome",
                 "reality_settings": {},
@@ -1224,8 +1224,11 @@ async def startup():
     # Reserve 443 for the built-in default first, regardless of dictionary order.
     if _is_managed_default_inbound("default", INBOUNDS.get("default")):
         _def = INBOUNDS["default"]
-        if int(_def.get("port") or 0) != 443 or int(_def.get("external_port") or 0) != 443:
+        if int(_def.get("port") or 0) != 443:
             _def["port"] = 443
+            _changed = True
+        # The built-in default is publicly/internal fixed at 443.
+        if int(_def.get("external_port") or 0) != 443:
             _def["external_port"] = 443
             _changed = True
         _seen_ports[443] = True
@@ -1304,13 +1307,20 @@ async def startup():
         # Never overwrite one with the other.
 
     # WS/XHTTP-TLS inbounds are served by the FastAPI relay on the panel's own
-    # port (CONFIG["port"]); the client-facing port stays 443 (Railway TLS).
-    # Syncing port→CONFIG["port"] ensures the relay and config agree.
+    # port (CONFIG["port"]), but the built-in default VLESS+WS is intentionally
+    # exposed/configured as 443 to match SpiderPanel-main.  Do not let the
+    # internal relay-port normalization overwrite that one special inbound.
     _relay_port = int(CONFIG.get("port") or 8080)
-    for _ib in INBOUNDS.values():
+    for _iid, _ib in INBOUNDS.items():
         _proto = (_ib.get("protocol") or "").lower()
         _sec = (_ib.get("security") or "").lower()
         if _proto == "worker" or _proto == "reality" or _sec == "reality":
+            continue
+        if _is_managed_default_inbound(_iid, _ib):
+            # Hard invariant: the built-in VLESS+WS default is always 443.
+            if _ib.get("port") != 443:
+                _ib["port"] = 443
+                _changed = True
             continue
         if int(_ib.get("port") or 0) != _relay_port:
             _ib["port"] = _relay_port
@@ -1812,6 +1822,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         addr_port = "443"
         if inbound is not None:
             inbound["port"] = 443
+            # The built-in default exposes public port 443 as well.
             inbound["external_port"] = 443
 
     # ── WORKER (multi-location via Cloudflare Worker) ──
@@ -3941,7 +3952,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib.pop("server_name", None)
     # Final invariant for the built-in default TLS+WS inbound.
     # This is intentionally an exception to the user-configurable inbound port:
-    # internal/listener port and public/external port are both 443.
+    # the persisted internal and public ports are both fixed at 443.
     if _is_managed_default_inbound(inbound_id, ib):
         ib["port"] = 443
         ib["external_port"] = 443
@@ -7728,8 +7739,8 @@ async def _ensure_worker_inbound() -> bool:
                 "security": "tls",
                 "domain": wdom,
                 "external_domain": wdom,
-                "sni": "www.hcaptcha.com",
-                "spoof_ip": "8.6.112.4",
+                "sni": "",
+                "spoof_ip": "",
                 "external_port": 443,
                 "fingerprint": "chrome",
                 "reality_settings": {},
