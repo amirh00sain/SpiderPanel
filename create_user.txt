@@ -1,0 +1,321 @@
+    # Short, readable default username; uniqueness is checked by the caller.
+    return f"{random.choice(_RANDOM_USERNAME_WORDS)}-{secrets.token_hex(2)}"
+
+
+@app.post("/api/users")
+async def create_user(request: Request, _=Depends(require_panel_or_node)):
+    """Create a new user with protocol config, traffic limit, and expiry."""
+    body = await request.json()
+    username = str(body.get("username") or "").strip()[:40]
+    if not username:
+        username = _random_username()
+    password = str(body.get("password") or secrets.token_urlsafe(12))
+    traffic_limit_gb = float(body.get("traffic_limit_gb") or 0)
+    expire_days = int(body.get("expire_days") or 0)
+    protocol = str(body.get("protocol") or "vless").lower()
+    _cc_raw = body.get("concurrent_connections")
+    concurrent_connections = int(_cc_raw) if _cc_raw not in (None, "", "null") else 0
+    server = (body.get("server") or "IR-Tehran-01").strip()[:40]
+    sni = str(body.get("sni") or "").strip()
+    path_custom = str(body.get("path") or "").strip()
+    transport_type = str(body.get("transport_type") or "").strip().lower()
+    inbound_id = str(body.get("inbound_id") or "").strip() or None
+    # Multi-inbound support: accept an array of inbound ids; keep the first as
+    # the "primary" inbound_id for backward compatibility.
+    raw_ids = body.get("inbound_ids") or []
+    if isinstance(raw_ids, str):
+        raw_ids = [x.strip() for x in raw_ids.split(",") if x.strip()]
+    inbound_ids = [str(x).strip() for x in raw_ids if str(x).strip()]
+    if inbound_id and inbound_id not in inbound_ids:
+        inbound_ids.insert(0, inbound_id)
+    if inbound_ids:
+        inbound_id = inbound_ids[0]
+    proxy_ip = str(body.get("proxy_ip") or "").strip()
+    proxy_country = str(body.get("proxy_country") or "").strip()
+    proxy_ips = [str(x).strip() for x in (body.get("proxy_ips") or []) if str(x).strip()][:3]
+    # Worker multi-location: the user may pick one or more countries; each gets
+    # its own /route/{country}/{uuid} config. Only set for worker inbounds.
+    proxy_countries = [str(x).strip().lower() for x in (body.get("proxy_countries") or []) if str(x).strip()]
+    if not proxy_countries and proxy_country:
+        proxy_countries = [proxy_country.lower()]
+    # Cloudflare Worker routing: when enabled + worker connected, the user's
+    # configs are addressed to the worker domain with a /route/{country}/{uuid} path.
+    proxy_ip_enabled = bool(body.get("proxy_ip_enabled"))
+    if proxy_ip_enabled and not WORKER.get("connected"):
+        proxy_ip_enabled = False
+    # Scanned custom-IP source: cf | railway ("" = off). Adds up to 10 extra
+    # configs in the sub, addressed by scanned IPs on non-Reality inbounds.
+    custom_ip_type = str(body.get("custom_ip_type") or "").strip().lower()
+    if custom_ip_type not in _SCANNED_TYPES:
+        custom_ip_type = ""
+    # Per-inbound scanned-IP switches: {cf: [inboundIds], railway: [inboundIds]}
+    # chosen in the create-user modal. Only these inbounds get scanned-IP configs.
+    cii = body.get("custom_ip_inbounds") or {}
+    if isinstance(cii, dict):
+        custom_ip_inbounds = {
+            "cf": [str(x) for x in (cii.get("cf") or [])],
+            "railway": [str(x) for x in (cii.get("railway") or [])],
+        }
+    else:
+        custom_ip_inbounds = {"cf": [], "railway": []}
+    # Sni spoof for v2box: when enabled, TLS WS and Worker configs include
+    # snispoofing JSON parameter. Does not apply to Reality/XHTTP Reality.
+    sni_spoof_v2box = bool(body.get("sni_spoof_v2box"))
+
+    # If transport_type not given explicitly, derive it from the primary inbound
+    # (so an xhttp inbound produces an xhttp user).
+    if not transport_type and inbound_id:
+        async with INBOUNDS_LOCK:
+            ib = INBOUNDS.get(inbound_id) or {}
+        # For Reality inbounds, transport_type should be "reality" regardless of network
+        if (ib.get("protocol") or "").lower() == "reality" or (ib.get("security") or "").lower() == "reality":
+            transport_type = "reality"
+        else:
+            transport_type = str(ib.get("network") or "").strip().lower()
+    if not transport_type:
+        transport_type = "ws"
+
+    if transport_type not in ("ws", "grpc", "tcp", "xhttp", "reality"):
+        transport_type = "ws"
+
+    if protocol not in USER_PROTOCOLS:
+        raise HTTPException(status_code=400, detail=f"Invalid protocol. Must be one of: {', '.join(USER_PROTOCOLS)}")
+    if len(username) < 1:
+        raise HTTPException(status_code=400, detail="Username is required")
+    if len(password) < 4:
+        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
+    if concurrent_connections < 0:
+        concurrent_connections = 0
+
+    user_id = generate_short_id()
+    supplied_uuid = str(body.get("config_uuid") or "").strip()
+    config_uuid = supplied_uuid if _is_valid_uuid(supplied_uuid) else generate_uuid()
+    subscription_uuid = secrets.token_urlsafe(16)
+    traffic_limit_bytes = int(traffic_limit_gb * 1024 ** 3) if traffic_limit_gb > 0 else 0
+    expire_at = (datetime.now() + timedelta(days=expire_days)).isoformat() if expire_days > 0 else None
+
+    # Auto-generate Reality key pair if protocol is reality and no key exists
+    if protocol == "reality":
+        async with SETTINGS_LOCK:
+            reality = SETTINGS.get("reality", {})
+            if not reality.get("public_key"):
+                try:
+                    reality["private_key"], reality["public_key"] = _xray_x25519_keypair()
+                    reality.setdefault("short_id", secrets.token_hex(4)[:10])
+                    reality.setdefault("dest", "is1-ssl.mzstatic.com:443")
+                    reality.setdefault("sni", "is1-ssl.mzstatic.com")
+                    reality.setdefault("spiderx", "/")
+                    reality.setdefault("fingerprint", "chrome")
+                    reality.setdefault("external_port", 443)
+                    SETTINGS["reality"] = reality
+                    asyncio.create_task(save_state())
+                    log_activity("settings", "کلیدهای Reality خودکار ساخته شد", "ok")
+                except ImportError:
+                    pass
+
+    async with USERS_LOCK:
+        # Check for duplicate username
+        if username and all(existing.get("username") != username for existing in USERS.values()):
+            pass
+        else:
+            # Only randomize automatically generated names on collision; user-supplied duplicates still return 409.
+            supplied_name = str(body.get("username") or "").strip()
+            if supplied_name:
+                raise HTTPException(status_code=409, detail="Username already exists")
+            for _ in range(12):
+                candidate = _random_username()
+                if all(existing.get("username") != candidate for existing in USERS.values()):
+                    username = candidate
+                    break
+            else:
+                raise HTTPException(status_code=500, detail="Could not generate a unique username")
+
+        # Determine the path based on the inbound type, not just transport_type
+        # WS inbound -> /ws/{config_uuid}, XHTTP inbound -> /xhttp-siz10/..., Worker inbound -> /route/{country}/{uuid}
+        primary_inbound = INBOUNDS.get(inbound_id) if inbound_id else None
+        primary_inbound_proto = (primary_inbound.get("protocol") if primary_inbound else "").lower()
+        primary_inbound_network = (primary_inbound.get("network") if primary_inbound else "").lower()
+
+        if primary_inbound_proto == "worker":
+            # Country is part of the Worker route; actual per-country links
+            # are emitted by _worker_configs(). Keep a deterministic template.
+            path = f"/route/{{country}}/{config_uuid}"
+        elif primary_inbound_proto == "tunnel":
+            path = f"/tunnel/{config_uuid}"
+        elif primary_inbound_proto == "reverse":
+            path = f"/reverse/{config_uuid}"
+        elif primary_inbound_proto == "reality":
+            if primary_inbound_network == "xhttp":
+                # REALITY+XHTTP uses the actual XHTTP path configured on the inbound.
+                # The default is `/` and the UUID is carried by VLESS, not appended to path.
+                path = str((primary_inbound.get('xhttp_settings') or {}).get('path') or '/').strip() or '/'
+                if not path.startswith('/'):
+                    path = '/' + path
+                path = path.rstrip('/') or '/'
+            elif primary_inbound_network == "grpc":
+                path = f"/{str((primary_inbound.get('grpc_settings') or {}).get('serviceName') or 'grpc').lstrip('/')}"
+            else:
+                path = f"/tcp/{config_uuid}"
+        elif primary_inbound_network == "xhttp":
+            # XHTTP URI path is the configured transport base. The user UUID is
+            # authenticated by VLESS, not encoded into the path.
+            xbase = str((primary_inbound.get('xhttp_settings') or {}).get('path') or '/xhttp').strip()
+            if not xbase.startswith('/'): xbase = '/' + xbase
+            path = xbase.rstrip('/') or '/'
+        elif primary_inbound_network == "grpc":
+            svc = str((primary_inbound.get('grpc_settings') or {}).get('serviceName') or 'grpc').strip('/')
+            path = f"/{svc}"
+        else:
+            wsbase = str((primary_inbound.get('ws_settings') or {}).get('path') or '/ws').strip()
+            if not wsbase.startswith('/'): wsbase = '/' + wsbase
+            path = f"{wsbase.rstrip('/')}/{config_uuid}"
+
+        # Custom path is only a transport base; a UUID suffix is mandatory for WS/XHTTP relay lookup.
+        if path_custom:
+            pc = str(path_custom).strip()
+            if not pc.startswith("/"): pc = "/" + pc
+            if "{uuid}" in pc:
+                path = pc.replace("{uuid}", config_uuid)
+            elif primary_inbound_network == "ws":
+                path = pc.rstrip("/") + f"/{config_uuid}"
+            elif primary_inbound_network == "xhttp":
+                path = pc.rstrip("/") or "/"
+            else:
+                path = pc
+
+        USERS[user_id] = {
+            "username": username,
+            "password_hash": hash_password(password),
+            "protocol": protocol,
+            "traffic_limit_bytes": traffic_limit_bytes,
+            "traffic_used_bytes": 0,
+            "expire_at": expire_at,
+            "concurrent_connections": concurrent_connections,
+            "created_at": datetime.now().isoformat(),
+            "status": "active",
+            "server": server,
+            "config_uuid": config_uuid,
+            "subscription_uuid": subscription_uuid,
+            "sni": sni,
+            "proxy_ip": proxy_ip,
+            "proxy_country": proxy_country,
+            "proxy_ips": proxy_ips,
+            "proxy_countries": proxy_countries,
+            "proxy_ip_enabled": proxy_ip_enabled,
+            "custom_ip_type": custom_ip_type,
+            "custom_ip_inbounds": custom_ip_inbounds,
+            "sni_spoof_v2box": sni_spoof_v2box,
+            "inbound_id": inbound_id,
+            "inbound_ids": inbound_ids,
+            "path": path,
+            "transport_type": transport_type,
+            "telegram_secret": "",
+        }
+        _path = USERS[user_id].get("path", "").strip().lstrip("/")
+
+    # Auto-create matching link so relay can find it
+    async with LINKS_LOCK:
+        link_xhttp = {}
+        # Determine the link protocol based on transport_type for correct config generation
+        # vless-ws for WS, xhttp-{mode} for XHTTP
+        link_protocol = protocol
+        if transport_type == "ws" or transport_type == "vless-ws":
+            link_protocol = "vless-ws"
+        elif transport_type == "xhttp":
+            link_protocol = "xhttp-stream-up"  # default mode
+        elif transport_type == "reality":
+            link_protocol = "reality"
+        elif transport_type == "worker":
+            link_protocol = "worker"
+        elif transport_type == "tunnel":
+            link_protocol = "tunnel"
+        elif transport_type == "reverse":
+            link_protocol = "reverse"
+
+        if transport_type == "xhttp":
+            link_xhttp = {
+                "xPaddingBytes": "100-1000",
+                "mode": "stream-up",
+                "scMaxEachPostBytes": "1000000",
+            }
+        LINKS[config_uuid] = {
+            "label": username,
+            "limit_bytes": traffic_limit_bytes,
+            "used_bytes": 0,
+            "created_at": datetime.now().isoformat(),
+            "active": True,
+            "expires_at": expire_at,
+            "note": f"لینک کاربر {username}",
+            "is_default": False,
+            "sub_id": None,
+            "protocol": link_protocol,  # Use transport-specific protocol for correct config
+            "transport_type": transport_type,
+            "xhttp_settings": link_xhttp,
+            "path": _path,
+            "user_id": user_id,
+        }
+        # Register uuid in PATH_INDEX for backward compat (old random-path clients)
+        # config_uuid IS the path under /ws/{config_uuid}
+        PATH_INDEX[config_uuid] = config_uuid
+        if _path:
+            PATH_INDEX[_path.lstrip("/")] = config_uuid
+
+    asyncio.create_task(save_state())
+    log_activity("user", f"کاربر «{username}» با پروتکل {protocol} ساخته شد", "ok")
+    # If the user picked the worker or tunnel inbound, sync them to the worker
+    # so VLESS auth + quotas work on the Cloudflare side too.
+    if WORKER.get("connected") and inbound_ids:
+        new_u = USERS.get(user_id) or {}
+        if _user_uses_worker_inbound(new_u):
+            asyncio.create_task(_worker_sync_users())
+    # Generate and persist telegram_secret if user has a Telegram inbound
+    if inbound_ids:
+        has_tg = any(
+            (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"
+            for i in inbound_ids
+        )
+        if has_tg:
+            from telegram_proxy import derive_secret_from_uuid
+            async with USERS_LOCK:
+                u = USERS.get(user_id)
+                if u:
+                    current = str(u.get("telegram_secret") or "").strip().lower()
+                    # mtprotoproxy 1.0.6 expects exactly 32 hex characters.
+                    if not re.fullmatch(r"[0-9a-f]{32}", current):
+                        u["telegram_secret"] = derive_secret_from_uuid(config_uuid)
+            asyncio.create_task(save_state())
+            # The inbound may have been created before this user existed.
+            # Rebuild its secret list and restart the listener now.
+            for _tg_iid in [i for i in inbound_ids if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"]:
+                asyncio.create_task(_restart_telegram_proxy(_tg_iid))
+    host = SETTINGS.get("domain") or get_host()
+    asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
+    # NODE inbound: replicate the user to all registered nodes (same UUID).
+    # Internal node-sync creates must never recursively sync back to other nodes.
+    node_results = []
+    user = USERS.get(user_id) or {}
+    selected = set() if body.get("node_sync") else await _selected_node_ids_for_user(user)
+    if selected:
+        node_results = await _sync_user_to_selected_nodes(
+            config_uuid,
+            {
+                "username": username,
+                "traffic_limit_gb": traffic_limit_gb,
+                "expire_days": expire_days,
+                "concurrent_connections": concurrent_connections,
+            },
+            selected,
+        )
+    return {
+        "user_id": user_id,
+        **USERS[user_id],
+        "password_hash": None,
+        "config_url": f"https://{host}/api/users/{user_id}/config",
+        "qr_url": f"https://{host}/api/users/{user_id}/qr",
+        "subscription_url": f"https://{host}/subs/{config_uuid}",
+        "config": generate_user_config(user_id, USERS[user_id], inbound_id),
+        "nodes_sync": node_results,
+    }
+
+@app.patch("/api/users/{user_id}/toggle")
+async def toggle_user(user_id: str, _=Depends(require_auth)):

@@ -1,0 +1,5 @@
+Loading animation regression checks
+- index.html uses the requested 9-slat SVG loader.
+- sub.html uses the same requested SVG loader.
+- login.html now contains an actual #login-boot-loader element and uses the same SVG loader.
+- No spinner circle CSS remains for the three boot overlays.

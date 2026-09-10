@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Spider Panel Login</title>
+<link rel="icon" href="/static/spider-logo.svg" type="image/svg+xml">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#c6c6c6",
+                        "tertiary-container": "#000000",
+                        "on-surface": "#e2e2e2",
+                        "on-secondary-container": "#b4b5b5",
+                        "on-primary-fixed-variant": "#474747",
+                        "tertiary-fixed": "#e2e2e2",
+                        "outline": "#988e90",
+                        "primary": "#c6c6c6",
+                        "on-primary": "#303030",
+                        "inverse-primary": "#5e5e5e",
+                        "on-tertiary-container": "#757575",
+                        "secondary-container": "#454747",
+                        "surface-bright": "#393939",
+                        "inverse-surface": "#e2e2e2",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "outline-variant": "#4c4546",
+                        "on-primary-container": "#757575",
+                        "on-secondary-fixed-variant": "#454747",
+                        "on-tertiary": "#303030",
+                        "on-primary-fixed": "#1b1b1b",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "secondary": "#c6c6c7",
+                        "surface-dim": "#131313",
+                        "surface": "#131313",
+                        "on-background": "#e2e2e2",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#303030",
+                        "on-secondary": "#2f3131",
+                        "on-surface-variant": "#cfc4c5",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#0e0e0e",
+                        "tertiary": "#c6c6c6",
+                        "on-error": "#690005",
+                        "surface-container-high": "#2a2a2a",
+                        "primary-fixed": "#e2e2e2",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "surface-tint": "#c6c6c6",
+                        "surface-container-low": "#1b1b1b",
+                        "surface-container-highest": "#353535",
+                        "background": "#131313",
+                        "secondary-fixed": "#e2e2e2",
+                        "surface-variant": "#353535",
+                        "on-secondary-fixed": "#1a1c1c",
+                        "surface-container": "#1f1f1f",
+                        "error-container": "#93000a",
+                        "primary-container": "#000000"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "container-max": "1440px",
+                        "stack-lg": "32px",
+                        "stack-sm": "8px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "code-label": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "code-label": ["13px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+</script>
+<style>
+        .glass-card {
+            background: rgba(19, 19, 19, 0.4);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .btn-hover-effect {
+            transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), background-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-hover-effect:active { transform: scale(0.98); }
+        .input-glass {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #e2e2e2;
+            caret-color: #e2e2e2;
+            transition: border-color 300ms ease, box-shadow 300ms ease;
+        }
+        .input-glass:focus {
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+            outline: none;
+        }
+        .error-msg {
+            background: rgba(255, 180, 171, 0.1);
+            border: 1px solid rgba(255, 180, 171, 0.3);
+            color: #ffb4ab;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .error-msg.show { display: flex; }
+        #shader-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* Sharp, restrained login surface */
+        body { background:#090a0c !important; }
+        .glass-card {
+            background:rgba(17,19,22,.96) !important;
+            border:1px solid rgba(255,255,255,.11) !important;
+            border-radius:10px !important;
+            box-shadow:0 22px 55px rgba(0,0,0,.48) !important;
+            backdrop-filter:none !important;
+            -webkit-backdrop-filter:none !important;
+        }
+        .login-card { border-radius:32px !important; box-shadow:0 22px 55px rgba(0,0,0,.42) !important; }
+        .login-title { background:none !important; -webkit-text-fill-color:#f2f4f7 !important; color:#f2f4f7 !important; }
+        .input-glass { border-radius:7px !important; background:#0c0e11 !important; border-color:rgba(255,255,255,.12) !important; box-shadow:none !important; }
+        .input-glass:focus { border-color:rgba(255,255,255,.32) !important; box-shadow:0 0 0 3px rgba(255,255,255,.05) !important; }
+        #loginBtn { border-radius:7px !important; min-height:44px; box-shadow:0 9px 24px rgba(0,0,0,.28); }
+        .error-msg { border-radius:7px !important; }
+        .login-card::before,.login-card::after { display:none !important; }
+
+</style>
+<script>
+  document.documentElement.setAttribute('data-theme', 'dark');
+</script>
+
+<style id="final-login-monochrome">
+html,body{background:#000!important;color:#fff!important}
+.login-card,.glass-card{border-radius:32px!important;box-shadow:0 22px 55px rgba(0,0,0,.42)!important}
+#loginBtn,.btn-hover-effect,button,input{box-shadow:none!important;text-shadow:none!important;outline:none!important}
+#loginBtn:focus,input:focus{box-shadow:none!important}
+</style>
+
+<style>
+.login-boot-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#131313;transition:opacity .25s ease,visibility .25s ease}
+.login-boot-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.login-boot-card{display:flex;flex-direction:column;align-items:center;gap:13px;padding:28px 32px;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:rgba(19,19,19,.96);box-shadow:0 20px 55px rgba(0,0,0,.5)}
+.login-boot-text{color:#f2f4f7;font-weight:700;font-size:13px}
+</style>
+<style>
+/* UI interaction lock: prevent page zoom and copying/selection of non-editable controls */
+html, body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+button, [role="button"], .btn, .btn-icon, .lang-btn, .scn-tab, .ib-pick, .country-tick,
+.node-select-row, label {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none;
+}
+button, [role="button"], img, svg {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+</style>
+</head>
+<body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex items-center justify-center relative">
+
+<div class="login-boot-loader" id="login-boot-loader" aria-live="polite"><div class="login-boot-card"><svg xmlns="http://www.w3.org/2000/svg" class="ven-loader" viewBox="0 0 64 64" width="96" height="96" fill="none" role="img" aria-label="Loading">
+  <style>
+    .ven-loader { color: #f5f5f7; --rate: 1; }
+    .ven-loader .ven { --dur: 2.6s; --n: 9; }
+    .ven-loader .ven-slat {
+      fill: url(#ven-face);
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: ven-turn calc(var(--dur) * var(--rate, 1)) infinite;
+      animation-delay: calc(var(--i) * var(--dur) * var(--rate, 1) / var(--n) * -1);
+    }
+    @keyframes ven-turn {
+      0% { transform: scaleY(1); opacity: 1; animation-timing-function: ease-in; }
+      50% { transform: scaleY(.02); opacity: .5; animation-timing-function: ease-out; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ven-loader .ven-slat {
+        animation: none;
+        transform: scaleY(calc(.15 + .85 * (1 - var(--i) / var(--n))));
+      }
+    }
+  </style>
+  <defs>
+    <clipPath id="ven-disc"><circle cx="32" cy="32" r="32"/></clipPath>
+    <linearGradient id="ven-face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="currentColor" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="currentColor" stop-opacity=".08"/>
+    </linearGradient>
+  </defs>
+  <g class="ven" clip-path="url(#ven-disc)">
+    <rect class="ven-slat" x="-2" y="0.00" width="68" height="7.11" style="--i:0;--rest:0.0"/>
+    <rect class="ven-slat" x="-2" y="7.11" width="68" height="7.11" style="--i:1;--rest:40.0"/>
+    <rect class="ven-slat" x="-2" y="14.22" width="68" height="7.11" style="--i:2;--rest:80.0"/>
+    <rect class="ven-slat" x="-2" y="21.33" width="68" height="7.11" style="--i:3;--rest:120.0"/>
+    <rect class="ven-slat" x="-2" y="28.44" width="68" height="7.11" style="--i:4;--rest:160.0"/>
+    <rect class="ven-slat" x="-2" y="35.56" width="68" height="7.11" style="--i:5;--rest:200.0"/>
+    <rect class="ven-slat" x="-2" y="42.67" width="68" height="7.11" style="--i:6;--rest:240.0"/>
+    <rect class="ven-slat" x="-2" y="49.78" width="68" height="7.11" style="--i:7;--rest:280.0"/>
+    <rect class="ven-slat" x="-2" y="56.89" width="68" height="7.11" style="--i:8;--rest:320.0"/>
+  </g>
+</svg><div class="login-boot-text">در حال بارگذاری ورود</div><div style="color:#9aa0a8;font-size:11px">لطفاً صبر کنید...</div></div></div>
+<!-- Shader Background -->
+<canvas id="shader-canvas"></canvas>
+<script>
+(function() {
+  var canvas = document.getElementById('shader-canvas');
+  function syncSize() {
+    var w = canvas.clientWidth || 1280;
+    var h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(syncSize).observe(canvas);
+  syncSize();
+  var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  var vs = 'attribute vec2 a_position; varying vec2 v_texCoord; void main() { v_texCoord = a_position * 0.5 + 0.5; gl_Position = vec4(a_position, 0.0, 1.0); }';
+  var fs = 'precision highp float; uniform float u_time; uniform vec2 u_resolution; uniform vec2 u_mouse; varying vec2 v_texCoord; float noise(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); } float smoothNoise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f); float a = noise(i); float b = noise(i + vec2(1.0, 0.0)); float c = noise(i + vec2(0.0, 1.0)); float d = noise(i + vec2(1.0, 1.0)); return mix(mix(a, b, f.x), mix(c, d, f.x), f.y); } void main() { vec2 uv = v_texCoord; vec2 p1 = uv * 3.0 + u_time * 0.05; vec2 p2 = uv * 5.0 - u_time * 0.08; float n = smoothNoise(p1) * 0.5 + smoothNoise(p2) * 0.3; float wave = sin(uv.y * 10.0 + n * 5.0 + u_time * 0.2) * 0.5 + 0.5; wave *= sin(uv.x * 8.0 - u_time * 0.1) * 0.5 + 0.5; vec3 color1 = vec3(0.047, 0.047, 0.047); vec3 color2 = vec3(0.106, 0.106, 0.106); vec3 finalColor = mix(color1, color2, wave * 0.4); float dist = distance(uv, u_mouse / u_resolution); finalColor += 0.03 * (1.0 - smoothstep(0.0, 0.5, dist)); gl_FragColor = vec4(finalColor, 1.0); }';
+  function cs(type, src) { var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+  var prog = gl.createProgram(); gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog); gl.useProgram(prog);
+  var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+  var pos = gl.getAttribLocation(prog, 'a_position'); gl.enableVertexAttribArray(pos); gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  var uTime = gl.getUniformLocation(prog, 'u_time');
+  var uRes = gl.getUniformLocation(prog, 'u_resolution');
+  var uMouse = gl.getUniformLocation(prog, 'u_mouse');
+  var mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      var nx = (e.clientX - rect.left) / rect.width;
+      var ny = 1.0 - (e.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+
+<!-- Login Card -->
+<div class="glass-card rounded-3xl w-full max-w-md p-stack-lg mx-margin-mobile flex flex-col gap-stack-lg shadow-2xl shadow-black/50 z-10" data-login-theme>
+  <!-- Header -->
+  <div class="flex flex-col items-center gap-stack-sm text-center">
+    <img src="/static/spider-logo.svg" alt="SPiDER" style="width:64px;height:64px;object-fit:contain;margin:0 auto 12px;display:block">
+        <h1 class="font-headline-lg text-headline-lg text-on-surface">SPIDER PANEL</h1>
+    <p class="font-body-sm text-body-sm text-on-surface-variant">High Performance Panel</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="error-msg">
+    <span class="material-symbols-outlined" style="font-size:18px;">error</span>
+    <span id="error-text"></span>
+  </div>
+
+  <!-- Form -->
+  <form class="flex flex-col gap-stack-md" id="login-form">
+    <div class="flex flex-col gap-2">
+      <label class="font-code-label text-code-label text-on-surface-variant" for="password">PASSWORD</label>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size: 20px;">lock</span>
+        <input class="input-glass w-full rounded-3xl py-3 pl-12 pr-4 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/50" id="password" placeholder="Enter password" type="password" autofocus required/>
+      </div>
+    </div>
+    <button class="mt-2 bg-white text-black font-body-lg text-body-lg font-bold py-3 rounded-3xl btn-hover-effect flex items-center justify-center gap-2 hover:bg-gray-200" id="loginBtn" type="submit">
+      <span id="btn-text" class="flex items-center gap-2">Sign In <span class="material-symbols-outlined" style="font-size: 20px;">arrow_forward</span></span>
+      <span id="btn-spinner" class="hidden"><span class="material-symbols-outlined animate-spin" style="font-size: 20px;">progress_activity</span></span>
+    </button>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){ var l=document.getElementById('login-boot-loader'); if(l) l.classList.add('hidden'); });
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('loginBtn');
+  var btnText = document.getElementById('btn-text');
+  var btnSpinner = document.getElementById('btn-spinner');
+  var errDiv = document.getElementById('error-msg');
+  var errText = document.getElementById('error-text');
+
+  errDiv.classList.remove('show');
+  btn.disabled = true;
+  var boot=document.getElementById('login-boot-loader'); if(boot) boot.classList.remove('hidden');
+  btnText.classList.add('hidden');
+  btnSpinner.classList.remove('hidden');
+
+  try {
+    var r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: document.getElementById('password').value })
+    });
+    if (!r.ok) {
+      var d = await r.json().catch(function() { return {}; });
+      throw new Error(d.detail || 'Login failed');
+    }
+    location.href = '/spider';
+  } catch(ex) {
+    errText.textContent = ex.message;
+    errDiv.classList.add('show');
+    btn.disabled = false;
+    var bootErr=document.getElementById('login-boot-loader'); if(bootErr) bootErr.classList.add('hidden');
+    btnText.classList.remove('hidden');
+    btnSpinner.classList.add('hidden');
+  }
+});
+</script>
+<script>
+// Prevent browser/page zoom gestures and keyboard zoom inside the app.
+(function lockPageZoom(){
+  document.addEventListener('wheel', function(e){
+    if (e.ctrlKey) e.preventDefault();
+  }, {passive:false});
+  document.addEventListener('keydown', function(e){
+    if (!e.ctrlKey && !e.metaKey) return;
+    if (['+','-','=','0'].includes(e.key)) e.preventDefault();
+  }, {capture:true});
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, {passive:false});
+  document.addEventListener('gesturechange', function(e){ e.preventDefault(); }, {passive:false});
+  document.addEventListener('gestureend', function(e){ e.preventDefault(); }, {passive:false});
+})();
+</script>
+</body></html>
+
+<style>html[data-theme="light"],html[data-theme="light"] body,html,body{background:#131313!important;color:#e2e2e2!important} [data-login-theme]{background:rgba(19,19,19,.92)!important;border-color:rgba(255,255,255,.15)!important;color:#e2e2e2!important;border-radius:32px!important} [data-login-theme] input{background:rgba(0,0,0,.5)!important;color:#e2e2e2!important}</style>

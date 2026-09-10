@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  spider-panel:
+    build: .
+    container_name: spider-panel
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - SECRET_KEY=${SECRET_KEY:-spider-panel-secret-key-v2}
+      - RAILWAY_PUBLIC_DOMAIN=${RAILWAY_PUBLIC_DOMAIN}
+      - DATA_DIR=/data
+      - WORKER_SYNC_INTERVAL=3600
+      - SECRET_KEY=${SECRET_KEY:-spider-panel-secret-key-v2}
+    volumes:
+      - spider_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock  # For managing Telegram proxy containers
+    networks:
+      - spider-network
+    restart: unless-stopped
+
+  # Telegram MTProto Proxy - one instance per Telegram inbound
+  # These are managed dynamically by the panel, but can be started manually too
+  # Example: docker-compose up -d tg-proxy-1
+  # The panel manages these dynamically via Docker API
+
+networks:
+  spider-network:
+    driver: bridge
+
+volumes:
+  spider_data:
+    driver: local
