@@ -1,6 +1,3 @@
-## SpiderPanel v9.2
-
-# Spider Panel - Single File Architecture
 
 <div align="right" dir="rtl">
 
