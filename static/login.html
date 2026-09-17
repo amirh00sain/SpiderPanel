@@ -31,13 +31,21 @@ tailwind.config = {
 
 <style>
 /* Prevent zoom on all devices */
+html, body {
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
 * {
-    touch-action: none !important;
-    -webkit-user-select: none !important;
-    -moz-user-select: none !important;
-    -ms-user-select: none !important;
-    user-select: none !important;
-    -webkit-touch-callout: none !important;
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 /* استایل کلی و پس‌زمینه */
 * {
@@ -46,7 +54,6 @@ tailwind.config = {
     box-sizing: border-box;
     user-select: none !important;
     -webkit-user-select: none !important;
-    touch-action: manipulation !important;
 }
 
 input, textarea, select {
