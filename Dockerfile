@@ -20,9 +20,9 @@ COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
 COPY . .
-RUN python -m py_compile app.py main.py telegram_proxy.py relay_vless.py shared.py pages.py
+RUN python -m py_compile main.py
 
 EXPOSE 8080
 EXPOSE 443
 
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
