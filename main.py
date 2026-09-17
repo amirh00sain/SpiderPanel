@@ -2108,23 +2108,20 @@ TGProxy = MTProtoProxyServer
 async def root():
     return {"service": "Spider Gateway", "version": "9.2", "status": "active", "channel": "https://t.me/spider_vpn1"}
 
-# ── Link redirect (link/uuid → sub/username) ──────────────────────────────────
+# ── Link endpoint (link/uuid → graphical sub page) ────────────────────────────
 @app.get("/link/{uuid}")
-async def link_redirect(uuid: str, request: Request):
-    """Redirect /link/{uuid} to /sub/{username}."""
+async def link_page(uuid: str, request: Request):
+    """Serve the HTML subscription page for link/uuid (no redirect)."""
     # Check if UUID matches a user
     async with USERS_LOCK:
         for uid, u in USERS.items():
             if u.get("config_uuid") == uuid:
-                username = u.get("username")
-                if username:
-                    return RedirectResponse(url=f"/sub/{username}", status_code=301)
-                break
+                return FileResponse(_os.path.join(_STATIC_DIR, "sub.html"))
     # Check if UUID matches a link
     async with LINKS_LOCK:
         link = LINKS.get(uuid)
     if link and is_link_allowed(link):
-        return RedirectResponse(url=f"/sub/{uuid}", status_code=301)
+        return FileResponse(_os.path.join(_STATIC_DIR, "sub.html"))
     raise HTTPException(status_code=404, detail="Link not found")
 
 

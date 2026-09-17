@@ -7,14 +7,22 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
 <style>
 /* Prevent zoom on all devices */
-* {
-    touch-action: none;
+html, body {
+    touch-action: pan-x pan-y;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
     -webkit-overflow-scrolling: auto;
+}
+* {
+    touch-action: pan-x pan-y;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 /* ===== Dark & Light Theme Settings ===== */
 [data-theme="dark"] {
@@ -1372,7 +1380,7 @@ body {
         '</div>' +
         '<div class="config-actions">' +
           '<button class="icon-btn copy-cfg" type="button" data-index="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>' +
-          '<button class="icon-btn qr-btn" type="button" data-index="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M20 20v.01"/></svg></button>' +
+          '<button class="icon-btn qr-btn" type="button" data-index="' + i + '" title="QR Code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M20 20v.01"/></svg></button>' +
         '</div>';
       list.appendChild(card);
     });
@@ -1603,7 +1611,7 @@ body {
     if (copySubText && !copySubText._bound) {
       copySubText._bound = true;
       copySubText.addEventListener("click", function() {
-        copyText(CONFIG_LINKS.join("\n")).then(function() { showToast(tr("toastSub")); });
+        copyText(SUB_URL).then(function() { showToast(tr("toastSub")); });
       });
     }
 
