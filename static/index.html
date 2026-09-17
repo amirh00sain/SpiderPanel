@@ -4,13 +4,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Spider Panel v5</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <style>
+
+/* Prevent zoom on all devices */
+* {
+    touch-action: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+}
 
 /* Ultra-dark sub-style theme — absolute black, no glass, fixed teal accent.
    Matches the /sub page exactly. */
@@ -1451,15 +1461,6 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
             </div>
 
             <div class="panel-h" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
-              <span class="glow" data-i18n="proxyPool">Proxy IP Pool</span>
-              <button class="btn btn-sm btn-p" onclick="workerAddProxy()" style="margin-left:auto">+ <span data-i18n="addProxy">افزودن کشور</span></button>
-              <button class="btn btn-sm btn-g" onclick="workerSync()" title="Re-deploy" style="margin-right:6px">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
-              </button>
-            </div>
-            <div id="worker-proxies"></div>
-
-            <div class="panel-h" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
               <span class="glow" data-i18n="workerSettings">تنظیمات Worker</span>
             </div>
             <button class="btn btn-sm btn-r" onclick="workerDisconnect()" style="margin-top:6px"><span data-i18n="removeConn">حذف اتصال Worker</span></button>
@@ -1873,7 +1874,6 @@ var I18N = {
     'addRailwayIps': 'افزودن ۱۰ کانفیگ با IPهای Railway اسکن‌شده',
     'realityNoExtra': 'Reality گزینه اضافه‌ای ندارد — فقط کانفیگ اصلی Reality.',
     'customIp': 'آی‌پی اختصاصی (اسکنر)', 'noCustomIp': '— بدون آی‌پی اختصاصی —', 'noCustomOpt': 'بدون آی‌پی اختصاصی',
-      'sniSpoofV2box': 'Sni Spoof برای v2box', 'sniSpoofV2boxHint': 'وقتی فعال باشد، کانفیگ‌های TLS WS و Worker شامل پارامتر snispoofing برای کلاینت v2box می‌شوند. روی Reality/XHTTP Reality اعمال نمی‌شود.',
     'customIpHint': 'از فایل ذخیره‌شده اسکنر، ۱۰ کانفیگ اضافه در ساب ساخته می‌شود. در بخش Address، فقط روی اینباندهای غیر-Reality قرار می‌گیرند.',
     'loadingIps': 'در حال بارگذاری...', 'noScannedIps': 'هنوز آی‌پی‌ای در فایل اسکنر ذخیره نشده. اول از صفحه اسکنر، اسکن کنید.', 'scannedTo10': 'آی‌پی ذخیره‌شده → ۱۰ کانفیگ:', 'errLoadIps': 'خطا در دریافت آی‌پی‌ها',
     'proxyCountry': 'کشور پروکسی', 'noProxy': '-- بدون پروکسی --', 'pxHint': 'کشور را روی نقشه کلیک کنید یا از فهرست بالا انتخاب کنید. سپس IP موردنظر را تیک بزنید — حداکثر ۳ IP.',
@@ -1935,7 +1935,6 @@ var I18N = {
     'addRailwayIps': 'Add 10 configs with scanned Railway IPs',
     'realityNoExtra': 'Reality needs no extras — only the main Reality config.',
     'customIp': 'Custom IP (Scanner)', 'noCustomIp': '— No custom IP —', 'noCustomOpt': 'No custom IP',
-      'sniSpoofV2box': 'Sni Spoof for v2box', 'sniSpoofV2boxHint': 'When enabled, TLS WS and Worker configs include snispoofing JSON parameter for v2box client. Does not apply to Reality/XHTTP Reality.',
     'customIpHint': 'Adds 10 extra configs in the sub from the scanner file. In the Address field they are only placed on non-Reality inbounds.',
     'loadingIps': 'Loading...', 'noScannedIps': 'No IPs saved in the scanner file yet. Run a scan from the Scanner page first.', 'scannedTo10': 'saved IPs → 10 configs:', 'errLoadIps': 'Error loading IPs',
     'proxyCountry': 'Proxy Country', 'noProxy': '-- No Proxy --', 'pxHint': 'Click a country on the map or pick from the list above, then check the IPs — up to 3 IPs.',
@@ -2673,7 +2672,21 @@ function copyCfg() {
   navigator.clipboard.writeText(curCfg).then(function() { toast(t('copied'), 'ok'); }).catch(function() { toast(t('errCopy'), 'err'); });
 }
 
-function viewSub(username) { window.open('/sub/' + username, '_blank'); }
+async function viewSub(username) {
+  try {
+    var d = await api('/api/sub/' + encodeURIComponent(username));
+    var uuid = d.config_uuid || username;
+    var subUrl = window.location.origin + '/link/' + uuid;
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(subUrl);
+      showToast('لینک ساب کپی شد', 'ok');
+    } else {
+      window.open(subUrl, '_blank');
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
 function viewQR(userId) { $id('qr-img').src = '/api/users/' + userId + '/qr?t=' + Date.now(); openModal('mod-qr'); }
 
 // ─── Inbounds ───
@@ -2732,7 +2745,7 @@ function renderInbounds() {
         _ibDetail(ib) +
         '<div class="spd-acc-btns">' +
           '<button class="btn btn-sm btn-b" onclick="editInbound(\'' + ib.inbound_id + '\')">' + t('edit') + '</button>' +
-          '<button class="btn btn-sm btn-r" onclick="deleteInbound(\'' + ib.inbound_id + '\')">' + t('delete') + '</button>' +
+          ((ib.system || ib.inbound_id === 'Node') ? '' : '<button class="btn btn-sm btn-r" onclick="deleteInbound(\'' + ib.inbound_id + '\')">' + t('delete') + '</button>') +
         '</div>' +
       '</div>' +
     '</div>';
@@ -2874,6 +2887,7 @@ function editInbound(iid) {
   if (!ib) return;
   var isReality = (ib.protocol === 'reality' || ib.security === 'reality');
   var isTg = (ib.protocol || '').toLowerCase() === 'telegram';
+  var isNode = (ib.system && ib.inbound_id === 'Node');
   $id('ib-title').textContent = t('editInbound');
   $id('ib-id').value = iid;
   $id('ib-name').value = ib.name || '';
@@ -2889,6 +2903,36 @@ function editInbound(iid) {
   $id('ib-xhttppath').value = xh.path || '/';
   $id('ib-xhttp-mode').value = xh.mode || 'auto';
   $id('ib-grpc-svc').value = (ib.grpc_settings || {}).serviceName || 'grpc';
+
+  // Node selection checkboxes (only for Inbound "Node")
+  if (isNode) {
+    var nodeIds = ib.node_ids || [];
+    var nodeWrap = $id('ib-node-select');
+    if (!nodeWrap) {
+      nodeWrap = document.createElement('div');
+      nodeWrap.id = 'ib-node-select';
+      nodeWrap.className = 'node-select-wrap';
+      nodeWrap.innerHTML = '<div class="divider"></div><div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Node Selection</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px"></div>';
+      var nodeContainer = nodeWrap.querySelector('.node-select-wrap');
+      nodeContainer.appendChild(document.createElement('div'));
+    }
+    var nodeContainer = $id('ib-node-select').querySelector('.node-select-wrap div:last-child');
+    nodeContainer.innerHTML = '';
+    ALL_NODES.forEach(function(node) {
+      var div = document.createElement('label');
+      div.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer';
+      var checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = node.node_id;
+      checkbox.checked = nodeIds.indexOf(node.node_id) >= 0;
+      div.appendChild(checkbox);
+      var span = document.createElement('span');
+      span.textContent = node.name || node.domain;
+      div.appendChild(span);
+      nodeContainer.appendChild(div);
+    });
+  }
 
   if (isTg) {
     // Telegram Proxy: populate TG-specific fields (only 3 fields)
@@ -2938,10 +2982,23 @@ async function submitInbound(e) {
   var type = $id('ib-inbound-type').value;
   var proto = type === 'telegram' ? 'telegram' : 'vless';
 
+  // Collect selected node IDs for Inbound "Node"
+  var nodeIds = [];
+  if (iid === 'Node') {
+    var checkboxes = document.querySelectorAll('#ib-node-select input[type="checkbox"]:checked');
+    for (var i = 0; i < checkboxes.length; i++) {
+      nodeIds.push(checkboxes[i].value);
+    }
+  }
+
   var body = {
     name: $id('ib-name').value,
     protocol: proto,
   };
+
+  if (iid === 'Node') {
+    body.node_ids = nodeIds;
+  }
 
   if (type === 'telegram') {
     // Telegram Proxy inbound - only 3 fields: internal_port, external_port, external_domain
@@ -4799,7 +4856,7 @@ function openNodeModal(nodeId) {
 
     var f1 = document.createElement('div');
     f1.className = 'f-g';
-    f1.innerHTML = '<label>' + t('nodeDomain') + '</label>';
+    f1.innerHTML = '<label>Domain</label>';
     var inp1 = document.createElement('input');
     inp1.type = 'text';
     inp1.id = 'node-domain';
@@ -4811,7 +4868,7 @@ function openNodeModal(nodeId) {
 
     var f2 = document.createElement('div');
     f2.className = 'f-g';
-    f2.innerHTML = '<label>' + t('nodeApiKey') + '</label>';
+    f2.innerHTML = '<label>API Key</label>';
     var inp2 = document.createElement('input');
     inp2.type = 'password';
     inp2.id = 'node-apikey';
@@ -4839,7 +4896,7 @@ function openNodeModal(nodeId) {
 
   // Update title and values
   modal.querySelector('.modal-t span').textContent = title;
-  $id('node-domain').value = node ? (node.domain || '') : '';
+  $id('node-domain').value = node ? (node.domain.replace('https://', '') || '') : '';
   $id('node-apikey').value = node ? (node.api_key || '') : '';
 
   modal.classList.add('show');

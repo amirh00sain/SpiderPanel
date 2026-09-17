@@ -844,7 +844,29 @@ async def startup():
             }
             asyncio.create_task(save_state())
             log_activity("inbound", "اینباند پیش‌فرض Reality+XHTTP ساخته شد", "ok")
-        # the deployed Cloudflare Worker domain (address/host/sni auto-filled),
+        # Auto-create system Inbound "Node" if it doesn't exist
+        has_node = any(ib.get("system") is True for ib in INBOUNDS.values())
+        if not has_node:
+            INBOUNDS["Node"] = {
+                "name": "Node",
+                "protocol": "vless",
+                "port": 443,
+                "network": "ws",
+                "security": "tls",
+                "domain": "",
+                "external_domain": "",
+                "sni": "",
+                "external_port": "",
+                "fingerprint": "chrome",
+                "reality_settings": {},
+                "xhttp_settings": {},
+                "node_ids": [],  # Selected node IDs
+                "system": True,  # Prevent deletion
+                "created_at": datetime.now().isoformat(),
+            }
+            asyncio.create_task(save_state())
+            log_activity("inbound", "اینباند سیستمی Node ساخته شد", "ok")
+        # Any deployed Cloudflare Worker domain (address/host/sni auto-filled),
         # with BPB snispoofing. Only created once a worker is actually connected.
         has_worker = any((ib.get("protocol") or "").lower() == "worker" for ib in INBOUNDS.values())
         _wdom_now = _worker_safe_domain(WORKER.get("worker_domain"))
@@ -1551,16 +1573,6 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     if transport not in ("ws", "xhttp"):
         transport = "ws"
 
-    # Sni spoofing for v2box: add snispoofing JSON param when enabled.
-    # Applies to TLS WS and Worker configs (handled in _worker_configs).
-    # Does NOT apply to Reality/XHTTP Reality.
-    sni_spoof = bool(user.get("sni_spoof_v2box"))
-    if sni_spoof:
-        fake_sni = str(user.get("fake_sni") or inbound.get("sni") if inbound else "") or "www.hcaptcha.com"
-        spoof_ip = str(user.get("spoof_ip") or inbound.get("spoof_ip") if inbound else "") or "8.6.112.4"
-        spoof = {"active": True, "fakeSni": fake_sni, "spoofIp": spoof_ip, "targetPort": 443}
-        spoof_q = quote(json.dumps(spoof, separators=(",", ":")), safe="")
-
     if transport == "xhttp":
         xs = inbound.get("xhttp_settings") if inbound else {}
         xpb = xs.get("xPaddingBytes", "100-1000")
@@ -1577,15 +1589,11 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         params = (f"encryption=none&security=tls&type=xhttp"
                   f"&host={quote(panel_domain)}&path={quote(xpath, safe='')}&sni={quote(panel_domain)}"
                   f"&fp=chrome&alpn=h2,http/1.1&mode={xmode}&extra={extra}")
-        if sni_spoof:
-            params += f"&snispoofing={spoof_q}"
     else:  # ws (default)
         ws_path = f"/ws/{config_uuid}"
         params = (f"encryption=none&security=tls&type=ws"
                   f"&host={quote(panel_domain)}&path={quote(ws_path, safe='')}&sni={quote(panel_domain)}"
                   f"&fp=chrome&alpn=http/1.1")
-        if sni_spoof:
-            params += f"&snispoofing={spoof_q}"
         # Add node tag for node-synced configs
         if inbound and inbound.get("node_ids"):
             params += f"&node={inbound['node_ids'][0]}"
@@ -1736,126 +1744,14 @@ def generate_status_config(user: dict, configs: list) -> str:
     return f"vless://{config_uuid}@{host}:{port}?{params}#{remark}"
 
 
-def generate_sni_spoof_configs(user_id: str, user: dict) -> list:
-    """Build Sni Spoof for v2box configs.
-
-    When user has sni_spoof_v2box enabled, generates TLS WS and Worker configs
-    with the snispoofing JSON parameter. Does NOT apply to Reality/XHTTP Reality configs.
-
-    Uses user's fake_sni and spoof_ip from spoof tab settings, or falls back
-    to inbound defaults.
-
-    Returns list of configs with snispoofing parameter.
-    """
-    if not user.get("sni_spoof_v2box"):
-        return []
-
-    # Get spoof settings from user (set via spoof tab)
-    fake_sni = str(user.get("fake_sni") or "").strip() or "www.hcaptcha.com"
-    spoof_ip = str(user.get("spoof_ip") or "").strip() or "8.6.112.4"
-    spoof = {"active": True, "fakeSni": fake_sni, "spoofIp": spoof_ip, "targetPort": 443}
-    spoof_q = quote(json.dumps(spoof, separators=(",", ":")), safe="")
-
-    cfg_uuid = user.get("config_uuid", "")
-    uname = user.get("username", user_id)
-    out = []
-
-    # Get user's inbound_ids
-    inbound_ids = user.get("inbound_ids") or []
-    for iid_ in inbound_ids:
-        ib = INBOUNDS.get(iid_)
-        if not ib:
-            continue
-        proto = (ib.get("protocol") or "").lower()
-        sec = (ib.get("security") or "").lower()
-
-        # Skip Reality inbounds - they don't use snispoofing
-        if proto == "reality" or sec == "reality":
-            continue
-
-        if proto == "worker":
-            # Worker inbound - use worker domain
-            wdomain = str(WORKER.get("worker_domain") or "").strip().lower()
-            if not wdomain or wdomain in ("localhost", "0.0.0.0", "127.0.0.1"):
-                continue
-            wport = ib.get("external_port") or ib.get("port") or 443
-
-            # Worker config: simple path /ws/{uuid}
-            wpath = f"/ws/{cfg_uuid}"
-            rem = quote(f"Spider-{uname}")
-            params = "&".join([
-                f"snispoofing={spoof_q}",
-                "security=tls",
-                "fp=chrome",
-                "allowInsecure=0",
-                f"host={quote(wdomain)}",
-                f"path={quote(wpath, safe='')}",
-                f"sni={quote(wdomain)}",
-                "insecure=0",
-                "encryption=none",
-                "type=ws",
-            ])
-            out.append(f"vless://{cfg_uuid}@{wdomain}:{wport}?{params}#{rem}")
-        else:
-            # TLS WS/XHTTP inbound - use panel domain
-            panel_domain = _safe_host(SETTINGS.get("domain"), get_host())
-            transport = (user.get("transport_type") or "").lower() or (ib.get("network") if ib else "") or "ws"
-            transport = transport.lower()
-            if transport not in ("ws", "xhttp"):
-                transport = "ws"
-
-            if transport == "xhttp":
-                # XHTTP with snispoofing
-                xs = ib.get("xhttp_settings") or {}
-                xpb = xs.get("xPaddingBytes", "100-1000")
-                xmode = str(xs.get("mode", "auto")).strip().lower()
-                if xmode not in ("packet-up", "stream-up"):
-                    xmode = "stream-up"
-                xsc = xs.get("scMaxEachPostBytes", "1000000")
-                extra = quote('{{"xPaddingBytes":"{}","mode":"{}","scMaxEachPostBytes":"{}"}}'.format(xpb, xmode, xsc), safe='')
-                xpath = f"/xhttp-siz10/{xmode}/{cfg_uuid}"
-                params = (f"encryption=none&security=tls&type=xhttp"
-                          f"&host={quote(panel_domain)}&path={quote(xpath, safe='')}&sni={quote(panel_domain)}"
-                          f"&fp=chrome&alpn=h2,http/1.1&mode={xmode}&extra={extra}"
-                          f"&snispoofing={spoof_q}")
-            else:
-                # WS with snispoofing
-                ws_path = f"/ws/{cfg_uuid}"
-                params = (f"encryption=none&security=tls&type=ws"
-                          f"&host={quote(panel_domain)}&path={quote(ws_path, safe='')}&sni={quote(panel_domain)}"
-                          f"&fp=chrome&alpn=http/1.1"
-                          f"&snispoofing={spoof_q}")
-            rem = quote(f"Spider-{uname} SniSpoof")
-            out.append(f"vless://{cfg_uuid}@{panel_domain}:443?{params}#{rem}")
-
-    return out
 
 
 def _worker_configs(user_id: str, user: dict, inbound: dict, stored_path: str, base_remark: str, addr_ip: str = None, addr_port: str = None) -> list:
-    """Build one VLESS config per selected country for a worker inbound.
-
-    Config structure:
-      - address = addr_ip (Clean IP) OR worker domain
-      - host/sni = worker domain (always, for TLS handshake + SNI routing)
-      - path = /route/{code} (always, for country-based proxy selection)
-      - snispoofing = BPB SNI spoofing params (for v2box compatibility)
-    """
+    """Build VLESS config for a worker inbound with path /ws/{uuid}."""
     wdomain = str(WORKER.get("worker_domain") or "").strip().lower()
     if not wdomain or wdomain in ("localhost", "0.0.0.0", "127.0.0.1"):
         return []
     wport = (inbound.get("external_port") if inbound else None) or (inbound.get("port") if inbound else None) or 443
-
-    # SNI spoofing for v2box: use user settings when enabled, fallback to inbound defaults
-    sni_spoof = bool(user.get("sni_spoof_v2box"))
-    if sni_spoof:
-        fake_sni = str(user.get("fake_sni") or (inbound.get("sni") if inbound else "")) or "www.hcaptcha.com"
-        spoof_ip = str(user.get("spoof_ip") or (inbound.get("spoof_ip") if inbound else "")) or "8.6.112.4"
-        spoof = {"active": True, "fakeSni": fake_sni, "spoofIp": spoof_ip, "targetPort": 443}
-    else:
-        fake_sni = str((inbound.get("sni") if inbound else "")) or "www.hcaptcha.com"
-        spoof_ip = str((inbound.get("spoof_ip") if inbound else "")) or "8.6.112.4"
-        spoof = {"active": True, "fakeSni": fake_sni, "spoofIp": spoof_ip, "targetPort": 0}
-    spoof_q = quote(json.dumps(spoof, separators=(",", ":")), safe="")
 
     cfg_uuid = user.get("config_uuid", "")
     uname = user.get("username", user_id)
@@ -1866,8 +1762,6 @@ def _worker_configs(user_id: str, user: dict, inbound: dict, stored_path: str, b
     port = addr_port if addr_port else wport
     rem = quote(f"Spider-{uname}")
 
-    configs = []
-
     params = {
         "encryption": "none",
         "security": "tls",
@@ -1876,12 +1770,9 @@ def _worker_configs(user_id: str, user: dict, inbound: dict, stored_path: str, b
         "fp": "chrome",
         "type": "ws",
         "path": quote(wpath, safe=''),
-        "snispoofing": spoof_q,
     }
     query = "&".join([f"{k}={v}" for k, v in params.items()])
-    configs.append(f"vless://{cfg_uuid}@{address}:{port}?{query}#{rem}")
-
-    return configs
+    return [f"vless://{cfg_uuid}@{address}:{port}?{query}#{rem}"]
 
 
 # ── Default link ──────────────────────────────────────────────────────────────
@@ -2217,6 +2108,26 @@ TGProxy = MTProtoProxyServer
 async def root():
     return {"service": "Spider Gateway", "version": "9.2", "status": "active", "channel": "https://t.me/spider_vpn1"}
 
+# ── Link redirect (link/uuid → sub/username) ──────────────────────────────────
+@app.get("/link/{uuid}")
+async def link_redirect(uuid: str, request: Request):
+    """Redirect /link/{uuid} to /sub/{username}."""
+    # Check if UUID matches a user
+    async with USERS_LOCK:
+        for uid, u in USERS.items():
+            if u.get("config_uuid") == uuid:
+                username = u.get("username")
+                if username:
+                    return RedirectResponse(url=f"/sub/{username}", status_code=301)
+                break
+    # Check if UUID matches a link
+    async with LINKS_LOCK:
+        link = LINKS.get(uuid)
+    if link and is_link_allowed(link):
+        return RedirectResponse(url=f"/sub/{uuid}", status_code=301)
+    raise HTTPException(status_code=404, detail="Link not found")
+
+
 # ── Subscription ping (must be before /sub/{{identifier}}) ──────────────────
 @app.get("/sub/{identifier}/ping")
 async def sub_ping_handler(identifier: str):
@@ -2289,9 +2200,26 @@ async def subscription_handler(identifier: str, request: Request):
             for cfg in custom_cfgs.get("railway", []) + custom_cfgs.get("cf", []):
                 configs.append(cfg)
 
-            # Sni Spoof configs
-            if target_user.get("sni_spoof_v2box"):
-                configs.extend(generate_sni_spoof_configs(target_uid, target_user))
+            # Add Node-synced configs (configs created on remote nodes)
+            async with INBOUNDS_LOCK:
+                node_inbound = INBOUNDS.get("Node", {})
+            node_ids = node_inbound.get("node_ids", [])
+            if node_ids:
+                for nid in node_ids:
+                    async with NODES_LOCK:
+                        node = NODES.get(nid, {})
+                    if node:
+                        node_cfg = generate_user_config(
+                            target_uid, target_user, "Node",
+                            addr=f"{node.get('remote_ip', '')}:{node.get('external_port', '443')}" if node.get('remote_ip') else None
+                        )
+                        if node_cfg:
+                            # Add node-specific tag
+                            remark_tag = f"Node-{node.get('name', node.get('remote_host', nid))}"
+                            node_cfg = generate_user_config(target_uid, target_user, "Node", addr=None, remark_tag=remark_tag)
+                            if node_cfg:
+                                configs.append(node_cfg)
+
 
             if not configs:
                 raise HTTPException(status_code=404, detail="no configs found")
@@ -3184,7 +3112,8 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib["grpc_settings"] = body["grpc_settings"]
         if "telegram_settings" in body and isinstance(body["telegram_settings"], dict):
             ib["telegram_settings"] = body["telegram_settings"]
-        if "node_ids" in body:
+        if "node_ids" in body and ib.get("system"):
+            # Only Node inbound can have node_ids modified via API
             ib["node_ids"] = [str(x).strip() for x in (body["node_ids"] or []) if str(x).strip()]
 
         if (ib.get("protocol") or "").lower() == "telegram":
@@ -3277,6 +3206,10 @@ async def delete_inbound(inbound_id: str, _=Depends(require_auth)):
         ib = INBOUNDS.pop(inbound_id, None)
         if not ib:
             raise HTTPException(status_code=404, detail="inbound not found")
+        # Protect system Inbound "Node" from deletion
+        if inbound_id == "Node" or ib.get("system") is True:
+            INBOUNDS[inbound_id] = ib
+            raise HTTPException(status_code=400, detail="سیستمی قابل حذف نیست")
         name = ib.get("name", inbound_id)
     # Stop Telegram Proxy if this was a telegram inbound
     if (ib.get("protocol") or "").lower() == "telegram":
@@ -3571,6 +3504,15 @@ async def create_user(request: Request, _=Depends(require_auth)):
             # Rebuild its secret list and restart the listener now.
             for _tg_iid in [i for i in inbound_ids if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"]:
                 asyncio.create_task(_restart_telegram_proxy(_tg_iid))
+    # If Inbound "Node" was selected, sync user to all selected nodes
+    if inbound_ids and "Node" in inbound_ids:
+        async with INBOUNDS_LOCK:
+            node_inbound = INBOUNDS.get("Node", {})
+        selected_node_ids = node_inbound.get("node_ids", [])
+        if selected_node_ids:
+            asyncio.create_task(sync_user_to_nodes(
+                user_id, USERS[user_id], inbound_id, selected_node_ids
+            ))
     host = SETTINGS.get("domain") or get_host()
     asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
     return {
@@ -4098,14 +4040,6 @@ async def api_user_sub(username: str):
     if all_custom:
         configs = configs + all_custom
 
-    # Sni Spoof for v2box configs: separate section when enabled
-    sni_spoof_cfgs = []
-    if user.get("sni_spoof_v2box"):
-        # Use user's fake_sni and spoof_ip from spoof tab, or fallback to inbound defaults
-        # These are TLS WS and Worker configs with snispoofing param
-        sni_spoof_cfgs = generate_sni_spoof_configs(user.get("user_id"), user)
-        if sni_spoof_cfgs:
-            configs = configs + sni_spoof_cfgs
 
     # Generate a status config (config-status) with fake random stats
     # This config is always the FIRST one in the list so clients show it as "status"
@@ -5481,6 +5415,51 @@ async def node_sync_user(request: Request):
     asyncio.create_task(save_state())
     log_activity("node", f"کاربر «{username}» از نود {from_node or '?'} سینک شد", "ok")
     return {"ok": True, "user_id": target_uid, "config_uuid": config_uuid}
+
+
+async def sync_user_to_nodes(user_id: str, user: dict, primary_inbound_id: str, node_ids: list) -> dict:
+    """Sync a single newly-created user to all selected nodes on Inbound 'Node'."""
+    results = []
+    async with NODES_LOCK:
+        targets = {nid: dict(NODES[nid]) for nid in node_ids if nid in NODES}
+    if not targets:
+        return {"skipped": True, "reason": "no valid nodes"}
+    origin = SETTINGS.get("domain") or get_host()
+    for nid, node in targets.items():
+        base = _node_base_url(node.get("domain", ""))
+        key = str(node.get("api_key") or "")
+        try:
+            ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=8.0))
+            payload = {
+                "username": user.get("username"),
+                "config_uuid": user.get("config_uuid"),
+                "traffic_limit_bytes": user.get("traffic_limit_bytes", 0),
+                "expire_at": user.get("expire_at"),
+                "concurrent_connections": user.get("concurrent_connections", 0),
+                "status": user.get("status", "active"),
+                "path": f"/ws/{user.get('config_uuid')}",
+                "from_node": origin,
+            }
+            r = await ac.post(f"{base}/api/node/sync-user", json=payload, headers={"X-Node-Key": key})
+            probe = await _probe_node(node)
+            async with NODES_LOCK:
+                if nid in NODES:
+                    NODES[nid].update(probe)
+            results.append({
+                "node_id": nid,
+                "name": node.get("name") or node.get("domain"),
+                "ok": r.status_code == 200,
+                "status": probe.get("last_status"),
+            })
+        except Exception as exc:
+            results.append({
+                "node_id": nid,
+                "name": node.get("name") or node.get("domain"),
+                "ok": False,
+                "error": str(exc)[:80],
+                "status": "error",
+            })
+    return {"ok": True, "results": results}
 
 
 @app.post("/api/inbounds/{inbound_id}/sync-nodes")
@@ -8025,17 +8004,12 @@ async def _worker_push_config() -> dict:
                 "countries": [],
                 "disabled": (u.get("status") or "active") != "active",
             })
-    locations = []
-    for code, p in (WORKER.get("proxies") or {}).items():
-        locations.append({"code": code, "country": p.get("country", code.upper()),
-                          "proxy": p.get("proxy", ""), "port": p.get("port", 443),
-                          "proxies": p.get("proxies", [p.get("proxy")])})
     try:
         async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
             r = await client.post(
                 f"https://{domain}/panel/config",
                 headers={"Authorization": f"Bearer {ctrl}"},
-                json={"users": users, "routes": {"locations": locations}, "settings": {}},
+                json={"users": users, "routes": {}, "settings": {}},
             )
         if r.status_code == 200:
             data = {}
@@ -8089,33 +8063,15 @@ async def _worker_pull_status() -> dict:
         return {"ok": False, "detail": str(e)}
 
 async def _worker_control_update() -> dict:
-    """Push the proxy pool to the deployed VLESS worker via its admin API.
-
-    The worker only accepts calls carrying the control token that was baked in
-    at deploy time (Bearer auth). The proxy pool is stored in the worker's KV
-    namespace (SPIDER_KV) and served from /api/locations.
-    """
+    """Keep worker KV synchronized (no multi-location anymore)."""
     domain = str(WORKER.get("worker_domain") or "").strip().lower()
     ctrl = str(WORKER.get("control_token") or "")
     if not domain or not ctrl or domain in ("localhost", "0.0.0.0", "127.0.0.1"):
         return {"ok": False, "detail": "worker not connected / no control token"}
-    # Build the locations list from the country → proxy map.
-    locations = []
-    for code, p in (WORKER.get("proxies") or {}).items():
-        loc = {"code": code, "country": p.get("country", code.upper()),
-               "proxy": p.get("proxy", ""), "port": p.get("port", 443),
-               "proxies": p.get("proxies", [p.get("proxy")])}
-        locations.append(loc)
+    # Single-location worker - no routes to sync
     try:
-        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
-            r = await client.post(
-                f"https://{domain}/api/proxies",
-                headers={"Authorization": f"Bearer {ctrl}"},
-                json={"locations": locations},
-            )
-        if r.status_code == 200:
-            return {"ok": True, "detail": "worker updated"}
-        return {"ok": False, "detail": f"worker returned HTTP {r.status_code}: {r.text[:120]}"}
+        # Single-location worker - nothing to sync
+        return {"ok": True, "detail": "no multi-location to sync"}
     except Exception as e:
         return {"ok": False, "detail": str(e)}
 
