@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Spider Panel Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700;900&display=swap" rel="stylesheet"/>
+
+<script>
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                "on-surface": "#e2e2e2",
+                "on-surface-variant": "#94a3b8",
+                "background": "#000000"
+            },
+            fontFamily: {
+                "headline-lg": ["Inter"],
+                "body-sm": ["Inter"],
+                "body-lg": ["Inter"],
+                "code-label": ["JetBrains Mono"]
+            }
+        }
+    }
+}
+</script>
+
+<style>
+/* استایل کلی و پس‌زمینه */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    touch-action: manipulation !important;
+}
+
+input, textarea, select {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+body {
+    background-color: #000000 !important;
+    color: #e2e2e2 !important;
+    min-height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+    font-family: 'Inter', sans-serif;
+}
+
+/* کانتینر مجسمه در سمت چپ */
+.hero-container {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    top: 0;
+    width: 60vw;
+    max-width: 900px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-end;
+    pointer-events: none;
+    z-index: 1; /* در لایه زیرین باکس لاگین قرار می‌گیرد */
+}
+
+/* تصویر مجسمه */
+.hero-statue {
+    height: 98vh;
+    max-height: 100%;
+    width: auto;
+    object-fit: contain;
+    object-position: bottom left;
+    opacity: 0.92;
+    image-rendering: pixelated;
+    -webkit-mask-image: linear-gradient(90deg, #000 65%, transparent 100%);
+    mask-image: linear-gradient(90deg, #000 65%, transparent 100%);
+}
+
+/* هاله دایره‌ای دور سر مجسمه */
+.hero-halo {
+    position: absolute;
+    left: 14%;
+    top: 6%;
+    width: clamp(280px, 34vw, 550px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    z-index: 0;
+    animation: breathe 7s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+/* کلمه عمودی SPIDER روی مجسمه */
+.hero-vertical-text {
+    position: absolute;
+    top: 50%;
+    left: 38%;
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(1.4rem, 2.2vw, 2.4rem);
+    font-weight: 900;
+    letter-spacing: 0.45em;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+    z-index: 2;
+}
+
+/* کادر مینیمال گوشه بالا راست */
+.badge-bar {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    gap: 12px;
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(255, 255, 255, 0.5);
+    z-index: 20;
+    letter-spacing: 0.1em;
+}
+
+.badge-item {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+}
+
+/* کارت شیشه‌ای لاگین */
+.glass-card {
+    background: rgba(10, 10, 15, 0.65) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* ورودی فرم */
+.input-glass {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #e2e2e2 !important;
+    caret-color: #e2e2e2 !important;
+    transition: all 0.3s ease;
+}
+
+.input-glass:focus {
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.15) !important;
+    outline: none;
+}
+
+/* دکمه ورود */
+.btn-submit {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    transition: all 0.25s ease;
+}
+
+.btn-submit:hover {
+    background-color: #e2e2e2 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* پیغام خطا */
+.error-msg {
+    background: rgba(255, 180, 171, 0.1);
+    border: 1px solid rgba(255, 180, 171, 0.3);
+    color: #ffb4ab;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+}
+.error-msg.show { display: flex; }
+
+/* رفتار اختصاصی نسخه موبایل */
+@media (max-width: 768px) {
+    .hero-container {
+        width: 100vw;
+        max-width: none;
+        opacity: 0.45; /* مات‌تر برای خوانایی بهتر فرم روی موبایل */
+        justify-content: center;
+    }
+    .hero-statue {
+        object-position: center bottom;
+        height: 85vh;
+        -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+    }
+    .hero-halo {
+        left: 50%;
+        transform: translateX(-50%);
+        top: 10%;
+        width: 320px;
+    }
+    .hero-vertical-text {
+        left: 15%;
+        opacity: 0.35;
+    }
+    .badge-bar {
+        top: 16px;
+        right: 16px;
+        font-size: 0.65rem;
+    }
+}
+</style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex items-center justify-center relative">
+
+<!-- نوار شناور بالا (بدون کلید release) -->
+<div class="badge-bar">
+    <span class="badge-item">★ 2026</span>
+    <span class="badge-item">SPIDER</span>
+</div>
+
+<!-- بک‌گراند: مجسمه دایترد و هاله (در سمت چپ) -->
+<div class="hero-container">
+    <div class="hero-halo"></div>
+    <span class="hero-vertical-text">SPIDER</span>
+    <img class="hero-statue" src="https://ryoku.dev/art/bone/hero.png" alt="Spider Statue Background">
+</div>
+
+<!-- باکس ورود (روی مجسمه و لایه z-10) -->
+<div class="glass-card rounded-3xl w-full max-w-md p-8 mx-4 flex flex-col gap-6 shadow-2xl z-10 relative">
+    <!-- Header -->
+    <div class="flex flex-col items-center gap-2 text-center">
+        <img src="/static/spider-logo.svg" alt="Spider" onerror="this.style.display='none'" style="width:96px;height:96px;margin-bottom:2px">
+        <h1 class="text-2xl font-bold tracking-wider text-white">SPIDER PANEL</h1>
+        <p class="text-xs text-on-surface-variant font-medium">High Performance Panel</p>
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" id="error-msg">
+        <span class="material-symbols-outlined" style="font-size:18px;">error</span>
+        <span id="error-text"></span>
+    </div>
+
+    <!-- Form -->
+    <form class="flex flex-col gap-4" id="login-form">
+        <div class="flex flex-col gap-2">
+            <label class="font-code-label text-xs text-on-surface-variant tracking-wider" for="password">PASSWORD</label>
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size: 20px;">lock</span>
+                <input class="input-glass w-full rounded-2xl py-3 pl-12 pr-4 text-sm text-white placeholder:text-gray-500 font-sans" id="password" placeholder="Enter password" type="password" autofocus required/>
+            </div>
+        </div>
+        
+        <button class="mt-2 btn-submit font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 text-sm" id="loginBtn" type="submit">
+            <span id="btn-text" class="flex items-center gap-2">Sign In <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span></span>
+            <span id="btn-spinner" class="hidden"><span class="material-symbols-outlined animate-spin" style="font-size: 18px;">progress_activity</span></span>
+        </button>
+    </form>
+</div>
+
+<!-- لاجیک احراز هویت -->
+<script>
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('loginBtn');
+    var btnText = document.getElementById('btn-text');
+    var btnSpinner = document.getElementById('btn-spinner');
+    var errDiv = document.getElementById('error-msg');
+    var errText = document.getElementById('error-text');
+
+    errDiv.classList.remove('show');
+    btn.disabled = true;
+    btnText.classList.add('hidden');
+    btnSpinner.classList.remove('hidden');
+
+    try {
+        var r = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: document.getElementById('password').value })
+        });
+        if (!r.ok) {
+            var d = await r.json().catch(function() { return {}; });
+            throw new Error(d.detail || 'Login failed');
+        }
+        location.href = '/spider';
+    } catch(ex) {
+        errText.textContent = ex.message;
+        errDiv.classList.add('show');
+        btn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+    }
+});
+</script>
+
+<!-- جلوگیری از زوم یا کپی ناخواسته -->
+<script>
+document.addEventListener('wheel', function(e) { if(e.ctrlKey || e.metaKey) e.preventDefault(); }, {passive:false});
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].indexOf(e.key) >= 0) e.preventDefault();
+    if ((e.ctrlKey || e.metaKey) && (e.key || '').toLowerCase() === 'c' && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || '')) e.preventDefault();
+});
+['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(function(x) {
+    document.addEventListener(x, function(e) {
+        if (!/^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || '')) e.preventDefault();
+    });
+});
+['touchstart', 'touchmove'].forEach(function(x) {
+    document.addEventListener(x, function(e) {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, {passive:false});
+});
+document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+</script>
+</body>
+</html>

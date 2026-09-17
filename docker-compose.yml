@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  spider-panel:
+    build: .
+    container_name: spider-panel
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-admin}"
+      SECRET_KEY: "${SECRET_KEY:-spider-panel-secret-key-v2}"
+      RAILWAY_PUBLIC_DOMAIN: "${RAILWAY_PUBLIC_DOMAIN:-}"
+      DATA_DIR: "/data"
+      WORKER_SYNC_INTERVAL: "3600"
+    volumes:
+      - spider_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - spider-network
+
+networks:
+  spider-network:
+    driver: bridge
+
+volumes:
+  spider_data:
+    driver: local

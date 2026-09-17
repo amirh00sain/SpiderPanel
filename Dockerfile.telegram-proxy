@@ -1,0 +1,23 @@
+# Dockerfile for Telegram MTProto Proxy using official telegrammessenger/proxy image
+# This is used to run the official telegrammessenger/proxy container for each Telegram inbound
+
+# Use the official telegram messenger proxy image
+FROM telegrammessenger/proxy:latest
+
+# Environment variables that will be set at runtime:
+# SECRET=<hex_secret>           - 16-byte hex secret for MTProto proxy (32 hex chars)
+# PORT=<port>                   - Port to listen on (default: 443)
+# DOMAIN=<domain>               - Optional domain for the proxy (for advertising)
+# PROXY_TAG=<hex_tag>           - Optional proxy tag from @MTProxybot (32 hex chars)
+
+# The official image expects SECRET environment variable with 32 hex characters
+# The container will listen on PORT (default 443) for MTProto proxy connections
+
+EXPOSE 443
+
+# The official image handles the MTProto protocol and runs as a daemon
+# No additional CMD needed - the base image handles startup
+
+
+# The image runs as root by default, which is needed for binding to port 443
+# In production, consider using setcap or running on a higher port if not running as root

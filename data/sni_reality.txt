@@ -1,0 +1,3 @@
+# Fastest SNIs
+www.google.com|45
+www.cloudflare.com|52
