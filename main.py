@@ -1783,19 +1783,19 @@ def generate_sni_spoof_configs(user_id: str, user: dict) -> list:
             # Worker config: simple path /ws/{uuid}
             wpath = f"/ws/{cfg_uuid}"
             rem = quote(f"Spider-{uname}")
-                params = "&".join([
-                    f"snispoofing={spoof_q}",
-                    "security=tls",
-                    "fp=chrome",
-                    "allowInsecure=0",
-                    f"host={quote(wdomain)}",
-                    f"path={quote(wpath, safe='')}",
-                    f"sni={quote(wdomain)}",
-                    "insecure=0",
-                    "encryption=none",
-                    "type=ws",
-                ])
-                out.append(f"vless://{cfg_uuid}@{wdomain}:{wport}?{params}#{rem}")
+            params = "&".join([
+                f"snispoofing={spoof_q}",
+                "security=tls",
+                "fp=chrome",
+                "allowInsecure=0",
+                f"host={quote(wdomain)}",
+                f"path={quote(wpath, safe='')}",
+                f"sni={quote(wdomain)}",
+                "insecure=0",
+                "encryption=none",
+                "type=ws",
+            ])
+            out.append(f"vless://{cfg_uuid}@{wdomain}:{wport}?{params}#{rem}")
         else:
             # TLS WS/XHTTP inbound - use panel domain
             panel_domain = _safe_host(SETTINGS.get("domain"), get_host())
@@ -1868,18 +1868,18 @@ def _worker_configs(user_id: str, user: dict, inbound: dict, stored_path: str, b
 
     configs = []
 
-        params = {
-            "encryption": "none",
-            "security": "tls",
-            "sni": wdomain,
-            "host": wdomain,
-            "fp": "chrome",
-            "type": "ws",
-            "path": quote(wpath, safe=''),
-            "snispoofing": spoof_q,
-        }
-        query = "&".join([f"{k}={v}" for k, v in params.items()])
-        configs.append(f"vless://{cfg_uuid}@{address}:{port}?{query}#{rem}")
+    params = {
+        "encryption": "none",
+        "security": "tls",
+        "sni": wdomain,
+        "host": wdomain,
+        "fp": "chrome",
+        "type": "ws",
+        "path": quote(wpath, safe=''),
+        "snispoofing": spoof_q,
+    }
+    query = "&".join([f"{k}={v}" for k, v in params.items()])
+    configs.append(f"vless://{cfg_uuid}@{address}:{port}?{query}#{rem}")
 
     return configs
 
