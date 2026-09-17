@@ -2687,7 +2687,7 @@ async function viewSub(username) {
     var subUrl = window.location.origin + '/link/' + uuid;
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(subUrl);
-      showToast('لینک ساب کپی شد', 'ok');
+      toast('لینک ساب کپی شد', 'ok');
     } else {
       window.open(subUrl, '_blank');
     }
