@@ -1078,7 +1078,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
         <div class="panel">
           <div class="panel-h" style="justify-content:space-between">
             <span class="glow" data-i18n="tab.users">مدیریت کاربران</span>
-            <button class="btn btn-p" onclick="openCreateUser()">
+            <button type="button" class="btn btn-p" onclick="openCreateUser(); return false;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span data-i18n="newUser">کاربر جدید</span>
             </button>
@@ -1506,7 +1506,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
 <!-- CREATE USER -->
 <div class="modal" id="mod-user"><div class="modal-c" style="max-width:680px">
   <div class="modal-t"><span class="glow" data-i18n="createUser">ایجاد کاربر جدید</span></div>
-  <form onsubmit="submitCreateUser(event)">
+  <form onsubmit="submitCreateUser(event); return false;">
     <div class="f-r">
       <div class="f-g"><label data-i18n="username">نام کاربری</label><input type="text" id="cu-name" placeholder="خالی = تصادفی"></div>
       <div class="f-g"><label data-i18n="conn">اتصال همزمان</label><input type="number" id="cu-conn" placeholder="∞ نامحدود"></div>
@@ -1524,7 +1524,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
     </div>
     <div class="modal-btns">
       <button type="button" class="btn btn-g" onclick="closeModal('mod-user')"><span data-i18n="cancel">انصراف</span></button>
-      <button type="submit" class="btn btn-p" id="cu-submit"><span data-i18n="submitUser">ایجاد کاربر</span></button>
+      <button type="button" class="btn btn-p" id="cu-submit" onclick="submitCreateUser(event)"><span data-i18n="submitUser">ایجاد کاربر</span></button>
     </div>
   </form>
 </div></div>
@@ -2311,30 +2311,43 @@ async function openCreateUser() {
 }
 
 async function submitCreateUser(e) {
-  e.preventDefault();
-  var btn = $id('cu-submit'); btn.disabled = true; btn.textContent = t('creatingUser');
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  var btn = $id('cu-submit');
+  if (!btn || btn.disabled) return false;
+  btn.disabled = true;
+  btn.textContent = t('creatingUser');
   var v = parseFloat($id('cu-vol').value) || 0, vu = $id('cu-vol-u').value;
   var ex = parseInt($id('cu-exp').value) || 0, eu = $id('cu-exp-u').value;
   var inbound_ids = selectedInboundIds();
-  // Per-inbound custom-IP switches only.
+  // No implicit/default inbound: require the user to explicitly select one or more.
+  if (!inbound_ids.length) {
+    toast('حداقل یک اینباند را انتخاب کنید', 'err');
+    btn.disabled = false; btn.textContent = t('submitUser');
+    return false;
+  }
   var cuSw = cuCustomStates();
   var cfIds = inbound_ids.filter(function(i){ return cuSw[i] && cuSw[i].cf; });
   var rwIds = inbound_ids.filter(function(i){ return cuSw[i] && cuSw[i].railway; });
   try {
     var r = await api('/api/users', {method: 'POST', body: {
-      username: $id('cu-name').value,
+      username: ($id('cu-name').value || '').trim(),
       traffic_limit_gb: vu === 'GB' ? v : v / 1024,
       expire_days: eu === 'months' ? ex * 30 : ex,
       concurrent_connections: parseInt($id('cu-conn').value) || 0,
       inbound_ids: inbound_ids,
-      // Mark which inbounds want scanned custom-IP configs (worker→cf, tls→railway).
       custom_ip_inbounds: { cf: cfIds, railway: rwIds }
     }});
-    toast(r.username + ' ' + t('userCreated'), 'ok');
+    toast((r.username || 'User') + ' ' + t('userCreated'), 'ok');
     closeModal('mod-user');
-    loadAll();
-  } catch(e) { toast(e.message || t('toast.err'), 'err'); }
-  btn.disabled = false; btn.textContent = t('submitUser');
+    await loadAll();
+  } catch(err) {
+    console.error('create user failed', err);
+    toast(err && err.message ? err.message : t('toast.err'), 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('submitUser');
+  }
+  return false;
 }
 
 var EU_INBOUND_PICKS = {};
@@ -2525,12 +2538,9 @@ function renderInbounds() {
 }
 
 function populateInboundSelects() {
-  // Default-select every inbound so per-inbound options show immediately.
-  if (!Object.keys(cuInboundState.picks).length) {
-    cuInboundState.picks = {};
-    ALL_IB.forEach(function(ib){ cuInboundState.picks[ib.inbound_id] = true; });
-    cuInboundState.countries = {};
-  }
+  // Never auto-select an inbound. The user must explicitly choose
+  // exactly the inbound(s) they want for this user.
+  if (!cuInboundState || !cuInboundState.picks) cuInboundState = {picks:{}, countries:{}};
   cuRenderInboundOpts();
 }
 
@@ -2540,12 +2550,9 @@ function toggleIbPick(el) {
 
 function selectedInboundIds() {
   var ids = [];
-  Object.keys(cuInboundState.picks).forEach(function(id) {
+  Object.keys(cuInboundState.picks || {}).forEach(function(id) {
     if (cuInboundState.picks[id]) ids.push(id);
   });
-  if (!ids.length) {
-    document.querySelectorAll('.ib-pick.selected').forEach(function(c){ ids.push(c.getAttribute('data-id')); });
-  }
   return ids;
 }
 

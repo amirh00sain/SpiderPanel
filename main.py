@@ -3519,6 +3519,7 @@ async def list_users(_=Depends(require_auth)):
 async def create_user(request: Request, _=Depends(require_auth)):
     """Create a new user with protocol config, traffic limit, and expiry."""
     body = await request.json()
+    logger.info("Create user request received: inbound_ids=%s username=%s", body.get("inbound_ids"), body.get("username"))
     _raw_name = (body.get("username") or "").strip()[:40]
     _auto_name = not _raw_name
     username = _raw_name or f"user-{secrets.token_hex(3)}"
@@ -3541,8 +3542,20 @@ async def create_user(request: Request, _=Depends(require_auth)):
     inbound_ids = [str(x).strip() for x in raw_ids if str(x).strip()]
     if inbound_id and inbound_id not in inbound_ids:
         inbound_ids.insert(0, inbound_id)
-    if inbound_ids:
-        inbound_id = inbound_ids[0]
+    if not inbound_ids:
+        raise HTTPException(
+            status_code=400,
+            detail="Select at least one inbound. No inbound is selected.",
+        )
+    inbound_id = inbound_ids[0]
+
+    # Reject stale/unknown inbound ids before creating the user.
+    _unknown_inbounds = [iid for iid in inbound_ids if iid not in INBOUNDS]
+    if _unknown_inbounds:
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown inbound: " + ", ".join(_unknown_inbounds),
+        )
     proxy_ip = str(body.get("proxy_ip") or "").strip()
     proxy_ips = [str(x).strip() for x in (body.get("proxy_ips") or []) if str(x).strip()][:3]
     # Cloudflare Worker routing: when enabled + worker connected, the user's
