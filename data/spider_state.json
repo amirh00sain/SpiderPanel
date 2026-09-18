@@ -100,18 +100,10 @@
     },
     "Node": {
       "name": "Node",
-      "protocol": "vless",
-      "port": 8080,
-      "network": "ws",
-      "security": "tls",
-      "domain": "localhost",
-      "external_domain": "",
-      "sni": "",
-      "external_port": 8081,
-      "fingerprint": "chrome",
-      "reality_settings": {},
-      "xhttp_settings": {},
+      "protocol": "node",
+      "inbound_type": "node",
       "node_ids": [],
+      "enabled_node_ids": [],
       "system": true,
       "created_at": "2026-09-18T09:11:24.790721"
     }

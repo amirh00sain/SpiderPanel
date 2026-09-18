@@ -3135,7 +3135,7 @@ async function submitInbound(e) {
       body.reality_settings = {
         private_key: $id('ib-privkey').value || '',
         public_key: $id('ib-pubkey').value || '',
-        short_ids: $id('ib-shortids').value || '',
+        short_id: $id('ib-shortids').value || '',
         spiderx: $id('ib-spiderx').value || '/',
         dest: sniVal + ':443',
         server_names: [sniVal],

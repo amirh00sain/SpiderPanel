@@ -5,6 +5,9 @@ import re
 import random
 import sys
 import hashlib
+import socket
+import signal
+from typing import Dict, Optional
 
 # Ensure the app directory is on the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -75,6 +78,33 @@ app.add_middleware(
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
 DATA_FILE = DATA_DIR / "spider_state.json"
 SAVE_LOCK = asyncio.Lock()
+
+# ── Official MTProxy runtime paths/settings ──────────────────────────────────
+# Every Telegram inbound owns one MTProxy process. The process listens on the
+# inbound's Internal Port (-H). Its statistics socket is localhost-only and
+# must be unique per inbound so multiple Telegram inbounds cannot collide.
+TG_DIR = DATA_DIR / "mtproxy"
+BIN = Path(os.environ.get("MTPROXY_BIN", "/usr/local/bin/mtproto-proxy"))
+if not BIN.exists():
+    _project_mtproxy = Path(os.path.dirname(os.path.abspath(__file__))) / "mtproto-proxy"
+    if _project_mtproxy.exists():
+        BIN = _project_mtproxy
+SECRET_RE = re.compile(r"^[0-9a-fA-F]{32}$")
+WORKERS = max(1, int(os.environ.get("MTPROXY_WORKERS", "1") or "1"))
+STATS_BASE = max(1024, int(os.environ.get("MTPROXY_STATS_BASE", "18080") or "18080"))
+
+def _mtproxy_bin_path() -> Path:
+    """Resolve MTProxy binary at runtime so post-import installs are honored."""
+    configured = Path(os.environ.get("MTPROXY_BIN", "")).expanduser() if os.environ.get("MTPROXY_BIN") else None
+    candidates = [
+        configured,
+        Path("/usr/local/bin/mtproto-proxy"),
+        Path(os.path.dirname(os.path.abspath(__file__))) / "mtproto-proxy",
+    ]
+    for candidate in candidates:
+        if candidate and candidate.exists() and candidate.is_file():
+            return candidate
+    return BIN
 
 # ── IP scanner live-saved files (first 10 working IPs per source) ─────────────
 SCANNED_DIR = Path(os.path.dirname(os.path.abspath(__file__))) / "data" / "scanned"
@@ -153,6 +183,47 @@ def _save_scanned_ips(ctype: str, entries: list, replace: bool = False) -> list:
     except Exception as e:
         logger.warning(f"Could not save scanned ips: {e}")
     return merged
+
+def _is_real_listener_inbound(ib: dict) -> bool:
+    proto = str(ib.get("protocol") or "").lower()
+    sec = str(ib.get("security") or "").lower()
+    return proto == "telegram" or proto == "reality" or sec == "reality"
+
+
+def _listener_port_in_use(port: int, exclude_id: str | None = None) -> str | None:
+    try:
+        port = int(port)
+    except Exception:
+        return "invalid"
+    if port == int(CONFIG.get("port") or 8080):
+        return "panel"
+    for iid, ib in INBOUNDS.items():
+        if exclude_id is not None and str(iid) == str(exclude_id):
+            continue
+        if not _is_real_listener_inbound(ib):
+            continue
+        try:
+            ip = int(ib.get("port") or 0)
+        except Exception:
+            continue
+        if ip == port:
+            return str(iid)
+    return None
+
+
+def _validate_listener_port(port: int, exclude_id: str | None = None) -> None:
+    try:
+        port = int(port)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Internal Port must be a number")
+    if not 1 <= port <= 65535:
+        raise HTTPException(status_code=400, detail="Internal Port must be between 1 and 65535")
+    owner = _listener_port_in_use(port, exclude_id=exclude_id)
+    if owner == "panel":
+        raise HTTPException(status_code=409, detail=f"Internal Port {port} is already used by the SpiderPanel HTTP server")
+    if owner and owner != "invalid":
+        raise HTTPException(status_code=409, detail=f"Internal Port {port} is already used by inbound {owner}")
+
 
 async def load_state():
     global LINKS, AUTH, SUBS, USERS, SETTINGS, GROUPS, IP_POOL, IP_BLACKLIST, INBOUNDS, NODES, PENDING_NODE_DELETIONS
@@ -806,8 +877,20 @@ def generate_telegram_proxy_link(user_id: str, user: dict, inbound: dict, remark
     if not external_domain or not external_port:
         return ""
 
-    # Use stored secret or derive a stable one
-    secret = user.get("telegram_secret") or derive_secret_from_uuid(config_uuid)
+    # Use a stored, validated secret. Older users are migrated lazily here and
+    # the value is written back to the in-memory record before the link is sent.
+    secret = str(user.get("telegram_secret") or "").strip().lower()
+    if not SECRET_RE.fullmatch(secret):
+        secret = derive_secret_from_uuid(config_uuid)
+        user["telegram_secret"] = secret
+        global_user = USERS.get(user_id)
+        if global_user is not None:
+            global_user["telegram_secret"] = secret
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(save_state())
+        except RuntimeError:
+            pass
 
     # Note: Telegram t.me/proxy links don't support #remark fragment like VLESS links
     # The name is set by the user in the Telegram app after adding the proxy
@@ -992,13 +1075,21 @@ async def startup():
     if normalize_relay_links():
         await save_state()
 
+    _changed = False
+
     # Normalize existing Telegram inbounds: only internal/external Telegram fields
     # are meaningful. Remove legacy SNI/Destination/Server Name state.
     for _tg_ib in INBOUNDS.values():
         if (_tg_ib.get("protocol") or "").lower() == "telegram":
             _tg = _tg_ib.setdefault("telegram_settings", {})
-            _tg["internal_port"] = int(_tg.get("internal_port") or _tg_ib.get("port") or 44344)
-            _tg["external_port"] = int(_tg.get("external_port") or _tg_ib.get("external_port") or 443)
+            try:
+                _tg["internal_port"] = int(_tg.get("internal_port") or _tg_ib.get("port") or 44344)
+            except Exception:
+                _tg["internal_port"] = 44344
+            try:
+                _tg["external_port"] = int(_tg.get("external_port") or _tg_ib.get("external_port") or 443)
+            except Exception:
+                _tg["external_port"] = 443
             _tg["external_domain"] = str(_tg.get("external_domain") or _tg_ib.get("external_domain") or "").strip()
             _tg_ib["port"] = _tg["internal_port"]
             _tg_ib["external_port"] = _tg["external_port"]
@@ -1007,11 +1098,24 @@ async def startup():
             _tg_ib.pop("destination", None)
             _tg_ib.pop("server_name", None)
 
+    # Persist a real per-user 16-byte/32-hex MTProxy secret. This repairs users
+    # created by older builds where the secret was only derived at link time.
+    for _uid, _u in USERS.items():
+        if not str(_u.get("config_uuid") or "").strip():
+            _u["config_uuid"] = str(uuid.uuid4())
+            _changed = True
+        _iids = _u.get("inbound_ids") or ([_u.get("inbound_id")] if _u.get("inbound_id") else [])
+        _has_tg = any((INBOUNDS.get(iid, {}).get("protocol") or "").lower() == "telegram" for iid in _iids)
+        if _has_tg:
+            _tg_secret = str(_u.get("telegram_secret") or "").strip().lower()
+            if not SECRET_RE.fullmatch(_tg_secret):
+                _u["telegram_secret"] = derive_secret_from_uuid(_u.get("config_uuid"))
+                _changed = True
+
     # Backfill placeholder domains on any pre-existing inbounds so configs never
     # carry localhost/SERVER_IP when a real domain is available.
     _real = _safe_host(SETTINGS.get("domain"), get_host())
     _real_is_rlwy = ".rlwy.net" in _real or ".up.railway.app" in _real
-    _changed = False
     for _ib in INBOUNDS.values():
         _proto = (_ib.get("protocol") or "").lower()
         _sec = (_ib.get("security") or "").lower()
@@ -1044,22 +1148,37 @@ async def startup():
         asyncio.create_task(save_state())
         logger.info("Backfilled placeholder inbound domains with %s", _real)
 
-    # Deduplicate inbound ports: on Railway each inbound must listen on its own
-    # port (443 can only be used once). Non-default inbounds that collide with
-    # an earlier one are moved to the next free port (80xx range).
-    _seen_ports: dict = {}
-    for _ib in INBOUNDS.values():
-        _p = int(_ib.get("port") or 0)
-        if _p and _p in _seen_ports:
-            _np = _p + 1
-            while _np in _seen_ports or _np == 80:
+    # Deduplicate only real OS listeners. The FastAPI panel itself owns its
+    # configured port, while the system Node selector is not a listener.
+    _seen_ports: dict[int, str] = {}
+    _panel_port = int(CONFIG.get("port") or 8080)
+    _seen_ports[_panel_port] = "panel"
+    for _iid, _ib in INBOUNDS.items():
+        _proto = (_ib.get("protocol") or "").lower()
+        if _proto == "node" or _ib.get("system") is True or _proto == "worker":
+            continue
+        if _proto not in {"reality", "telegram"} and (_ib.get("security") or "").lower() != "reality":
+            continue
+        try:
+            _p = int(_ib.get("port") or 0)
+        except Exception:
+            _p = 0
+        if not 1 <= _p <= 65535 or _p in _seen_ports:
+            _np = max(10000, _p + 1 if _p else 10000)
+            while _np in _seen_ports or _np == _panel_port:
                 _np += 1
+                if _np > 65535:
+                    raise RuntimeError("No free internal listener port remains for inbound %s" % _iid)
+            old_port = _p
             _ib["port"] = _np
+            if _proto == "telegram":
+                _ib.setdefault("telegram_settings", {})["internal_port"] = _np
             if not _ib.get("external_port"):
                 _ib["external_port"] = _np
             _changed = True
-            logger.info("Inbound «%s» moved to free port %s (was %s)", _ib.get("name"), _np, _p)
-        _seen_ports[int(_ib.get("port") or 0)] = True
+            logger.info("Inbound «%s» moved to free internal port %s (was %s)", _ib.get("name"), _np, old_port or "unset")
+            _p = _np
+        _seen_ports[_p] = _iid
 
     # Reality migration: every reality inbound must carry a WORKING pbk/sid —
     # a pbk that is actually the public half of the private key Xray will use.
@@ -1116,6 +1235,12 @@ async def startup():
             _changed = True
             logger.info("Reality inbound «%s» backfilled with pbk", _ib.get("name"))
         _rs.setdefault("short_id", _gs_rs.get("short_id") or secrets.token_hex(5)[:10])
+        _sid = str(_rs.get("short_id") or "").strip().lower()
+        if not re.fullmatch(r"[0-9a-f]{2,16}", _sid or "") or len(_sid) % 2:
+            _rs["short_id"] = secrets.token_hex(5)
+            _changed = True
+        else:
+            _rs["short_id"] = _sid
         _rs.setdefault("spiderx", "/")
         _rs.setdefault("dest", "is1-ssl.mzstatic.com:443")
         _rs.setdefault("sni", "is1-ssl.mzstatic.com")
@@ -1164,6 +1289,22 @@ async def startup():
             _u["path"] = f"/ws/{_cuuid}"
             _up_changed = True
             logger.info("User «%s» path fixed to /ws/%s", _u.get("username", _uid), _cuuid)
+
+        # Native Reality+XHTTP uses the inbound's shared XHTTP base path.
+        # Do not retain the old relay-style /xhttp-siz10/.../{uuid} path.
+        for _iid in _iids:
+            _rib = INBOUNDS.get(_iid)
+            if not _rib:
+                continue
+            if str(_rib.get("protocol") or "").lower() == "reality" and str(_rib.get("network") or "").lower() == "xhttp":
+                _wanted = str((_rib.get("xhttp_settings") or {}).get("path") or "/").strip()
+                if not _wanted.startswith("/") or "?" in _wanted or "#" in _wanted:
+                    _wanted = "/"
+                if _u.get("path") != _wanted:
+                    _u["path"] = _wanted
+                    _up_changed = True
+                    logger.info("User «%s» Reality+XHTTP path fixed to %s", _u.get("username", _uid), _wanted)
+                break
     if _up_changed:
         asyncio.create_task(save_state())
 
@@ -1242,11 +1383,12 @@ async def _start_telegram_proxy(inbound_id: str, inbound: dict):
             if inbound_id in iids:
                 config_uuid = u.get("config_uuid", uid)
                 secret = str(u.get("telegram_secret") or "").strip().lower()
-                if not re.fullmatch(r"[0-9a-f]{32}", secret):
+                if not SECRET_RE.fullmatch(secret):
                     secret = derive_secret_from_uuid(config_uuid)
                     u["telegram_secret"] = secret
                 secrets_map[secret] = {"user_id": uid, "config_uuid": config_uuid, "label": u.get("username", uid)}
 
+    await save_state()
     server = MTProtoProxyServer(inbound_id=inbound_id, port=int_port)
     server.update_secrets(secrets_map)
     if not secrets_map:
@@ -1721,7 +1863,10 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     sec = (inbound.get("security") if inbound else None) or "tls"
     sec = sec.lower()
 
-    config_uuid = user.get("config_uuid", "") or user_id
+    config_uuid = str(user.get("config_uuid", "") or user_id).strip()
+    if not _is_valid_uuid(config_uuid):
+        logger.warning("Skipping config for user %s: invalid config UUID %r", user_id, config_uuid)
+        return ""
     username = user.get("username", user_id)
     rem = f"Spider-{username}"
     if remark_tag:
@@ -1764,16 +1909,29 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         gs = SETTINGS.get("reality") or {}
         # Use the private key from inbound, derive public key from it (this is the ONLY
         # public key that works with Xray — Xray derives it from the same private key).
-        priv_key = rs.get("private_key") or gs.get("private_key") or ""
-        pbk = _xray_x25519_public_key(priv_key) if priv_key else (rs.get("public_key") or gs.get("public_key") or "")
-        sid = rs.get("short_id") or gs.get("short_id") or ""
-        spx = rs.get("spiderx") or gs.get("spiderx") or "/"
+        priv_key = _xray_x25519_privkey_norm(str(rs.get("private_key") or gs.get("private_key") or ""))
+        if not priv_key:
+            logger.warning("Skipping Reality config for user %s: missing/invalid private key", user_id)
+            return ""
+        pbk = _xray_x25519_public_key(priv_key)
+        if not pbk:
+            logger.warning("Skipping Reality config for user %s: failed to derive public key", user_id)
+            return ""
+        sid = str(rs.get("short_id") or gs.get("short_id") or "").strip().lower()
+        if not re.fullmatch(r"[0-9a-f]{2,16}", sid or "") or len(sid) % 2:
+            logger.warning("Skipping Reality config for user %s: invalid short_id %r", user_id, sid)
+            return ""
+        spx = str(rs.get("spiderx") or gs.get("spiderx") or "/").strip() or "/"
         fp = inbound.get("fingerprint") or rs.get("fingerprint") or gs.get("fingerprint") or "chrome"
         sni = inbound.get("sni") or rs.get("sni") or gs.get("sni") or "is1-ssl.mzstatic.com"
         xs = inbound.get("xhttp_settings") or {}
-        # For Reality XHTTP, path should be "/" (as per requirement)
-        rpath = str(xs.get("path") or "/")
-        if rpath != "/":
+        # XHTTP path is a shared transport base path: the client and server
+        # must use the exact same value. Xray adds its per-session UUID path
+        # internally; do not manually append the VLESS UUID here.
+        rpath = str(xs.get("path") or "/").strip()
+        if not rpath.startswith("/"):
+            rpath = "/" + rpath
+        if "#" in rpath or "?" in rpath or rpath == "":
             rpath = "/"
         host = addr_ip or ext_domain
         port = addr_port or ext_port
@@ -1785,26 +1943,23 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         else:
             xpb = xs.get("xPaddingBytes", "100-1000")
             xmod = str(xs.get("mode") or "stream-up").strip().lower()
-            if xmod not in ("auto", "packet-up", "stream-up"):
+            if xmod not in ("auto", "packet-up", "stream-up", "stream-one"):
                 xmod = "stream-up"
             if xmod == "auto":
                 # Keep client/server mode deterministic. Recent Xray builds have
                 # compatibility issues when one side forces a concrete mode and
                 # the other advertises auto.
                 xmod = "stream-up"
-            xsc = xs.get("scMaxEachPostBytes", "1000000")
-            extra = quote('{{"xPaddingBytes":"{}","mode":"{}","scMaxEachPostBytes":"{}"}}'.format(xpb, xmod, xsc), safe='')
-            # Use dest and server_names from reality_settings if provided
-            rs_sni = rs.get("sni") or sni
-            rs_dest = rs.get("dest") or (rs_sni + ":443")
-            rs_server_names = rs.get("server_names") or [rs_sni]
-            server_names_q = quote(",".join(rs_server_names), safe="")
+            extra_obj = {"xPaddingBytes": xpb}
+            if xmod == "packet-up":
+                extra_obj["scMaxEachPostBytes"] = xs.get("scMaxEachPostBytes", "1000000")
+            extra = quote(json.dumps(extra_obj, separators=(",", ":"), ensure_ascii=False), safe='')
+            xh_host = str(xs.get("host") or "").strip()
+            host_q = f"&host={quote(xh_host)}" if xh_host else ""
             params = (f"encryption=none&security=reality"
-                      f"&sni={quote(sni)}&fp={fp}"
-                      f"&pbk={pbk}&sid={sid}&spx={spx}"
-                      f"&type=xhttp&path={rpath}&mode={xmod}&extra={extra}"
-                      f"&dest={quote(rs_dest)}"
-                      f"&serverName={server_names_q}")
+                      f"&sni={quote(sni)}&fp={quote(str(fp), safe='')}"
+                      f"&pbk={quote(pbk, safe='')}&sid={sid}&spx={quote(spx, safe='')}"
+                      f"&type=xhttp{host_q}&path={quote(rpath, safe='')}&mode={xmod}&extra={extra}")
         return f"vless://{config_uuid}@{host}:{port}?{params}#{remark}"
 
     # ── TLS (WS default / XHTTP selectable) — served by the FastAPI relay ──
@@ -1862,7 +2017,10 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         if xmode not in ("packet-up", "stream-up"):
             xmode = "stream-up"
         xsc = xs.get("scMaxEachPostBytes", "1000000")
-        extra = quote('{{"xPaddingBytes":"{}","mode":"{}","scMaxEachPostBytes":"{}"}}'.format(xpb, xmode, xsc), safe='')
+        extra_obj = {"xPaddingBytes": xpb}
+        if xmode == "packet-up":
+            extra_obj["scMaxEachPostBytes"] = xsc
+        extra = quote(json.dumps(extra_obj, separators=(",", ":"), ensure_ascii=False), safe='')
         xpath = f"/xhttp-siz10/{xmode}/{config_uuid}"
         params = (f"encryption=none&security={security}&type=xhttp"
                   f"&host={quote(host)}&path={quote(xpath, safe='')}&sni={quote(host)}"
@@ -2220,11 +2378,6 @@ def stop_docker_telegram_proxy(*args, **kwargs):
     return None
 
 
-def _railway_tcp_info() -> tuple[str, int, int]:
-    domain = str(os.environ.get("RAILWAY_TCP_PROXY_DOMAIN") or "").strip()
-    public_port = int(os.environ.get("RAILWAY_TCP_PROXY_PORT") or "0")
-    app_port = int(os.environ.get("RAILWAY_TCP_APPLICATION_PORT") or "0")
-    return domain, public_port, app_port
 
 
 def _get_public_ip() -> str:
@@ -2260,6 +2413,7 @@ def _get_internal_ip() -> str:
 
 async def _download_official_files() -> tuple[Path, Path]:
     """Download Telegram's proxy secret/config files, refreshing the config daily."""
+    TG_DIR.mkdir(parents=True, exist_ok=True)
     secret_file = TG_DIR / "proxy-secret"
     config_file = TG_DIR / "proxy-multi.conf"
     import urllib.request
@@ -2280,7 +2434,10 @@ class MTProtoProxyServer:
 
     def __init__(self, inbound_id: str, port: int, sni: str = "", destination: str = "", server_name: str = ""):
         self.inbound_id = inbound_id
-        self.railway_domain, self.railway_public_port, railway_app_port = _railway_tcp_info()
+        _railway = _railway_tcp_info()
+        self.railway_domain = str(_railway.get("domain") or "")
+        self.railway_public_port = int(_railway.get("public_port") or 0)
+        railway_app_port = int(_railway.get("application_port") or 0)
         # The inbound's Internal Port is authoritative for the MTProxy listener.
         # Railway's TCP application port must be configured to the same value.
         self.port = int(port)
@@ -2295,6 +2452,7 @@ class MTProtoProxyServer:
         self._process: Optional[asyncio.subprocess.Process] = None
         self._running = False
         self._stdout_task: Optional[asyncio.Task] = None
+        self._stats_port_value: Optional[int] = None
 
     def update_secrets(self, secrets_map: dict):
         cleaned = {}
@@ -2310,8 +2468,25 @@ class MTProtoProxyServer:
         return {}
 
     def _stats_port(self) -> int:
-        # Keep stats local-only and deterministic per process.
-        return STATS_BASE
+        # Stable localhost-only stats port, avoiding both active stats ports and
+        # every actual inbound/panel listener. Cache the choice to prevent recursion.
+        if self._stats_port_value is not None:
+            return self._stats_port_value
+        digest = hashlib.sha256(self.inbound_id.encode("utf-8")).digest()
+        offset = int.from_bytes(digest[:2], "big") % 1000
+        port = STATS_BASE + offset
+        used = {getattr(s, "_stats_port_value", None) for iid, s in TG_PROXY_INSTANCES.items() if iid != self.inbound_id}
+        used.update(
+            int(ib.get("port") or 0) for iid, ib in INBOUNDS.items()
+            if iid != self.inbound_id and _is_real_listener_inbound(ib)
+        )
+        used.add(int(CONFIG.get("port") or 8080))
+        while port in used or not 1024 <= port <= 65535:
+            port += 1
+            if port > 65535:
+                port = 1024
+        self._stats_port_value = port
+        return port
 
     async def start(self):
         if self._running:
@@ -2319,8 +2494,9 @@ class MTProtoProxyServer:
         if not self._secrets_map:
             logger.info("[TG Proxy %s] no users/secrets yet; listener not started", self.inbound_id)
             return
-        if not Path(BIN).exists():
-            raise RuntimeError(f"official mtproto-proxy binary not found at {BIN}")
+        bin_path = _mtproxy_bin_path()
+        if not bin_path.exists():
+            raise RuntimeError(f"official mtproto-proxy binary not found at {bin_path}")
 
         secret_file, config_file = await _download_official_files()
         internal_ip = _get_internal_ip()
@@ -2332,11 +2508,10 @@ class MTProtoProxyServer:
         # The exact structure is based on the official Telegram MTProxy runner:
         # -p = local stats port, -H = client-facing listener port.
         cmd = [
-            BIN,
+            str(bin_path),
             "-p", str(self._stats_port()),
             "-H", str(self.port),
             "-M", str(WORKERS),
-            "-C", str(MAX_CONNECTIONS),
             "--aes-pwd", str(secret_file),
             "-u", "nobody",
             str(config_file),
@@ -2346,7 +2521,9 @@ class MTProtoProxyServer:
             cmd += ["--nat-info", f"{internal_ip}:{public_ip}"]
         cmd += secret_args
 
-        domain, public_port, _ = _railway_tcp_info()
+        _railway = _railway_tcp_info()
+        domain = str(_railway.get("domain") or "")
+        public_port = int(_railway.get("public_port") or 0)
         logger.info("[TG Proxy %s] Starting official MTProxy", self.inbound_id)
         logger.info("[TG Proxy %s] client listener: 0.0.0.0:%s", self.inbound_id, self.port)
         if domain and public_port:
@@ -3510,6 +3687,13 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         port = telegram_settings["internal_port"]
         external_port = telegram_settings["external_port"]
         external_domain = telegram_settings["external_domain"]
+        _validate_listener_port(port)
+        if not 1 <= external_port <= 65535:
+            raise HTTPException(status_code=400, detail="Telegram External Port must be between 1 and 65535")
+    elif protocol == "reality" or security == "reality":
+        _validate_listener_port(port)
+        if not 1 <= external_port <= 65535:
+            raise HTTPException(status_code=400, detail="External Port must be between 1 and 65535")
 
     # Auto-generate Reality keys (x25519 pbk/priv + short_id + mldsa65 seed)
     # fresh for every reality inbound. SNI target is fixed.
@@ -3519,8 +3703,16 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
             reality_settings["private_key"] = fresh["private_key"]
         if not reality_settings.get("public_key"):
             reality_settings["public_key"] = fresh["public_key"]
-        if not reality_settings.get("short_id"):
+        if not reality_settings.get("short_id") and reality_settings.get("short_ids"):
+            reality_settings["short_id"] = reality_settings.get("short_ids")
+        _sid = str(reality_settings.get("short_id") or "").strip().lower()
+        if not re.fullmatch(r"[0-9a-f]{2,16}", _sid or "") or len(_sid) % 2:
             reality_settings["short_id"] = fresh["short_id"]
+        else:
+            reality_settings["short_id"] = _sid
+        _pub = _xray_x25519_public_key(str(reality_settings.get("private_key") or ""))
+        if _pub:
+            reality_settings["public_key"] = _pub
         reality_settings.setdefault("spiderx", "/")
         reality_settings.setdefault("mldsa65_seed", fresh["mldsa65_seed"])
         reality_settings.setdefault("mldsa65_verify", fresh["mldsa65_verify"])
@@ -3578,9 +3770,15 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
             "enabled_node_ids": [str(x).strip() for x in (body.get("enabled_node_ids") or body.get("node_ids") or []) if str(x).strip()],
             "created_at": datetime.now().isoformat(),
         }
-    if protocol == "reality" and network == "xhttp" and not xhttp_settings.get("path"):
-        xhttp_settings["path"] = "/"
-        xhttp_settings.setdefault("mode", "stream-up")
+    if protocol == "reality" and network == "xhttp":
+        _xp = str(xhttp_settings.get("path") or "/").strip()
+        if not _xp.startswith("/") or "?" in _xp or "#" in _xp:
+            _xp = "/"
+        xhttp_settings["path"] = _xp
+        _xm = str(xhttp_settings.get("mode") or "stream-up").strip().lower()
+        if _xm not in ("packet-up", "stream-up", "stream-one"):
+            _xm = "stream-up"
+        xhttp_settings["mode"] = _xm
         xhttp_settings.setdefault("xPaddingBytes", "100-1000")
         xhttp_settings.setdefault("scMaxEachPostBytes", "1000000")
     await save_state()
@@ -3596,10 +3794,12 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
 async def update_inbound(inbound_id: str, request: Request, _=Depends(require_auth)):
     """Update an existing inbound."""
     body = await request.json()
+    old_protocol = ""
     async with INBOUNDS_LOCK:
         ib = INBOUNDS.get(inbound_id)
         if not ib:
             raise HTTPException(status_code=404, detail="inbound not found")
+        old_protocol = str(ib.get("protocol") or "").lower()
         if "name" in body:
             _nn = str(body["name"]).strip()[:60]
             if _nn:
@@ -3672,7 +3872,23 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         if "fingerprint" in body:
             ib["fingerprint"] = str(body["fingerprint"]).strip()
         if "reality_settings" in body and isinstance(body["reality_settings"], dict):
-            ib["reality_settings"] = body["reality_settings"]
+            incoming_rs = dict(body["reality_settings"])
+            if incoming_rs.get("short_id") in (None, "") and incoming_rs.get("short_ids") not in (None, ""):
+                incoming_rs["short_id"] = incoming_rs.get("short_ids")
+            current_rs = dict(ib.get("reality_settings") or {})
+            current_rs.update(incoming_rs)
+            _priv = _xray_x25519_privkey_norm(str(current_rs.get("private_key") or ""))
+            if _priv:
+                current_rs["private_key"] = _priv
+                _pub = _xray_x25519_public_key(_priv)
+                if _pub:
+                    current_rs["public_key"] = _pub
+            _sid = str(current_rs.get("short_id") or "").strip().lower()
+            if not re.fullmatch(r"[0-9a-f]{2,16}", _sid or "") or len(_sid) % 2:
+                current_rs["short_id"] = secrets.token_hex(5)
+            else:
+                current_rs["short_id"] = _sid
+            ib["reality_settings"] = current_rs
         if "xhttp_settings" in body and isinstance(body["xhttp_settings"], dict):
             ib["xhttp_settings"] = body["xhttp_settings"]
         if "ws_settings" in body and isinstance(body["ws_settings"], dict):
@@ -3681,6 +3897,44 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib["grpc_settings"] = body["grpc_settings"]
         if "telegram_settings" in body and isinstance(body["telegram_settings"], dict):
             ib["telegram_settings"] = body["telegram_settings"]
+
+        if (ib.get("protocol") or "").lower() == "reality" or (ib.get("security") or "").lower() == "reality":
+            rs = ib.setdefault("reality_settings", {})
+            _priv = _xray_x25519_privkey_norm(str(rs.get("private_key") or ""))
+            if not _priv:
+                fresh = _gen_reality_settings()
+                _priv = _xray_x25519_privkey_norm(str(fresh.get("private_key") or ""))
+                if _priv:
+                    rs["private_key"] = _priv
+                    rs["public_key"] = _xray_x25519_public_key(_priv) or str(fresh.get("public_key") or "")
+            else:
+                rs["private_key"] = _priv
+                rs["public_key"] = _xray_x25519_public_key(_priv) or rs.get("public_key", "")
+            _sid = str(rs.get("short_id") or rs.get("short_ids") or "").strip().lower()
+            if not re.fullmatch(r"[0-9a-f]{2,16}", _sid or "") or len(_sid) % 2:
+                rs["short_id"] = secrets.token_hex(5)
+            else:
+                rs["short_id"] = _sid
+            rs.setdefault("spiderx", "/")
+            _sni_final = str(ib.get("sni") or rs.get("sni") or "is1-ssl.mzstatic.com").strip() or "is1-ssl.mzstatic.com"
+            rs["sni"] = _sni_final
+            if not str(rs.get("dest") or "").strip() or "sni" in body:
+                rs["dest"] = _sni_final + ":443"
+            if not rs.get("server_names") or "sni" in body:
+                rs["server_names"] = [_sni_final]
+            if (ib.get("network") or "").lower() == "xhttp":
+                xs = ib.setdefault("xhttp_settings", {})
+                _xp = str(xs.get("path") or "/").strip()
+                if not _xp.startswith("/") or "?" in _xp or "#" in _xp:
+                    _xp = "/"
+                _xm = str(xs.get("mode") or "stream-up").strip().lower()
+                if _xm not in ("packet-up", "stream-up", "stream-one"):
+                    _xm = "stream-up"
+                xs["path"] = _xp
+                xs["mode"] = _xm
+                xs.setdefault("xPaddingBytes", "100-1000")
+                xs.setdefault("scMaxEachPostBytes", "1000000")
+
         if ("node_ids" in body or "enabled_node_ids" in body) and ib.get("system"):
             selected = body.get("enabled_node_ids") if "enabled_node_ids" in body else body.get("node_ids")
             ids = [str(x).strip() for x in (selected or []) if str(x).strip()]
@@ -3700,6 +3954,8 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             tg["internal_port"] = int(incoming_tg.get("internal_port") or body.get("port") or tg.get("internal_port") or ib.get("port") or 44344)
             tg["external_port"] = int(incoming_tg.get("external_port") or body.get("external_port") or tg.get("external_port") or ib.get("external_port") or 443)
             tg["external_domain"] = str(incoming_tg.get("external_domain") or body.get("external_domain") or tg.get("external_domain") or ib.get("external_domain") or "").strip()
+            if not 1 <= tg["external_port"] <= 65535:
+                raise HTTPException(status_code=400, detail="Telegram External Port must be between 1 and 65535")
             ib.pop("sni", None)
             ib.pop("destination", None)
             ib.pop("server_name", None)
@@ -3718,6 +3974,11 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         ib["external_domain"] = ""
         ib["external_port"] = ""
 
+    if (ib.get("protocol") or "").lower() == "telegram":
+        _validate_listener_port(int(ib.get("port") or 0), exclude_id=inbound_id)
+    elif (ib.get("protocol") or "").lower() == "reality" or (ib.get("security") or "").lower() == "reality":
+        _validate_listener_port(int(ib.get("port") or 0), exclude_id=inbound_id)
+
     await save_state()
     log_activity("inbound", f"اینباند «{ib.get('name', inbound_id)}» ویرایش شد", "info")
     # The Node inbound is a selector, never an Xray listener. Selection changes
@@ -3726,9 +3987,14 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         asyncio.create_task(refresh_node_inbound_configs(inbound_id))
     if (ib.get("protocol") or "").lower() != "node":
         asyncio.create_task(_xray_apply())
-    # Restart Telegram Proxy if this is a telegram inbound
-    if (ib.get("protocol") or "").lower() == "telegram":
+    # Telegram process lifecycle follows the final protocol, while also
+    # shutting down a listener when an existing Telegram inbound is converted
+    # into another protocol.
+    _new_protocol = (ib.get("protocol") or "").lower()
+    if _new_protocol == "telegram":
         asyncio.create_task(_restart_telegram_proxy(inbound_id))
+    elif old_protocol == "telegram":
+        asyncio.create_task(_stop_telegram_proxy(inbound_id))
     return {"ok": True}
 
 
@@ -3749,8 +4015,10 @@ async def generate_inbound_reality_keys(inbound_id: str, _=Depends(require_auth)
             ib["protocol"] = "reality"
             if ib.get("network") not in ("tcp", "xhttp", "grpc"):
                 ib["network"] = "tcp"
+            if not rs.get("private_key") or not rs.get("public_key"):
+                raise HTTPException(status_code=503, detail="X25519 Reality key generation failed")
         except ImportError:
-            return {"error": True, "note": "cryptography not installed: pip install cryptography"}
+            raise HTTPException(status_code=503, detail="cryptography not installed: pip install cryptography")
     await save_state()
     return {
         "ok": True,
@@ -4110,8 +4378,15 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
         if primary_inbound_proto == "worker" or worker_selected:
             # Managed Worker owns this exact route; never let a custom/legacy path diverge.
             path = f"/ws/{config_uuid}"
-        elif primary_inbound_proto == "reality" or primary_inbound_network == "xhttp":
-            # XHTTP or Reality inbound uses XHTTP path
+        elif primary_inbound_proto == "reality" and primary_inbound_network == "xhttp":
+            # Native Xray XHTTP has one shared base path on the inbound. Xray
+            # handles the per-session UUID suffix internally; never synthesize
+            # /uuid here because it would diverge from xhttpSettings.path.
+            path = str((primary_inbound.get("xhttp_settings") or {}).get("path") or "/").strip()
+            if not path.startswith("/") or "?" in path or "#" in path:
+                path = "/"
+        elif primary_inbound_network == "xhttp":
+            # FastAPI XHTTP relay uses a UUID-bearing route.
             path = f"/xhttp-siz10/stream-up/{config_uuid}"
         else:
             # Default WS TLS inbound uses /ws/{config_uuid}
@@ -4147,7 +4422,11 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "inbound_ids": inbound_ids,
             "path": path,
             "transport_type": transport_type,
-            "telegram_secret": "",
+            "telegram_secret": (
+                derive_secret_from_uuid(config_uuid)
+                if any((INBOUNDS.get(_iid, {}).get("protocol") or "").lower() == "telegram" for _iid in inbound_ids)
+                else ""
+            ),
             "node_sync_password": secrets.token_urlsafe(18),
             "node_configs": {},
             "node_sync_state": {},
@@ -4293,8 +4572,17 @@ async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
         if user_id not in USERS:
             raise HTTPException(status_code=404, detail="user not found")
         u = USERS[user_id]
+        old_telegram_inbound_ids = {
+            str(i) for i in (u.get("inbound_ids") or [])
+            if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"
+        }
         if "username" in body:
-            u["username"] = str(body["username"]).strip()[:40]
+            _new_name = str(body["username"]).strip()[:40]
+            if not _new_name:
+                raise HTTPException(status_code=400, detail="Username cannot be empty")
+            if any(oid != user_id and ou.get("username") == _new_name for oid, ou in USERS.items()):
+                raise HTTPException(status_code=409, detail="Username already exists")
+            u["username"] = _new_name
         if "traffic_limit_gb" in body:
             gb = float(body["traffic_limit_gb"])
             u["traffic_limit_bytes"] = int(gb * 1024**3) if gb > 0 else 0
@@ -4373,8 +4661,15 @@ async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
     if _selected_node_ids_for_user(u) or u.get("node_configs"):
         asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(u)))
     asyncio.create_task(save_state())
-    for _tg_iid in [i for i in (u.get("inbound_ids") or []) if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"]:
+    new_telegram_inbound_ids = {
+        str(i) for i in (u.get("inbound_ids") or [])
+        if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"
+    }
+    # Restart all affected listeners, including a Telegram inbound the user
+    # was removed from; otherwise the old secret remains live until reboot.
+    for _tg_iid in sorted(old_telegram_inbound_ids | new_telegram_inbound_ids):
         asyncio.create_task(_restart_telegram_proxy(_tg_iid))
+    asyncio.create_task(_xray_apply())
     return {"ok": True, "user_id": user_id}
 
 @app.get("/api/users/config/{config_uuid}")
@@ -4420,6 +4715,13 @@ async def get_user(user_id: str, auth=Depends(require_replication_auth)):
         }
     u["user_id"] = target_id
     u["password_hash"] = None
+    host = SETTINGS.get("domain") or get_host()
+    u["config"] = generate_user_config(target_id, u, u.get("inbound_id"))
+    u["config_url"] = f"https://{host}/api/users/{target_id}/config"
+    u["qr_url"] = f"https://{host}/api/users/{target_id}/qr"
+    u["subscription_url"] = f"https://{host}/link/{u.get('config_uuid')}"
+    u["traffic_used_fmt"] = fmt_bytes(u.get("traffic_used_bytes", 0))
+    u["traffic_limit_fmt"] = "∞" if u.get("traffic_limit_bytes", 0) == 0 else fmt_bytes(u.get("traffic_limit_bytes", 0))
     return u
 
 
@@ -4453,6 +4755,10 @@ async def delete_user(user_id: str, auth=Depends(require_replication_auth)):
         config_uuid = u.get("config_uuid")
         node_ids = set(str(x) for x in (u.get("node_configs") or {}).keys())
         node_ids.update(_selected_node_ids_for_user(u))
+        telegram_inbound_ids = [
+            str(i) for i in (u.get("inbound_ids") or [])
+            if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"
+        ]
         if auth.get("kind") == "api_key":
             # A remote Node deletion must not cascade back to this panel's other Nodes.
             node_ids = set()
@@ -4470,94 +4776,13 @@ async def delete_user(user_id: str, auth=Depends(require_replication_auth)):
         asyncio.create_task(_delete_user_from_nodes_after_local_delete(dict(u), list(node_ids)))
     if WORKER.get("connected") and _user_uses_worker_inbound(u):
         asyncio.create_task(_worker_sync_users())
+    # Remove the deleted user's MTProxy secret from the live listener immediately.
+    for _tg_iid in telegram_inbound_ids:
+        asyncio.create_task(_restart_telegram_proxy(_tg_iid))
     asyncio.create_task(save_state())
+    asyncio.create_task(_xray_apply())
     log_activity("user", f"کاربر «{username}» حذف شد", "err")
     return {"ok": True, "deleted": target_uid, "config_uuid": config_uuid}
-@app.get("/api/users/{user_id}")
-async def get_single_user(user_id: str, _=Depends(require_auth)):
-    """Get full details for a single user."""
-    async with USERS_LOCK:
-        u = USERS.get(user_id)
-        if not u:
-            raise HTTPException(status_code=404, detail="user not found")
-        user = dict(u)
-        user["user_id"] = user_id
-        user["password_hash"] = None  # Never expose hash
-    auto_check_user_expiry(user)
-    host = SETTINGS.get("domain") or get_host()
-    return {
-        **user,
-        "config": generate_user_config(user_id, user, user.get("inbound_id")),
-        "config_url": f"https://{host}/api/users/{user_id}/config",
-        "qr_url": f"https://{host}/api/users/{user_id}/qr",
-        "subscription_url": f"https://{host}/link/{user.get('config_uuid')}",
-        "traffic_used_fmt": fmt_bytes(user.get("traffic_used_bytes", 0)),
-        "traffic_limit_fmt": "∞" if user.get("traffic_limit_bytes", 0) == 0 else fmt_bytes(user.get("traffic_limit_bytes", 0)),
-    }
-
-@app.patch("/api/users/{user_id}")
-async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
-    """Edit an existing user's fields."""
-    body = await request.json()
-    async with USERS_LOCK:
-        u = USERS.get(user_id)
-        if not u:
-            raise HTTPException(status_code=404, detail="user not found")
-        old_username = u.get("username")
-
-        if "username" in body:
-            new_name = str(body["username"]).strip()[:40]
-            # Check duplicate
-            for oid, ou in USERS.items():
-                if oid != user_id and ou.get("username") == new_name:
-                    raise HTTPException(status_code=409, detail="Username already exists")
-            if new_name:
-                u["username"] = new_name
-
-        if "traffic_limit_gb" in body:
-            gb = float(body["traffic_limit_gb"] or 0)
-            u["traffic_limit_bytes"] = int(gb * 1024 ** 3) if gb > 0 else 0
-
-        if "expire_days" in body:
-            days = int(body["expire_days"] or 0)
-            u["expire_at"] = (datetime.now() + timedelta(days=days)).isoformat() if days > 0 else None
-
-        if "protocol" in body:
-            proto = str(body["protocol"]).lower()
-            if proto in USER_PROTOCOLS:
-                u["protocol"] = proto
-
-        if "sni" in body:
-            u["sni"] = str(body["sni"]).strip()
-
-        if "path" in body:
-            u["path"] = str(body["path"]).strip()
-
-        if "transport_type" in body:
-            tt = str(body["transport_type"]).strip().lower()
-            if tt in ("ws", "grpc", "tcp", "xhttp", "reality"):
-                u["transport_type"] = tt
-
-        if "status" in body:
-            st = str(body["status"]).lower()
-            if st in ("active", "disabled", "expired"):
-                u["status"] = st
-
-        if "concurrent_connections" in body:
-            _ccv = body["concurrent_connections"]
-            cc = int(_ccv) if _ccv is not None else 0
-            u["concurrent_connections"] = max(0, cc)
-        if any((INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram" for i in (u.get("inbound_ids") or [])):
-            # telegram_proxy merged into main.py
-            cur_secret = str(u.get("telegram_secret") or "").strip().lower()
-            if not re.fullmatch(r"[0-9a-f]{32}", cur_secret):
-                u["telegram_secret"] = derive_secret_from_uuid(u.get("config_uuid", user_id))
-
-    asyncio.create_task(save_state())
-    for _tg_iid in [i for i in (u.get("inbound_ids") or []) if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"]:
-        asyncio.create_task(_restart_telegram_proxy(_tg_iid))
-    log_activity("user", f"کاربر «{old_username}» ویرایش شد", "info")
-    return {"ok": True, "user_id": user_id, "username": u.get("username")}
 
 @app.get("/api/users/{user_id}/config")
 async def get_user_config(user_id: str, _=Depends(require_auth)):
@@ -7718,6 +7943,8 @@ async def bulk_create_users(request: Request, _=Depends(require_auth)):
                 "config_uuid": config_uuid,
                 "subscription_uuid": secrets.token_urlsafe(16),
             }
+            if protocol == "telegram":
+                USERS[user_id]["telegram_secret"] = derive_secret_from_uuid(config_uuid)
             created.append({"user_id": user_id, "username": username})
 
     asyncio.create_task(save_state())
@@ -7839,9 +8066,9 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
             if iid in uids and u.get("config_uuid") and is_user_allowed(u):
                 client_ids.add(u["config_uuid"])
         if not client_ids:
-            # Ensure at least a placeholder client so Xray accepts the config;
-            # the panel's own relay also serves these paths.
-            client_ids.add(generate_uuid())
+            # Keep a valid placeholder only when the inbound currently has no
+            # active users. Never add a malformed/legacy user UUID.
+            client_ids.add(str(uuid.uuid4()))
         clients = []
         for uid in client_ids:
             client = {"id": uid}
@@ -7869,39 +8096,40 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
             rs_server_names = [x.strip() for x in rs_server_names.split(",") if x.strip()]
         if not rs_server_names:
             rs_server_names = [rs_sni]
+        private_key = _xray_x25519_privkey_norm(str(rs.get("private_key") or ""))
+        if not private_key:
+            private_key = str(rs.get("private_key") or "").strip()
+        short_id = str(rs.get("short_id") or rs.get("short_ids") or "").strip().lower()
+        if not re.fullmatch(r"[0-9a-f]{1,16}", short_id or "") or len(short_id) % 2:
+            short_id = secrets.token_hex(5)
         reality_settings = {
             "show": False,
-            "dest": rs_dest,
+            "target": rs_dest,
             "xver": 0,
             "serverNames": rs_server_names,
-            "privateKey": rs.get("private_key", ""),
-            "shortIds": [rs.get("short_id", "5a3ff5a13d")],
-            "spiderX": rs.get("spiderx", "/"),
-            "settings": {
-                "publicKey": rs.get("public_key", ""),
-                "privateKey": rs.get("private_key", ""),
-                "fingerprint": fingerprint,
-                "serverName": rs_server_names[0],
-                "spiderX": rs.get("spiderx", "/"),
-                "mldsa65Verify": rs.get("mldsa65_verify", ""),
-            },
+            "privateKey": private_key,
+            "shortIds": [short_id],
         }
         # ML-DSA-65 is optional. Emit the fields only when a real seed was
         # generated by Xray and passed validation; never send stale placeholders.
         if _valid_mldsa65_seed(str(rs.get("mldsa65_seed") or "")):
             reality_settings["mldsa65Seed"] = rs["mldsa65_seed"]
-            if rs.get("mldsa65_verify"):
-                reality_settings["settings"]["mldsa65Verify"] = rs["mldsa65_verify"]
         inbound_obj["streamSettings"] = {
             "network": network if network in ("tcp", "xhttp", "grpc") else "tcp",
             "security": "reality",
             "realitySettings": reality_settings,
         }
         if network == "xhttp":
+            _xhttp_path = str(xh_settings.get("path") or "/").strip()
+            if not _xhttp_path.startswith("/") or "#" in _xhttp_path or "?" in _xhttp_path:
+                _xhttp_path = "/"
+            _xhttp_mode = str(xh_settings.get("mode") or "stream-up").strip().lower()
+            if _xhttp_mode == "auto" or _xhttp_mode not in ("packet-up", "stream-up", "stream-one"):
+                _xhttp_mode = "stream-up"
             inbound_obj["streamSettings"]["xhttpSettings"] = {
-                "path": xh_settings.get("path", "/"),
-                "host": xh_settings.get("host", domain),
-                "mode": (xh_settings.get("mode") if xh_settings.get("mode") in ("packet-up", "stream-up") else "stream-up"),
+                "path": _xhttp_path,
+                "host": str(xh_settings.get("host") or "").strip(),
+                "mode": _xhttp_mode,
                 "xPaddingBytes": xh_settings.get("xPaddingBytes", "100-1000"),
                 "scMaxEachPostBytes": xh_settings.get("scMaxEachPostBytes", "1000000"),
                 "scMaxBufferedPosts": xh_settings.get("scMaxBufferedPosts", 30),
@@ -7949,6 +8177,56 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
     
     cfg["inbounds"].append(inbound_obj)
 
+
+def _validate_xray_server_config(config: dict) -> list[str]:
+    """Fail closed on malformed Xray Reality/XHTTP configs before spawning Xray."""
+    errors = []
+    seen = set()
+    for ib in config.get("inbounds") or []:
+        try:
+            port = int(ib.get("port"))
+        except Exception:
+            port = 0
+        if not 1 <= port <= 65535:
+            errors.append(f"{ib.get('tag')}: invalid port {ib.get('port')!r}")
+        listen = str(ib.get("listen") or "")
+        key = (listen, port)
+        if key in seen:
+            errors.append(f"{ib.get('tag')}: duplicate listener {listen}:{port}")
+        seen.add(key)
+        if ib.get("protocol") != "vless":
+            errors.append(f"{ib.get('tag')}: Reality inbound must use VLESS protocol")
+            continue
+        clients = ((ib.get("settings") or {}).get("clients") or [])
+        for client in clients:
+            uid = str(client.get("id") or "")
+            try:
+                uuid.UUID(uid)
+            except Exception:
+                errors.append(f"{ib.get('tag')}: invalid VLESS client UUID {uid!r}")
+        ss = ib.get("streamSettings") or {}
+        if ss.get("security") != "reality":
+            errors.append(f"{ib.get('tag')}: security must be reality")
+        rs = ss.get("realitySettings") or {}
+        private = str(rs.get("privateKey") or "")
+        if not _xray_x25519_privkey_norm(private):
+            errors.append(f"{ib.get('tag')}: invalid Reality privateKey")
+        sids = rs.get("shortIds") or []
+        if not sids or any(not re.fullmatch(r"[0-9a-fA-F]{2,16}", str(x)) or len(str(x)) % 2 for x in sids):
+            errors.append(f"{ib.get('tag')}: invalid Reality shortIds")
+        names = rs.get("serverNames") or []
+        if not isinstance(names, list) or not names or any(not str(x).strip() for x in names):
+            errors.append(f"{ib.get('tag')}: serverNames is empty")
+        elif any("*" in str(x) for x in names):
+            errors.append(f"{ib.get('tag')}: Reality serverNames must not contain wildcard '*' entries")
+        if ss.get("network") == "xhttp":
+            xh = ss.get("xhttpSettings") or {}
+            path = str(xh.get("path") or "")
+            if not path.startswith("/") or "#" in path or "?" in path:
+                errors.append(f"{ib.get('tag')}: invalid XHTTP path")
+            if xh.get("mode") not in ("packet-up", "stream-up", "stream-one"):
+                errors.append(f"{ib.get('tag')}: invalid XHTTP mode {xh.get('mode')!r}")
+    return errors
 
 # ── Xray process manager ───────────────────────────────────────────────────────
 _xray_proc: asyncio.subprocess.Process | None = None
@@ -8014,6 +8292,10 @@ async def _xray_start(config: dict) -> bool:
                 _xray_proc.terminate()
             except Exception:
                 pass
+        return False
+    validation_errors = _validate_xray_server_config(config)
+    if validation_errors:
+        logger.error("Xray config validation failed: %s", " | ".join(validation_errors))
         return False
     async with _xray_restart_lock:
         # Stop existing
