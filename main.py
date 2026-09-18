@@ -1601,7 +1601,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
                    panel's main domain, port 443. ws is the default transport,
                    xhttp is selectable per inbound.
       - Worker   → served by the Cloudflare Worker; address/host/sni = worker
-                   domain, path /route/{country-code} (see _worker_configs).
+                   domain, canonical path /ws/{uuid}.
 
     addr (scanned custom IP) overrides only the connect address; host/sni stay
     on the real domain so the TLS handshake reaches the service.
@@ -1925,32 +1925,56 @@ def generate_status_config(user: dict, configs: list) -> str:
 
 
 def _worker_configs(user_id: str, user: dict, inbound: dict, stored_path: str, base_remark: str, addr_ip: str = None, addr_port: str = None) -> list:
-    """Build VLESS config for a worker inbound with path /ws/{uuid}."""
-    wdomain = str(WORKER.get("worker_domain") or "").strip().lower()
-    if not wdomain or wdomain in ("localhost", "0.0.0.0", "127.0.0.1"):
+    """Build one canonical VLESS/TCP/WS/TLS config for the managed Worker.
+
+    The Worker accepts exactly /ws/{UUID}; the same UUID is embedded in the
+    VLESS user-id and in the KV record pushed by the panel. Never invent a
+    second UUID or reuse a legacy bare-hex identifier here.
+    """
+    wdomain = _worker_safe_domain(WORKER.get("worker_domain"))
+    if not wdomain:
         return []
-    wport = (inbound.get("external_port") if inbound else None) or (inbound.get("port") if inbound else None) or 443
 
-    cfg_uuid = user.get("config_uuid", "")
-    uname = user.get("username", user_id)
+    cfg_uuid = str(user.get("config_uuid") or "").strip().lower()
+    if not _is_valid_uuid(cfg_uuid):
+        logger.warning("worker config skipped: invalid config_uuid user=%s uuid=%s", user_id, cfg_uuid)
+        return []
 
-    # Worker config: simple path /ws/{uuid}
+    # Default Worker endpoint is HTTPS/WSS on 443. A scanned Cloudflare IP
+    # may replace only the TCP connect address; TLS SNI/Host stay on the real
+    # Pages domain so the edge certificate and routing remain correct.
+    raw_port = ((inbound or {}).get("external_port") or (inbound or {}).get("port") or 443)
+    try:
+        wport = int(raw_port)
+    except Exception:
+        wport = 443
+    if not 1 <= wport <= 65535:
+        wport = 443
+
+    address = str(addr_ip or wdomain).strip()
+    try:
+        port = int(addr_port or wport)
+    except Exception:
+        port = wport
+    if not address or not (1 <= port <= 65535):
+        return []
+
+    # Canonical route shared by the generator, Worker and every subscription.
     wpath = f"/ws/{cfg_uuid}"
-    address = addr_ip if addr_ip else wdomain
-    port = addr_port if addr_port else wport
-    rem = quote(f"Spider-{uname}")
+    uname = str(user.get("username") or user_id)
+    remark = quote(f"Spider-{uname}{(' ' + str(base_remark)) if base_remark and not str(base_remark).startswith('Spider-') else ''}")
 
-    params = {
-        "encryption": "none",
-        "security": "tls",
-        "sni": wdomain,
-        "host": wdomain,
-        "fp": "chrome",
-        "type": "ws",
-        "path": quote(wpath, safe=''),
-    }
-    query = "&".join([f"{k}={v}" for k, v in params.items()])
-    return [f"vless://{cfg_uuid}@{address}:{port}?{query}#{rem}"]
+    params = (
+        "encryption=none"
+        "&security=tls"
+        "&type=ws"
+        f"&host={quote(wdomain, safe='')}"
+        f"&path={quote(wpath, safe='')}"
+        f"&sni={quote(wdomain, safe='')}"
+        "&fp=chrome"
+        "&alpn=http%2F1.1"
+    )
+    return [f"vless://{cfg_uuid}@{address}:{port}?{params}#{remark}"]
 
 
 # ── Default link ──────────────────────────────────────────────────────────────
@@ -3648,15 +3672,16 @@ async def create_user(request: Request, _=Depends(require_auth)):
                 raise HTTPException(status_code=409, detail="Username already exists")
 
         # Determine the path based on the inbound type, not just transport_type
-        # WS inbound -> /ws/{config_uuid}, XHTTP inbound -> /xhttp-siz10/..., Worker inbound -> /route/...
+        # WS/Worker inbound -> /ws/{config_uuid}; XHTTP/Reality use their own path.
         primary_inbound = INBOUNDS.get(inbound_id) if inbound_id else None
         primary_inbound_proto = (primary_inbound.get("protocol") if primary_inbound else "").lower()
         primary_inbound_network = (primary_inbound.get("network") if primary_inbound else "").lower()
+        worker_selected = any(((INBOUNDS.get(iid) or {}).get("protocol") or "").lower() == "worker" for iid in inbound_ids)
         relay_default_id = find_default_tls_ws_inbound_id()
         relay_enabled = bool(relay_default_id and relay_default_id in inbound_ids)
 
-        if primary_inbound_proto == "worker":
-            # Worker inbound uses /ws/{uuid} path
+        if primary_inbound_proto == "worker" or worker_selected:
+            # Managed Worker owns this exact route; never let a custom/legacy path diverge.
             path = f"/ws/{config_uuid}"
         elif primary_inbound_proto == "reality" or primary_inbound_network == "xhttp":
             # XHTTP or Reality inbound uses XHTTP path
@@ -4619,8 +4644,7 @@ async def sync_all_nodes(_=Depends(require_auth)):
         nodes = list(NODES.items())
     if not nodes:
         return {"ok": True, "synced": 0}
-    from . import sync_inbounds_to_nodes as _sync_fn
-    result = await _sync_fn(nodes)
+    result = await sync_inbounds_to_nodes(nodes)
     return {"ok": True, "synced": result}
 
 
@@ -6328,6 +6352,7 @@ def get_live_stats() -> dict:
         "ws_connections": ws_client_count,
         "total_users": len(USERS),
         "total_traffic_used_tb": round(total_used / (1024**4), 3),
+        "total_traffic_used_gb": round(total_used / (1024**3), 2),
         "total_traffic_limit_tb": round(total_limit / (1024**4), 3) if total_limit > 0 else 0,
         "uptime": uptime(),
         "uptime_seconds": uptime_secs(),
@@ -7663,11 +7688,11 @@ CF_API = "https://api.cloudflare.com/client/v4"
 CF_TOKEN_LINK = "https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22zone%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22dns%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=spider-Token"
 
 # Worker script deployed to the user's Cloudflare account lives in the project
-# at worker/_worker.js (NOT under /static, so it is never served to the web).
+# at worker/worker.js (source of truth; deployment uploads it as _worker.js).
 # The proxy map is injected at deploy time by replacing __PROXIES_JSON__, so
 # adding/removing a country re-deploys the worker (see /api/worker/sync).
 CF_WORKER_DIR = Path(os.path.dirname(os.path.abspath(__file__))) / "worker"
-CF_WORKER_TEMPLATE = CF_WORKER_DIR / "_worker.js"
+CF_WORKER_TEMPLATE = CF_WORKER_DIR / "worker.js"
 
 
 def _worker_script() -> str:
@@ -7675,7 +7700,7 @@ def _worker_script() -> str:
     if not CF_WORKER_TEMPLATE.is_file():
         raise FileNotFoundError(
             f"worker template not found: {CF_WORKER_TEMPLATE} "
-            "(create worker/_worker.js in the project repo)"
+            "(create worker/worker.js in the project repo)"
         )
     return CF_WORKER_TEMPLATE.read_text(encoding="utf-8")
 
@@ -7894,8 +7919,9 @@ async def _ensure_reverse_kv() -> str | None:
 async def _ensure_worker_pages_project(kv_id: str | None, tunnel_kv_id: str | None = None, reverse_kv_id: str | None = None) -> dict:
     """Create/refresh a Cloudflare Pages project used for the managed worker.
 
-    The Pages project runs the advanced-mode `_worker.js` file and binds the
-    dedicated SPIDER_KV namespace (plus optional tunnel/reverse namespaces).
+    The Pages project runs the advanced-mode `_worker.js` file generated from
+    the local `worker/worker.js` source and binds the dedicated SPIDER_KV
+    namespace (plus optional tunnel/reverse namespaces).
     """
     acct = str(WORKER.get("account_id") or "").strip()
     token = str(WORKER.get("token") or "").strip()
@@ -7984,7 +8010,7 @@ async def _worker_deploy() -> tuple:
     """Deploy the managed VLESS Worker as a Cloudflare Pages Advanced Mode project.
 
     The panel creates/reuses a Pages project, configures the dedicated KV
-    binding, and uploads `worker/_worker.js` as `_worker.js` using the Pages
+    binding, and uploads `worker/worker.js` as `_worker.js` using the Pages
     Direct Upload API.
     """
     try:
@@ -8276,6 +8302,8 @@ async def _worker_push_config() -> dict:
         return {"ok": False, "detail": "worker not connected / no control token"}
     wid = next((iid for iid, ib in INBOUNDS.items()
                 if ((ib or {}).get("protocol") or "").lower() == "worker"), None)
+    if not wid:
+        return {"ok": False, "detail": "no worker inbound"}
     users = []
     async with USERS_LOCK:
         for uid, u in USERS.items():
@@ -8531,7 +8559,7 @@ async def worker_get(_=Depends(require_auth)):
 
 @app.post("/api/worker/setup")
 async def worker_setup(request: Request, _=Depends(require_auth)):
-    """Create/reuse a Cloudflare Pages project and deploy worker/_worker.js.
+    """Create/reuse a Cloudflare Pages project and deploy the managed worker source as `_worker.js`.
 
     The supplied Cloudflare API token is validated first. A dedicated KV
     namespace is created/attached, then the project is deployed in Pages
@@ -8617,13 +8645,15 @@ async def worker_setup(request: Request, _=Depends(require_auth)):
         asyncio.create_task(save_state())
         raise HTTPException(status_code=500, detail=f"Worker Pages deploy failed: {msg}")
 
+    await _ensure_worker_inbound()
     ctrl_res = await _worker_push_config()
     if not ctrl_res.get("ok"):
-        await _worker_control_update()
-        await _worker_sync_users()
+        async with WORKER_LOCK:
+            WORKER["last_error"] = ctrl_res.get("detail", "worker config push failed")
+        asyncio.create_task(save_state())
+        raise HTTPException(status_code=502, detail=f"Worker control sync failed: {ctrl_res.get('detail', 'unknown error')}")
 
     await _worker_pull_all_users()
-    await _ensure_worker_inbound()
 
     async with WORKER_LOCK:
         WORKER["last_sync"] = now_ir().isoformat(timespec="seconds")
@@ -8647,13 +8677,11 @@ async def worker_sync(_=Depends(require_auth)):
         raise HTTPException(status_code=400, detail="worker is not connected")
     sc, sd = await _worker_deploy()
     if sc in (200, 201, 409):
-        # Prefer the single remote-control push; fall back to per-user sync.
+        await _ensure_worker_inbound()
         push = await _worker_push_config()
         if not push.get("ok"):
-            await _worker_control_update()
             await _worker_sync_users()
         await _worker_pull_all_users()
-        await _ensure_worker_inbound()
     async with WORKER_LOCK:
         if sc in (200, 201, 409):
             WORKER["last_sync"] = now_ir().isoformat(timespec="seconds")

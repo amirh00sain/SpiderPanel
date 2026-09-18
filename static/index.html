@@ -1262,7 +1262,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
             <div class="f-g" style="margin-top:10px"><label data-i18n="cfToken">Cloudflare API Token</label>
               <div style="display:flex;gap:8px">
                 <input type="password" id="wk-token" dir="ltr" style="flex:1" autocomplete="off">
-                <a class="btn btn-sm btn-g" href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">
+                <a class="btn btn-sm btn-g" href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22page%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=SpiderPanel-Worker-Token" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">
                   <span data-i18n="getToken">گرفتن توکن</span>
                 </a>
               </div>
@@ -2173,7 +2173,7 @@ async function loadDashboard() {
     var s = await api('/stats');
     var html = '<div class="stats">';
     html += statCard(iconUsers, '<span id="dash-users">' + s.active_users + ' / ' + s.total_users + '</span>', t('activeUsers'));
-    html += statCard(iconTraffic, '<span id="dash-traffic">' + fmtBytes((s.traffic_usage_gb || 0) * 1073741824) + '</span>', t('trafficUsed'));
+    html += statCard(iconTraffic, '<span id="dash-traffic">' + fmtBytes((s.total_traffic_used_gb || s.traffic_usage_gb || 0) * 1073741824) + '</span>', t('trafficUsed'));
     html += statCard(iconConn, '<span id="dash-conn">' + (s.active_connections || '۰') + '</span>', t('activeConns'));
     html += statCard(iconUptime, '<span id="dash-uptime">...</span>', t('uptime'));
     html += '</div>';
@@ -2203,7 +2203,7 @@ async function refreshLiveStats() {
     var uptEl = $id('live-uptime'); if (uptEl) uptEl.textContent = fmtUptime(st.uptime_seconds);
     var duptEl = $id('dash-uptime'); if (duptEl) duptEl.textContent = fmtUptime(st.uptime_seconds);
     var connEl = $id('dash-conn'); if (connEl) connEl.textContent = String(st.active_connections || 0);
-    var trEl = $id('dash-traffic'); if (trEl) trEl.textContent = fmtBytes((st.total_traffic_used_tb || 0) * 1099511627776);
+    var trEl = $id('dash-traffic'); if (trEl) trEl.textContent = (typeof st.total_traffic_used_gb !== 'undefined' ? st.total_traffic_used_gb + ' GB' : fmtBytes((st.total_traffic_used_tb || 0) * 1099511627776));
     var usrEl = $id('dash-users'); if (usrEl) usrEl.textContent = (st.active_users || 0) + ' / ' + (st.total_users || 0);
     var statusEl = $id('dash-server-status'); if (statusEl) {
       var ss = String(st.server_status || 'healthy');
@@ -2285,13 +2285,13 @@ function _userAccBody(u) {
     '<div class="spd-acc-kv"><span>' + t('expiry') + '</span><b>' + _userExp(u) + '</b></div>' +
     '<div class="spd-acc-kv"><span>' + t('connTh') + '</span><b>' + connTxt + '</b></div>' +
     '<div class="spd-acc-btns">' +
-      '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.config_uuid || '') + '\')">Config</button>' +
-      '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + (u.config_uuid || '') + '\')">Sub</button>' +
-      '<button class="btn btn-sm btn-b" onclick="viewQR(\'' + u.user_id + '\')">QR</button>' +
-      '<button class="btn btn-sm btn-b" onclick="editUser(\'' + u.user_id + '\')">' + t('edit') + '</button>' +
-      '<button class="btn btn-sm btn-b" onclick="resetUserTraffic(\'' + u.user_id + '\')">Reset</button>' +
-      '<button class="btn btn-sm btn-r" onclick="toggleUser(\'' + u.user_id + '\')">Toggle</button>' +
-      '<button class="btn btn-sm btn-r" onclick="deleteUser(\'' + u.user_id + '\')">' + t('delete') + '</button>' +
+      '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.config_uuid || '') + '\')" title="Config">'+iconCfg+'</button>' +
+      '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + (u.config_uuid || '') + '\')" title="Sub Link">'+iconLink+'</button>' +
+      '<button class="btn btn-sm btn-b" onclick="viewQR(\'' + u.user_id + '\')" title="QR Code">'+iconQr+'</button>' +
+      '<button class="btn btn-sm btn-b" onclick="editUser(\'' + u.user_id + '\')" title="Edit">'+iconEdit+'</button>' +
+      '<button class="btn btn-sm btn-b" onclick="resetUserTraffic(\'' + u.user_id + '\')" title="Reset Traffic">'+iconReset+'</button>' +
+      '<button class="btn btn-sm btn-r" onclick="toggleUser(\'' + u.user_id + '\')" title="Toggle">'+iconToggle+'</button>' +
+      '<button class="btn btn-sm btn-r" onclick="deleteUser(\'' + u.user_id + '\')" title="Delete">'+iconTrash+'</button>' +
     '</div>' +
   '</div>';
 }
@@ -3069,6 +3069,7 @@ var iconQr = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke
 var iconEdit = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 var iconToggle = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>';
 var iconTrash = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+var iconReset = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>';
 var iconCheck = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
 var iconRefresh = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>';
 
@@ -4219,7 +4220,8 @@ var EDITING_NODE_ID = null;
 
 async function loadNodes() {
   try {
-    ALL_NODES = await api('/api/nodes');
+    var response = await api('/api/nodes');
+    ALL_NODES = response.nodes || response || [];
     renderNodes();
   } catch(e) {
     $id('nodes-list').innerHTML = '<div style="color:var(--red);padding:20px">' + (e.message || t('toast.err')) + '</div>';
@@ -4235,8 +4237,9 @@ function renderNodes() {
   }
   var html = '';
   ALL_NODES.forEach(function(node) {
-    var statusColor = node.online ? 'var(--green)' : 'var(--red)';
-    var statusText = node.online ? t('nodeOnline') : t('nodeOffline');
+    var isOnline = (node.last_status === 'online');
+    var statusColor = isOnline ? 'var(--green)' : 'var(--red)';
+    var statusText = isOnline ? t('nodeOnline') : t('nodeOffline');
     html += '<div class="spd-acc" style="margin-bottom:8px">' +
       '<button type="button" class="spd-acc-head" onclick="spdToggleAcc(\'node-' + esc(node.node_id) + '\',this)" aria-expanded="false">' +
       '<span class="spd-acc-title"><strong>' + esc(node.name || node.domain) + '</strong></span>' +
@@ -4244,8 +4247,8 @@ function renderNodes() {
       '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>' +
       '<div class="spd-acc-body" id="acc-node-' + esc(node.node_id) + '">' +
       '<div class="set-row"><span class="set-lbl">' + t('nodeDomain') + '</span><span dir="ltr" style="font-size:12px">' + esc(node.domain) + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">' + t('nodeIp') + '</span><span dir="ltr" style="font-size:12px">' + (node.ip || '--') + ' ' + (node.flag || '') + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">' + t('nodeLatency') + '</span><span dir="ltr" style="font-size:12px;color:var(--neon)">' + (node.latency ? node.latency + 'ms' : '--') + '</span></div>' +
+      '<div class="set-row"><span class="set-lbl">' + t('nodeIp') + '</span><span dir="ltr" style="font-size:12px">' + (node.remote_ip || '--') + ' ' + (node.remote_flag || '') + '</span></div>' +
+      '<div class="set-row"><span class="set-lbl">' + t('nodeLatency') + '</span><span dir="ltr" style="font-size:12px;color:var(--neon)">' + (node.latency_ms ? node.latency_ms + 'ms' : '--') + '</span></div>' +
       '<div style="display:flex;gap:8px;margin-top:14px">' +
       '<button class="btn btn-p" onclick="syncNode(\'' + esc(node.node_id) + '\')">' + t('nodeSyncing').split(' ')[0] + '</button>' +
       '<button class="btn btn-g" onclick="editNode(\'' + esc(node.node_id) + '\')">' + t('edit') + '</button>' +
@@ -4286,27 +4289,38 @@ function openNodeModal(nodeId) {
 
     var f1 = document.createElement('div');
     f1.className = 'f-g';
-    f1.innerHTML = '<label>Domain</label>';
+    f1.innerHTML = '<label>نام</label>';
     var inp1 = document.createElement('input');
     inp1.type = 'text';
-    inp1.id = 'node-domain';
+    inp1.id = 'node-name';
     inp1.dir = 'ltr';
-    inp1.placeholder = 'example.com';
-    inp1.required = true;
+    inp1.placeholder = 'نام نود';
     f1.appendChild(inp1);
     form.appendChild(f1);
 
     var f2 = document.createElement('div');
     f2.className = 'f-g';
-    f2.innerHTML = '<label>API Key</label>';
+    f2.innerHTML = '<label>Domain</label>';
     var inp2 = document.createElement('input');
-    inp2.type = 'password';
-    inp2.id = 'node-apikey';
+    inp2.type = 'text';
+    inp2.id = 'node-domain';
     inp2.dir = 'ltr';
-    inp2.placeholder = 'API Key';
+    inp2.placeholder = 'example.com';
     inp2.required = true;
     f2.appendChild(inp2);
     form.appendChild(f2);
+
+    var f3 = document.createElement('div');
+    f3.className = 'f-g';
+    f3.innerHTML = '<label>API Key</label>';
+    var inp3 = document.createElement('input');
+    inp3.type = 'password';
+    inp3.id = 'node-apikey';
+    inp3.dir = 'ltr';
+    inp3.placeholder = 'API Key';
+    inp3.required = true;
+    f3.appendChild(inp3);
+    form.appendChild(f3);
 
     var btns = document.createElement('div');
     btns.className = 'modal-btns';
@@ -4326,7 +4340,8 @@ function openNodeModal(nodeId) {
 
   // Update title and values
   modal.querySelector('.modal-t span').textContent = title;
-  $id('node-domain').value = node ? (node.domain.replace('https://', '') || '') : '';
+  $id('node-name').value = node ? (node.name || '') : '';
+  $id('node-domain').value = node ? (node.domain ? node.domain.replace('https://', '') : '') : '';
   $id('node-apikey').value = node ? (node.api_key || '') : '';
 
   modal.classList.add('show');
@@ -4334,6 +4349,7 @@ function openNodeModal(nodeId) {
 
 async function submitNode(e) {
   e.preventDefault();
+  var name = $id('node-name').value.trim();
   var domain = $id('node-domain').value.trim();
   var apiKey = $id('node-apikey').value.trim();
   if (!domain || !apiKey) {
@@ -4345,7 +4361,7 @@ async function submitNode(e) {
   try {
     var method = EDITING_NODE_ID ? 'PATCH' : 'POST';
     var url = EDITING_NODE_ID ? '/api/nodes/' + EDITING_NODE_ID : '/api/nodes';
-    var result = await api(url, {method: method, body: {domain: domain, api_key: apiKey}});
+    var result = await api(url, {method: method, body: {name: name, domain: domain, api_key: apiKey}});
     if (!result || !result.ok) throw new Error('پاسخ نامعتبر از سرور');
     toast(EDITING_NODE_ID ? t('nodeUpdated') : t('nodeAdded'), 'ok');
     closeModal('mod-node');
@@ -4371,7 +4387,7 @@ async function deleteNode(nodeId) {
 
 async function syncNode(nodeId) {
   try {
-    await api('/api/nodes/' + nodeId + '/sync', {method: 'POST'});
+    await api('/api/nodes/' + nodeId + '/check', {method: 'POST'});
     toast(t('nodeSynced'), 'ok');
     loadNodes();
   } catch(e) { toast(e.message || t('nodeSyncFailed'), 'err'); }

@@ -54,7 +54,7 @@
   "groups": {},
   "inbounds": {
     "default": {
-      "name": "VLESS+WS پیش‌فرض",
+      "name": "پیش‌فرض TLS + WS",
       "protocol": "vless",
       "port": 8080,
       "network": "ws",
@@ -96,6 +96,23 @@
         "scMaxEachPostBytes": "1000000"
       },
       "created_at": "2026-08-23T15:24:47.818863"
+    },
+    "Node": {
+      "name": "Node",
+      "protocol": "vless",
+      "port": 8080,
+      "network": "ws",
+      "security": "tls",
+      "domain": "localhost",
+      "external_domain": "",
+      "sni": "",
+      "external_port": "",
+      "fingerprint": "chrome",
+      "reality_settings": {},
+      "xhttp_settings": {},
+      "node_ids": [],
+      "system": true,
+      "created_at": "2026-09-18T09:11:24.790721"
     }
   },
   "ip_pool": [],
@@ -106,6 +123,9 @@
     "worker_name": "",
     "worker_domain": "",
     "worker_url": "",
+    "pages_project_name": "",
+    "pages_project_id": "",
+    "pages_url": "",
     "token": "",
     "control_token": "",
     "panel_domain": "",
@@ -131,7 +151,8 @@
     "reverse_kv_namespace_id": "",
     "reverse_kv_namespace_title": ""
   },
+  "nodes": {},
   "password_hash": "fcb3149c23e642e467520646d99c50a045d0a5908fda6468b74fab1e851a08fa",
   "saved_secret": "spider-panel-secret-key-v2",
-  "saved_at": "2026-08-23T15:34:55.602337"
+  "saved_at": "2026-09-18T09:24:12.033462"
 }
