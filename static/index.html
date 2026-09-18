@@ -564,6 +564,47 @@ html[lang="en"] body, html[lang="en"] .sidebar, html[lang="en"] .panel, html[lan
 .stat-l{font-size:11px;color:var(--txt2);margin-top:4px}
 
 /* Buttons */
+/* Neutral controls for the entire Inbounds workflow.
+   Keep all action buttons visually consistent with the rest of the panel. */
+#tab-inbounds .btn,
+#tab-inbounds .btn-p,
+#tab-inbounds .btn-b,
+#tab-inbounds .btn-r,
+#tab-inbounds .btn-gr,
+#tab-inbounds .btn-glass,
+#mod-inbound .btn,
+#mod-inbound .btn-p,
+#mod-inbound .btn-b,
+#mod-inbound .btn-r,
+#mod-inbound .btn-gr,
+#mod-inbound .btn-glass{
+  background:var(--input-bg)!important;
+  color:var(--txt)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  filter:none!important;
+  transform:none!important;
+}
+#tab-inbounds .btn:hover,
+#tab-inbounds .btn-p:hover,
+#tab-inbounds .btn-b:hover,
+#tab-inbounds .btn-r:hover,
+#tab-inbounds .btn-gr:hover,
+#tab-inbounds .btn-glass:hover,
+#mod-inbound .btn:hover,
+#mod-inbound .btn-p:hover,
+#mod-inbound .btn-b:hover,
+#mod-inbound .btn-r:hover,
+#mod-inbound .btn-gr:hover,
+#mod-inbound .btn-glass:hover{
+  background:var(--nav-bg)!important;
+  color:var(--txt)!important;
+  border-color:var(--border-glow)!important;
+  box-shadow:none!important;
+  transform:none!important;
+  filter:none!important;
+}
+
 .btn{
   display:inline-flex;align-items:center;gap:6px;padding:9px 18px;
   border:none;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;
@@ -957,11 +998,12 @@ tr{animation:fadeIn .3s ease}
 .spd-acc-sec-t{font-size:11px;color:var(--txt2);margin-bottom:4px}
 .spd-acc-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .spd-acc .scn-pane{display:block!important}
+.spd-acc.node-item-accordion .spd-acc-body{padding-top:6px}
 
 /* No text selection outside form controls */
 body,.panel,.stat,.tbl,.u-card,.sidebar,.topbar,.nav-item,.nav-accordion-head,.btn,.badge,pre{user-select:none;-webkit-user-select:none}
 input,textarea,select{user-select:text!important;-webkit-user-select:text!important}
-*{accent-color:#000000}
+*{accent-color:var(--txt)}
 
 
 /* User accordion action buttons are intentionally neutral, like regular controls. */
@@ -993,6 +1035,49 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
 .node-online{color:var(--green)!important;border-color:rgba(80,200,120,.35)!important}
 .node-checking{color:var(--orange)!important}
 .node-unauth,.node-offline{color:var(--red)!important}
+
+/* FINAL BUTTON SYSTEM: every action button is neutral in both themes. */
+.btn,.btn-p,.btn-g,.btn-r,.btn-b,.btn-gr,.btn-glass,.lang-btn,.login-btn{
+  background:var(--input-bg)!important;
+  color:var(--txt)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+  transform:none!important;
+}
+.btn:hover,.btn-p:hover,.btn-g:hover,.btn-r:hover,.btn-b:hover,.btn-gr:hover,.btn-glass:hover,.lang-btn:hover,.login-btn:hover:not(:disabled){
+  background:var(--nav-bg)!important;
+  color:var(--txt)!important;
+  border-color:var(--border-glow)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  filter:none!important;
+  transform:none!important;
+}
+.btn:active,.btn-p:active,.btn-g:active,.btn-r:active,.btn-b:active,.btn-gr:active,.btn-glass:active,.lang-btn:active,.login-btn:active:not(:disabled){
+  background:var(--nav-bg)!important;
+  color:var(--txt)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+.btn:disabled,.btn-p:disabled,.btn-g:disabled,.btn-r:disabled,.btn-b:disabled,.btn-gr:disabled,.btn-glass:disabled,.lang-btn:disabled,.login-btn:disabled{
+  opacity:.55!important;
+  cursor:not-allowed!important;
+}
+.login-btn::after{display:none!important}
+
+/* Node inbound editor: only the node selector is shown. */
+.node-only-hidden{display:none!important}
+#mod-inbound.inbound-node-only .modal-c{max-width:560px}
+#mod-inbound.inbound-node-only .modal-t{margin-bottom:12px}
+#mod-inbound.inbound-node-only .node-select-wrap{margin-top:0;padding-top:0;border-top:0}
+#mod-inbound.inbound-node-only .node-select-list{max-height:52vh;overflow:auto;padding-right:2px}
+#mod-inbound.inbound-node-only .modal-btns{margin-top:14px}
+
+/* Neutral selected node rows in both themes, without colored fills. */
+.node-select-row.selected{background:var(--nav-bg)!important;border-color:var(--border-glow)!important}
+.node-select-row:hover{background:var(--nav-bg)!important;border-color:var(--border-glow)!important}
 </style>
 </head>
 <body>
@@ -2151,9 +2236,21 @@ function spdToggleAcc(id, btn) {
   var body = $id('acc-' + id);
   if (!body) return;
   var acc = body.parentElement;
-  var open = acc.classList.toggle('open');
+  var open = !acc.classList.contains('open');
+  acc.classList.toggle('open', open);
   var head = btn || acc.querySelector('.spd-acc-head');
   if (head) head.setAttribute('aria-expanded', String(open));
+}
+
+/* Node accordions use the clicked card itself instead of a generated id.
+   This prevents an open node from getting stuck and keeps each node independent. */
+function toggleNodeAccordion(btn, evt) {
+  if (evt) { evt.preventDefault(); evt.stopPropagation(); }
+  var acc = btn && btn.closest ? btn.closest('.spd-acc') : null;
+  if (!acc) return;
+  var open = !acc.classList.contains('open');
+  acc.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', String(open));
 }
 
 function switchTab(tab, el) {
@@ -2344,36 +2441,12 @@ function _copyNodeConfigEncoded(encoded) {
   try { var cfg=decodeURIComponent(encoded); navigator.clipboard.writeText(cfg).then(function(){toast(t('copied'),'ok');}); } catch(e) { toast('خطا در کپی','err'); }
 }
 
-function _userNodeConfigs(u) {
-  var rows = Array.isArray(u.node_assignments) ? u.node_assignments : [];
-  if (!rows.length) return '';
-  var html = '<div class="spd-acc-sec"><div class="spd-acc-sec-t">Node Configs</div>';
-  rows.forEach(function(n){
-    var label = (n.country_flag || '🌐') + ' ' + (n.name || n.node_id || 'Node');
-    var meta = [n.country || n.country_code || '', n.public_ip || '--', n.status || 'offline'].filter(Boolean).join(' · ');
-    var encoded = encodeURIComponent(n.config || '');
-    html += '<div class="node-user-config" style="padding:8px 0;border-bottom:1px solid var(--border)">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
-        '<span style="font-size:11px;font-weight:600">' + esc(label) + '</span>' +
-        '<span class="node-status-pill ' + (String(n.status || '').toLowerCase()==='online' ? 'node-online' : 'node-offline') + '">' + esc(n.status || 'offline') + '</span>' +
-      '</div>' +
-      '<div dir="ltr" style="font-size:10px;color:var(--txt2);margin:3px 0 6px">' + esc(meta) + '</div>' +
-      '<div style="display:flex;gap:6px;align-items:center">' +
-        '<code dir="ltr" style="display:block;flex:1;max-height:38px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:9px;color:var(--txt2)">' + esc(n.config || '—') + '</code>' +
-        (n.config ? '<button class="btn btn-sm btn-g" onclick="_copyNodeConfigEncoded(\'' + encoded + '\')">Copy</button>' : '') +
-      '</div>' +
-    '</div>';
-  });
-  return html + '</div>';
-}
-
 function _userAccBody(u) {
   var connTxt = u.concurrent_connections ? u.concurrent_connections : t('unlimited');
   return '<div class="spd-acc-body" id="acc-ua-' + u.user_id + '">' +
     '<div class="spd-acc-sec"><div class="spd-acc-sec-t">' + t('volume') + '</div>' + _userTraffic(u) + '</div>' +
     '<div class="spd-acc-kv"><span>' + t('expiry') + '</span><b>' + _userExp(u) + '</b></div>' +
     '<div class="spd-acc-kv"><span>' + t('connTh') + '</span><b>' + connTxt + '</b></div>' +
-    _userNodeConfigs(u) +
     '<div class="spd-acc-btns user-action-btns">' +
       '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.config_uuid || '') + '\')" title="Config">'+iconCfg+'</button>' +
       '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + (u.config_uuid || '') + '\')" title="Sub Link">'+iconLink+'</button>' +
@@ -2609,17 +2682,6 @@ async function viewCfg(configUuid) {
     list = list.filter(function(c){ return c && c.indexOf('%F0%9F%93%8A') === -1; });
     curCfg = list.join('\n');
     $id('cfg-code').textContent = curCfg || t('noCfg');
-    var nodeBox = $id('node-configs-view');
-    if (!nodeBox) {
-      nodeBox = document.createElement('div'); nodeBox.id='node-configs-view'; nodeBox.style.marginTop='12px';
-      var pre = $id('cfg-code'); if (pre && pre.parentNode) pre.parentNode.insertBefore(nodeBox, pre);
-    }
-    try {
-      var us = await api('/api/users/config/'+encodeURIComponent(configUuid));
-      var ncs = us.node_configs || {};
-      var rows = Object.keys(ncs).map(function(nid){ var n=ALL_NODES.find(function(x){return x.node_id===nid;}) || {}; return '<div class="set-row"><span class="set-lbl">'+esc((n.country_flag||n.remote_flag||'🌐')+' '+(n.country||n.name||nid))+'</span><span dir="ltr" style="font-size:10px;word-break:break-all">'+esc(ncs[nid])+'</span></div>'; }).join('');
-      nodeBox.innerHTML = rows ? '<div class="panel-h"><span class="glow">Node Configs</span></div>'+rows : '';
-    } catch(e) { if(nodeBox) nodeBox.innerHTML=''; }
     openModal('mod-cfg');
   } catch(e) { toast(e.message, 'err'); }
 }
@@ -2700,8 +2762,8 @@ function renderInbounds() {
       '<div class="spd-acc-body" id="acc-ia-' + ib.inbound_id + '">' +
         _ibDetail(ib) +
         '<div class="spd-acc-btns">' +
-          '<button class="btn btn-sm btn-b" onclick="editInbound(\'' + ib.inbound_id + '\')">' + t('edit') + '</button>' +
-          ((ib.system || ib.inbound_id === 'Node') ? '' : '<button class="btn btn-sm btn-r" onclick="deleteInbound(\'' + ib.inbound_id + '\')">' + t('delete') + '</button>') +
+          '<button class="btn btn-sm btn-g" onclick="editInbound(\'' + ib.inbound_id + '\')">' + t('edit') + '</button>' +
+          ((ib.system || ib.inbound_id === 'Node') ? '' : '<button class="btn btn-sm btn-g" onclick="deleteInbound(\'' + ib.inbound_id + '\')">' + t('delete') + '</button>') +
         '</div>' +
       '</div>' +
     '</div>';
@@ -2811,8 +2873,90 @@ async function generateShortId() {
   } catch(e) { toast(t('toast.err'), 'err'); }
 }
 
+function setInboundNodeOnlyMode(enabled) {
+  var modal = $id('mod-inbound');
+  var form = modal && modal.querySelector('form');
+  if (!modal || !form) return;
+  modal.classList.toggle('inbound-node-only', !!enabled);
+  Array.from(form.children).forEach(function(child) {
+    var keep = child.classList.contains('modal-t') ||
+               child.classList.contains('modal-btns') ||
+               child.id === 'ib-node-select' ||
+               child.id === 'ib-id';
+    child.classList.toggle('node-only-hidden', !!enabled && !keep);
+  });
+}
+
+function ensureNodeSelector(ib) {
+  var modal = $id('mod-inbound');
+  var nodeWrap = $id('ib-node-select');
+  if (!nodeWrap) {
+    nodeWrap = document.createElement('div');
+    nodeWrap.id = 'ib-node-select';
+    nodeWrap.className = 'node-select-wrap';
+    nodeWrap.innerHTML =
+      '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">انتخاب نودها (با فعال‌کردن هر نود، کانفیگ همان نود برای کاربران این اینباند ساخته می‌شود)</div>' +
+      '<div id="ib-node-list" class="node-select-list"></div>' +
+      '<div style="font-size:10px;color:var(--txt2);margin-top:8px">نام هر نود همراه Flag کشور و IP نمایش داده می‌شود.</div>';
+    var formEl = modal && modal.querySelector('form');
+    var modalBtns = formEl && formEl.querySelector('.modal-btns');
+    if (formEl) {
+      if (modalBtns) formEl.insertBefore(nodeWrap, modalBtns);
+      else formEl.appendChild(nodeWrap);
+    }
+  }
+
+  var nodeIds = (ib && (ib.enabled_node_ids || ib.node_ids) || []).map(String);
+  var nodeContainer = $id('ib-node-list');
+  if (!nodeContainer) return;
+  nodeContainer.innerHTML = '';
+  if (!ALL_NODES || ALL_NODES.length === 0) {
+    nodeContainer.innerHTML = '<span style="font-size:11px;color:var(--txt2)">هنوز نودی اضافه نشده</span>';
+    return;
+  }
+  ALL_NODES.forEach(function(node) {
+    var nid = String(node.node_id || '');
+    var name = node.name || node.domain || nid;
+    var flag = node.country_flag || node.remote_flag || '🌐';
+    var ip = node.public_ip || node.remote_ip || '--';
+    var online = (node.status || node.last_status) === 'online';
+    var label = document.createElement('label');
+    label.className = 'node-select-row' + (nodeIds.indexOf(nid) >= 0 ? ' selected' : '');
+    label.title = name + ' ' + flag + ' ' + ip;
+
+    var checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = nid;
+    checkbox.checked = nodeIds.indexOf(nid) >= 0;
+    checkbox.addEventListener('change', function() {
+      label.classList.toggle('selected', checkbox.checked);
+    });
+    label.appendChild(checkbox);
+
+    var main = document.createElement('span');
+    main.className = 'node-select-main';
+    var top = document.createElement('span');
+    top.className = 'node-select-name';
+    top.textContent = flag + ' ' + name;
+    main.appendChild(top);
+    var meta = document.createElement('span');
+    meta.className = 'node-select-meta';
+    meta.dir = 'ltr';
+    meta.textContent = [ip, online ? 'ONLINE' : 'OFFLINE'].filter(Boolean).join('  ');
+    main.appendChild(meta);
+    label.appendChild(main);
+
+    var status = document.createElement('span');
+    status.className = 'node-select-status ' + (online ? 'online' : 'offline');
+    status.textContent = online ? '●' : '○';
+    label.appendChild(status);
+    nodeContainer.appendChild(label);
+  });
+}
+
 function openCreateInbound() {
   // Reset form for new inbound creation
+  setInboundNodeOnlyMode(false);
   var nodeWrap = $id('ib-node-select');
   if (nodeWrap) nodeWrap.classList.add('hidden');
   $id('ib-id').value = '';
@@ -2863,82 +3007,23 @@ async function editInbound(iid) {
   $id('ib-xhttp-mode').value = xh.mode || 'auto';
   $id('ib-grpc-svc').value = (ib.grpc_settings || {}).serviceName || 'grpc';
 
-  // The Node inbound is a selector: each checked node gets a user config on
-  // that node's exact remote «پیش‌فرض TLS + WS» inbound.
-  var nodeWrap = $id('ib-node-select');
+  // Node inbound is a selector only. No name/type/port/TLS/network fields are shown.
   if (isNode) {
-    if (!nodeWrap) {
-      nodeWrap = document.createElement('div');
-      nodeWrap.id = 'ib-node-select';
-      nodeWrap.className = 'node-select-wrap';
-      nodeWrap.innerHTML =
-        '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">انتخاب نودها (با فعال‌کردن هر نود، کانفیگ همان نود برای کاربران این اینباند ساخته می‌شود)</div>' +
-        '<div id="ib-node-list" class="node-select-list"></div>' +
-        '<div style="font-size:10px;color:var(--txt2);margin-top:8px">نام هر نود همراه Flag کشور و IP نمایش داده می‌شود.</div>';
-      var formEl = modal && modal.querySelector('form');
-      var modalBtns = formEl && formEl.querySelector('.modal-btns');
-      if (formEl) {
-        if (modalBtns) formEl.insertBefore(nodeWrap, modalBtns);
-        else formEl.appendChild(nodeWrap);
-      }
-    }
-    nodeWrap.classList.remove('hidden');
-
-    // Nodes may not have been loaded yet when the user enters Inbounds first.
+    setInboundNodeOnlyMode(true);
+    $id('ib-name').value = 'Node';
+    $id('ib-submit').textContent = t('updateInbound');
     if (!ALL_NODES || ALL_NODES.length === 0) {
       try { await loadNodes(); } catch (e) {}
     }
-
-    var nodeIds = (ib.enabled_node_ids || ib.node_ids || []).map(String);
-    var nodeContainer = $id('ib-node-list');
-    if (nodeContainer) {
-      nodeContainer.innerHTML = '';
-      if (!ALL_NODES || ALL_NODES.length === 0) {
-        nodeContainer.innerHTML = '<span style="font-size:11px;color:var(--txt2)">هنوز نودی اضافه نشده</span>';
-      } else {
-        ALL_NODES.forEach(function(node) {
-          var nid = String(node.node_id || '');
-          var name = node.name || node.domain || nid;
-          var flag = node.country_flag || node.remote_flag || '🌐';
-          var ip = node.public_ip || node.remote_ip || '--';
-          var online = (node.status || node.last_status) === 'online';
-          var label = document.createElement('label');
-          label.className = 'node-select-row' + (nodeIds.indexOf(nid) >= 0 ? ' selected' : '');
-          label.title = name + ' ' + flag + ' ' + ip;
-
-          var checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.value = nid;
-          checkbox.checked = nodeIds.indexOf(nid) >= 0;
-          checkbox.addEventListener('change', function() {
-            label.classList.toggle('selected', checkbox.checked);
-          });
-          label.appendChild(checkbox);
-
-          var main = document.createElement('span');
-          main.className = 'node-select-main';
-          var top = document.createElement('span');
-          top.className = 'node-select-name';
-          top.textContent = name;
-          main.appendChild(top);
-          var meta = document.createElement('span');
-          meta.className = 'node-select-meta';
-          meta.dir = 'ltr';
-          meta.textContent = [flag, ip, online ? 'ONLINE' : 'OFFLINE'].filter(Boolean).join('  ');
-          main.appendChild(meta);
-          label.appendChild(main);
-
-          var status = document.createElement('span');
-          status.className = 'node-select-status ' + (online ? 'online' : 'offline');
-          status.textContent = online ? '●' : '○';
-          label.appendChild(status);
-          nodeContainer.appendChild(label);
-        });
-      }
-    }
-  } else if (nodeWrap) {
-    nodeWrap.classList.add('hidden');
+    ensureNodeSelector(ib);
+    var nodeWrap = $id('ib-node-select');
+    if (nodeWrap) nodeWrap.classList.remove('hidden');
+    openModal('mod-inbound');
+    return;
   }
+  setInboundNodeOnlyMode(false);
+  var nodeWrap = $id('ib-node-select');
+  if (nodeWrap) nodeWrap.classList.add('hidden');
 
   if (isTg) {
     // Telegram Proxy: populate TG-specific fields (only 3 fields)
@@ -3003,10 +3088,12 @@ async function submitInbound(e) {
   };
 
   if (iid === 'Node') {
-    body.enabled_node_ids = nodeIds; body.node_ids = nodeIds;
-  }
-
-  if (type === 'telegram') {
+    body.name = 'Node';
+    body.protocol = 'node';
+    body.inbound_type = 'node';
+    body.enabled_node_ids = nodeIds;
+    body.node_ids = nodeIds;
+  } else if (type === 'telegram') {
     // Telegram Proxy inbound - only 3 fields: internal_port, external_port, external_domain
     var internalPort = parseInt($id('ib-tg-intport').value) || 44344;
     var externalPort = parseInt($id('ib-tg-extport').value) || 443;
@@ -4419,13 +4506,13 @@ function renderNodes() {
     var lastSeen = node.last_seen || node.last_checked || '—';
     var lastSync = node.last_sync || '—';
     var lastErr = node.last_error || node.error || '—';
-    html += '<div class="spd-acc" style="margin-bottom:8px">' +
-      '<button type="button" class="spd-acc-head" onclick="spdToggleAcc(\'node-' + esc(node.node_id) + '\',this)" aria-expanded="false">' +
+    html += '<div class="spd-acc node-item-accordion" style="margin-bottom:8px">' +
+      '<button type="button" class="spd-acc-head" onclick="toggleNodeAccordion(this,event)" aria-expanded="false">' +
         '<span class="spd-acc-title"><strong>' + esc(flag + ' ' + (node.name || node.domain || node.node_id)) + '</strong><span style="font-size:10px;color:var(--txt2);display:block;margin-top:3px" dir="ltr">' + esc(country + (country && ip ? ' · ' : '') + ip) + '</span></span>' +
         '<span class="node-status-pill ' + statusCls + '">' + esc(status) + '</span>' +
         '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span>' +
       '</button>' +
-      '<div class="spd-acc-body" id="acc-node-' + esc(node.node_id) + '">' +
+      '<div class="spd-acc-body">' +
         '<div class="set-row"><span class="set-lbl">Domain</span><span dir="ltr" style="font-size:12px">' + esc(node.domain || '—') + '</span></div>' +
         '<div class="set-row"><span class="set-lbl">IP / Country</span><span dir="ltr" style="font-size:12px">' + esc(ip) + ' · ' + esc(flag + ' ' + country) + '</span></div>' +
         '<div class="set-row"><span class="set-lbl">Status</span><span class="node-status-pill ' + statusCls + '">' + esc(status) + '</span></div>' +
