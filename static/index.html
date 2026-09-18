@@ -601,6 +601,9 @@ table{width:100%;min-width:0;border-collapse:collapse}
 .u-card-meta .badge{width:fit-content}
 .u-card-actions .act-row{flex-wrap:wrap;gap:6px}
 .u-card-actions .btn-sm{flex:1 1 auto}
+/* User action buttons: keep them neutral/standard instead of semantic color fills. */
+.user-action-btns .btn{background:var(--input-bg)!important;color:var(--txt)!important;border:1px solid var(--border)!important;box-shadow:none!important}
+.user-action-btns .btn:hover{background:var(--nav-bg)!important;color:var(--txt)!important;border-color:var(--border-glow)!important;transform:none!important;filter:none!important}
 th{text-align:right;padding:12px;font-size:10px;color:var(--txt2);font-weight:700;border-bottom:1px solid var(--border);background:rgba(43,127,255,.04)}
 td{padding:12px;font-size:13px;border-bottom:1px solid var(--border)}
 tr:hover td{background:rgba(43,127,255,.03)}
@@ -923,6 +926,20 @@ tr{animation:fadeIn .3s ease}
 .nav-accordion-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 14px;background:#111;color:#fff;border:0;border-bottom:1px solid #2a2a2a;font:600 13px inherit;cursor:pointer}
 .nav-accordion-title{display:inline-flex;align-items:center;gap:8px}.nav-accordion-ic{font-size:18px}.nav-accordion-arrow{font-size:19px;transition:transform .2s}.nav-accordion-body{max-height:0;overflow:hidden;transition:max-height .25s ease;background:#000}.nav-accordion.open .nav-accordion-body{max-height:520px}.nav-accordion.open .nav-accordion-arrow{transform:rotate(180deg)}.nav-accordion-body .nav-item{border-radius:0!important;border:0!important;border-bottom:1px solid #1d1d1d!important;background:#000!important;margin:0!important}.nav-accordion-body .nav-item:last-child{border-bottom:0!important}.nav-accordion-body .nav-item.active{background:#171717!important;color:#fff!important;box-shadow:inset 3px 0 0 #fff}.nav-accordion-body .nav-item:hover{background:#101010!important}
 [data-theme="light"] .nav-accordion{background:#fff;border-color:#cfcfcf;box-shadow:0 8px 22px rgba(0,0,0,.12)}[data-theme="light"] .nav-accordion-head{background:#f3f3f3;color:#000;border-color:#d8d8d8}[data-theme="light"] .nav-accordion-body{background:#fff}[data-theme="light"] .nav-accordion-body .nav-item{background:#fff!important;border-bottom-color:#e6e6e6!important;color:#333}[data-theme="light"] .nav-accordion-body .nav-item.active{background:#f0f0f0!important;color:#000!important;box-shadow:inset 3px 0 0 #000}
+
+/* Node selector inside Node inbound editor */
+.node-select-wrap{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.node-select-list{display:flex;flex-direction:column;gap:7px}
+.node-select-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);cursor:pointer;transition:all .18s}
+.node-select-row:hover{border-color:var(--border-glow)}
+.node-select-row.selected{border-color:var(--neon);background:rgba(255,255,255,.04)}
+.node-select-row input{width:16px;height:16px;flex:0 0 auto;margin:0}
+.node-select-main{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}
+.node-select-name{font-size:12px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node-select-meta{font-size:10px;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-select-status{font-size:12px;line-height:1}
+.node-select-status.online{color:var(--green)}
+.node-select-status.offline{color:var(--txt2)}
 
 /* Shared content accordion (users, inbounds, scanner, worker, settings) */
 .spd-acc-list{display:flex;flex-direction:column;gap:8px}
@@ -1368,6 +1385,21 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
           <div class="settings-inner-block">
             <div class="panel-h"><span class="glow" data-i18n="serverInfo">Server Info</span></div>
             <div id="server-info-wrap" style="padding:4px 0"></div>
+          </div>
+          <div class="settings-inner-block">
+            <div class="panel-h"><span class="glow" data-i18n="panelApiKey">SpiderPanel API Key</span></div>
+            <div class="set-row">
+              <span class="set-lbl">API Key</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <code id="panel-api-key" dir="ltr" style="flex:1;font-size:12px;word-break:break-all">--</code>
+                <button class="btn btn-sm btn-g" onclick="copyPanelApiKey()" style="font-size:11px">کپی</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn btn-p" style="flex:1" onclick="regeneratePanelApiKey()"><span data-i18n="regenerateApiKey">ساخت کلید جدید</span></button>
+              <button class="btn btn-g" style="flex:1" onclick="verifyPanelApiKey()"><span data-i18n="verifyApiKey">بررسی کلید</span></button>
+            </div>
+            <div class="px-hint" style="margin-top:8px">این API Key برای اتصال نودهای Remote استفاده می‌شود. با تغییر کلید، تمام نودهای موجود نیاز به reconnect دارند.</div>
           </div>
           <div class="settings-inner-block">
             <div class="panel-h"><span class="glow" data-i18n="changePassword">Change Password</span></div>
@@ -2125,6 +2157,7 @@ function switchTab(tab, el) {
   target.style.setProperty('top', '0px', 'important');
   target.style.setProperty('transform', 'none', 'important');
   if (tab === 'worker' || tab === 'contact' || tab === 'settings' || tab === 'nodes') {
+    if (tab === 'settings') loadPanelApiKey();
     target.style.setProperty('position', 'static', 'important');
     target.style.setProperty('flex', 'none', 'important');
   }
@@ -2294,7 +2327,7 @@ function _userAccBody(u) {
     '<div class="spd-acc-sec"><div class="spd-acc-sec-t">' + t('volume') + '</div>' + _userTraffic(u) + '</div>' +
     '<div class="spd-acc-kv"><span>' + t('expiry') + '</span><b>' + _userExp(u) + '</b></div>' +
     '<div class="spd-acc-kv"><span>' + t('connTh') + '</span><b>' + connTxt + '</b></div>' +
-    '<div class="spd-acc-btns">' +
+    '<div class="spd-acc-btns user-action-btns">' +
       '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.config_uuid || '') + '\')" title="Config">'+iconCfg+'</button>' +
       '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + (u.config_uuid || '') + '\')" title="Sub Link">'+iconLink+'</button>' +
       '<button class="btn btn-sm btn-b" onclick="viewQR(\'' + u.user_id + '\')" title="QR Code">'+iconQr+'</button>' +
@@ -2722,6 +2755,8 @@ async function generateShortId() {
 
 function openCreateInbound() {
   // Reset form for new inbound creation
+  var nodeWrap = $id('ib-node-select');
+  if (nodeWrap) nodeWrap.classList.add('hidden');
   $id('ib-id').value = '';
   $id('ib-title').textContent = t('newInbound');
   $id('ib-name').value = '';
@@ -2747,12 +2782,13 @@ function openCreateInbound() {
   openModal('mod-inbound');
 }
 
-function editInbound(iid) {
+async function editInbound(iid) {
   var ib = ALL_IB.find(function(x) { return x.inbound_id === iid; });
   if (!ib) return;
   var isReality = (ib.protocol === 'reality' || ib.security === 'reality');
   var isTg = (ib.protocol || '').toLowerCase() === 'telegram';
   var isNode = (ib.system && ib.inbound_id === 'Node');
+  var modal = $id('mod-inbound');
   $id('ib-title').textContent = t('editInbound');
   $id('ib-id').value = iid;
   $id('ib-name').value = ib.name || '';
@@ -2769,38 +2805,81 @@ function editInbound(iid) {
   $id('ib-xhttp-mode').value = xh.mode || 'auto';
   $id('ib-grpc-svc').value = (ib.grpc_settings || {}).serviceName || 'grpc';
 
-  // Node selection checkboxes (only for Inbound "Node")
+  // The Node inbound is a selector: each checked node gets a user config on
+  // that node's exact remote «پیش‌فرض TLS + WS» inbound.
+  var nodeWrap = $id('ib-node-select');
   if (isNode) {
-    var nodeIds = ib.node_ids || [];
-    var nodeWrap = $id('ib-node-select');
     if (!nodeWrap) {
       nodeWrap = document.createElement('div');
       nodeWrap.id = 'ib-node-select';
-      nodeWrap.style.cssText = 'margin-top:14px;padding-top:14px;border-top:1px solid var(--border)';
-      nodeWrap.innerHTML = '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">انتخاب نودها (که کاربر در آن‌ها ساخته شود)</div>' +
-        '<div id="ib-node-list" style="display:flex;flex-direction:column;gap:6px"></div>';
-      modal.querySelector('.modal-c').appendChild(nodeWrap);
-    }
-    var nodeContainer = $id('ib-node-list');
-    nodeContainer.innerHTML = '';
-    if (!ALL_NODES || ALL_NODES.length === 0) {
-      nodeContainer.innerHTML = '<span style="font-size:11px;color:var(--txt2)">هنوز نودی اضافه نشده</span>';
-    } else {
-      ALL_NODES.forEach(function(node) {
-        var div = document.createElement('label');
-        div.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:6px;border-radius:8px';
-        var checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = node.node_id;
-        checkbox.checked = nodeIds.indexOf(node.node_id) >= 0;
-        div.appendChild(checkbox);
-        var span = document.createElement('span');
-        span.textContent = node.name || node.domain;
-        div.appendChild(span);
-        nodeContainer.appendChild(div);
-      });
+      nodeWrap.className = 'node-select-wrap';
+      nodeWrap.innerHTML =
+        '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">انتخاب نودها (با فعال‌کردن هر نود، کانفیگ همان نود برای کاربران این اینباند ساخته می‌شود)</div>' +
+        '<div id="ib-node-list" class="node-select-list"></div>' +
+        '<div style="font-size:10px;color:var(--txt2);margin-top:8px">نام هر نود همراه Flag کشور و IP نمایش داده می‌شود.</div>';
+      var formEl = modal && modal.querySelector('form');
+      var modalBtns = formEl && formEl.querySelector('.modal-btns');
+      if (formEl) {
+        if (modalBtns) formEl.insertBefore(nodeWrap, modalBtns);
+        else formEl.appendChild(nodeWrap);
+      }
     }
     nodeWrap.classList.remove('hidden');
+
+    // Nodes may not have been loaded yet when the user enters Inbounds first.
+    if (!ALL_NODES || ALL_NODES.length === 0) {
+      try { await loadNodes(); } catch (e) {}
+    }
+
+    var nodeIds = (ib.node_ids || []).map(String);
+    var nodeContainer = $id('ib-node-list');
+    if (nodeContainer) {
+      nodeContainer.innerHTML = '';
+      if (!ALL_NODES || ALL_NODES.length === 0) {
+        nodeContainer.innerHTML = '<span style="font-size:11px;color:var(--txt2)">هنوز نودی اضافه نشده</span>';
+      } else {
+        ALL_NODES.forEach(function(node) {
+          var nid = String(node.node_id || '');
+          var name = node.name || node.domain || nid;
+          var flag = node.remote_flag || '';
+          var ip = node.remote_ip || '--';
+          var online = node.last_status === 'online';
+          var label = document.createElement('label');
+          label.className = 'node-select-row' + (nodeIds.indexOf(nid) >= 0 ? ' selected' : '');
+          label.title = name + ' ' + flag + ' ' + ip;
+
+          var checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.value = nid;
+          checkbox.checked = nodeIds.indexOf(nid) >= 0;
+          checkbox.addEventListener('change', function() {
+            label.classList.toggle('selected', checkbox.checked);
+          });
+          label.appendChild(checkbox);
+
+          var main = document.createElement('span');
+          main.className = 'node-select-main';
+          var top = document.createElement('span');
+          top.className = 'node-select-name';
+          top.textContent = name;
+          main.appendChild(top);
+          var meta = document.createElement('span');
+          meta.className = 'node-select-meta';
+          meta.dir = 'ltr';
+          meta.textContent = [flag, ip, online ? 'ONLINE' : 'OFFLINE'].filter(Boolean).join('  ');
+          main.appendChild(meta);
+          label.appendChild(main);
+
+          var status = document.createElement('span');
+          status.className = 'node-select-status ' + (online ? 'online' : 'offline');
+          status.textContent = online ? '●' : '○';
+          label.appendChild(status);
+          nodeContainer.appendChild(label);
+        });
+      }
+    }
+  } else if (nodeWrap) {
+    nodeWrap.classList.add('hidden');
   }
 
   if (isTg) {
@@ -4242,6 +4321,36 @@ async function loadNodes() {
   }
 }
 
+function getNodeStatusColor(status) {
+  switch (status) {
+    case 'online': return 'var(--green)';
+    case 'checking': return 'var(--neon)';
+    case 'offline': case 'unauthorized': case 'remote_error': return 'var(--red)';
+    default: return 'var(--txt2)';
+  }
+}
+
+function getNodeStatusText(status) {
+  var statusMap = {
+    'online': 'Online',
+    'checking': 'Checking...',
+    'offline': 'Offline',
+    'unauthorized': 'Unauthorized',
+    'remote_error': 'Error',
+  };
+  return statusMap[status] || status || '--';
+}
+
+function getNodeStatusIcon(status) {
+  switch (status) {
+    case 'online': return '● ';
+    case 'checking': return '◉ ';
+    case 'offline': return '○ ';
+    case 'unauthorized': case 'remote_error': return '⚠ ';
+    default: return '○ ';
+  }
+}
+
 function renderNodes() {
   var wrap = $id('nodes-list');
   if (!wrap) return;
@@ -4251,22 +4360,33 @@ function renderNodes() {
   }
   var html = '';
   ALL_NODES.forEach(function(node) {
-    var isOnline = (node.last_status === 'online');
-    var statusColor = isOnline ? 'var(--green)' : 'var(--red)';
-    var statusText = isOnline ? t('nodeOnline') : t('nodeOffline');
+    var status = node.status || 'unknown';
+    var statusColor = getNodeStatusColor(status);
+    var statusText = getNodeStatusText(status);
+    var flag = node.country_flag || '';
+    var country = node.country || '';
+    var ip = node.public_ip || '--';
+    var latency = node.latency_ms != null ? node.latency_ms + 'ms' : '--';
+    var lastSeen = node.last_seen ? formatTime(node.last_seen) : '--';
+    var lastSync = node.last_sync ? formatTime(node.last_sync) : lastSeen;
+    var displayName = flag ? flag + ' ' + node.name : (node.name || node.domain);
     html += '<div class="spd-acc" style="margin-bottom:8px">' +
       '<button type="button" class="spd-acc-head" onclick="spdToggleAcc(\'node-' + esc(node.node_id) + '\',this)" aria-expanded="false">' +
-      '<span class="spd-acc-title"><strong>' + esc(node.name || node.domain) + '</strong></span>' +
+      '<span class="spd-acc-title"><strong>' + esc(displayName.trim()) + '</strong></span>' +
       '<span style="font-size:11px;color:' + statusColor + '">' + statusText + '</span>' +
       '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>' +
       '<div class="spd-acc-body" id="acc-node-' + esc(node.node_id) + '">' +
-      '<div class="set-row"><span class="set-lbl">' + t('nodeDomain') + '</span><span dir="ltr" style="font-size:12px">' + esc(node.domain) + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">' + t('nodeIp') + '</span><span dir="ltr" style="font-size:12px">' + (node.remote_ip || '--') + ' ' + (node.remote_flag || '') + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">' + t('nodeLatency') + '</span><span dir="ltr" style="font-size:12px;color:var(--neon)">' + (node.latency_ms ? node.latency_ms + 'ms' : '--') + '</span></div>' +
+      '<div class="set-row"><span class="set-lbl">Domain</span><span dir="ltr" style="font-size:12px">' + esc(node.domain) + '</span></div>' +
+      '<div class="set-row"><span class="set-lbl">Public IP</span><span dir="ltr" style="font-size:12px">' + ip + ' ' + flag + ' ' + country + '</span></div>' +
+      '<div class="set-row"><span class="set-lbl">Status</span><span style="font-size:11px;color:' + statusColor + '">' + statusText + '</span></div>' +
+      '<div class="set-row"><span class="set-lbl">Ping</span><span dir="ltr" style="font-size:12px;color:var(--neon)">' + latency + '</span></div>' +
+      '<div class="set-row"><span class="set-lbl">Last Seen</span><span dir="ltr" style="font-size:12px;color:var(--txt2)">' + lastSeen + '</span></div>' +
+      '<div class="set-row"><span class="set-lbl">Last Sync</span><span dir="ltr" style="font-size:12px;color:var(--txt2)">' + lastSync + '</span></div>' +
+      (node.last_error ? '<div class="set-row"><span class="set-lbl">Error</span><span dir="ltr" style="font-size:11px;color:var(--red)">' + esc(node.last_error) + '</span></div>' : '') +
       '<div style="display:flex;gap:8px;margin-top:14px">' +
-      '<button class="btn btn-p" onclick="syncNode(\'' + esc(node.node_id) + '\')">' + t('nodeSyncing').split(' ')[0] + '</button>' +
-      '<button class="btn btn-g" onclick="editNode(\'' + esc(node.node_id) + '\')">' + t('edit') + '</button>' +
-      '<button class="btn" style="background:var(--red);color:#fff" onclick="deleteNode(\'' + esc(node.node_id) + '\')">' + t('delete') + '</button>' +
+      '<button class="btn btn-p" onclick="refreshNode(\'' + esc(node.node_id) + '\')">Refresh</button>' +
+      '<button class="btn btn-g" onclick="editNode(\'' + esc(node.node_id) + '\')">Edit</button>' +
+      '<button class="btn" style="background:var(--red);color:#fff" onclick="deleteNode(\'' + esc(node.node_id) + '\')">Delete</button>' +
       '</div></div></div>';
   });
   wrap.innerHTML = html;
@@ -4277,7 +4397,6 @@ function openNodeModal(nodeId) {
   var node = nodeId ? ALL_NODES.find(function(n) { return n.node_id === nodeId; }) : null;
   var title = node ? t('editNode') : t('addNode');
 
-  // Create modal if it doesn't exist
   var modal = $id('mod-node');
   if (!modal) {
     modal = document.createElement('div');
@@ -4303,12 +4422,12 @@ function openNodeModal(nodeId) {
 
     var f1 = document.createElement('div');
     f1.className = 'f-g';
-    f1.innerHTML = '<label>نام</label>';
+    f1.innerHTML = '<label>Name</label>';
     var inp1 = document.createElement('input');
     inp1.type = 'text';
     inp1.id = 'node-name';
     inp1.dir = 'ltr';
-    inp1.placeholder = 'نام نود';
+    inp1.placeholder = 'Node name';
     f1.appendChild(inp1);
     form.appendChild(f1);
 
@@ -4319,19 +4438,19 @@ function openNodeModal(nodeId) {
     inp2.type = 'text';
     inp2.id = 'node-domain';
     inp2.dir = 'ltr';
-    inp2.placeholder = 'example.com';
+    inp2.placeholder = 'example.com or https://example.com';
     inp2.required = true;
     f2.appendChild(inp2);
     form.appendChild(f2);
 
     var f3 = document.createElement('div');
     f3.className = 'f-g';
-    f3.innerHTML = '<label>API Key</label>';
+    f3.innerHTML = '<label>SpiderPanel API Key</label>';
     var inp3 = document.createElement('input');
     inp3.type = 'password';
     inp3.id = 'node-apikey';
     inp3.dir = 'ltr';
-    inp3.placeholder = 'API Key';
+    inp3.placeholder = 'spdr_xxxxx';
     inp3.required = true;
     f3.appendChild(inp3);
     form.appendChild(f3);
@@ -4352,11 +4471,10 @@ function openNodeModal(nodeId) {
     form.appendChild(btns);
   }
 
-  // Update title and values
   modal.querySelector('.modal-t span').textContent = title;
   $id('node-name').value = node ? (node.name || '') : '';
   $id('node-domain').value = node ? (node.domain ? node.domain.replace('https://', '') : '') : '';
-  $id('node-apikey').value = node ? (node.api_key || '') : '';
+  $id('node-apikey').value = node ? '' : '';
 
   modal.classList.add('show');
 }
@@ -4367,7 +4485,11 @@ async function submitNode(e) {
   var domain = $id('node-domain').value.trim();
   var apiKey = $id('node-apikey').value.trim();
   if (!domain || !apiKey) {
-    toast(t('nodeDomain') + ' و ' + t('nodeApiKey') + ' الزامی است', 'err');
+    toast('Domain و API Key الزامی است', 'err');
+    return;
+  }
+  if (!apiKey.startsWith('spdr_')) {
+    toast('API Key باید با spdr_ شروع شود', 'err');
     return;
   }
   var btn = e.target.querySelector('button[type="submit"]');
@@ -4377,11 +4499,11 @@ async function submitNode(e) {
     var url = EDITING_NODE_ID ? '/api/nodes/' + EDITING_NODE_ID : '/api/nodes';
     var result = await api(url, {method: method, body: {name: name, domain: domain, api_key: apiKey}});
     if (!result || !result.ok) throw new Error('پاسخ نامعتبر از سرور');
-    toast(EDITING_NODE_ID ? t('nodeUpdated') : t('nodeAdded'), 'ok');
+    toast(EDITING_NODE_ID ? 'نود بروزرسانی شد' : 'نود اضافه شد', 'ok');
     closeModal('mod-node');
     loadNodes();
   } catch(e) {
-    toast(e.message || t('nodeSyncFailed'), 'err');
+    toast(e.message || 'خطا در اتصال', 'err');
   }
   btn.disabled = false; btn.textContent = t('saveChanges');
 }
@@ -4391,32 +4513,82 @@ function editNode(nodeId) {
 }
 
 async function deleteNode(nodeId) {
-  if (!confirm(t('confirmDeleteNode'))) return;
+  if (!confirm('آیا از حذف این نود اطمینان دارید؟')) return;
   try {
     await api('/api/nodes/' + nodeId, {method: 'DELETE'});
-    toast(t('nodeDeleted'), 'ok');
+    toast('نود حذف شد', 'ok');
     loadNodes();
   } catch(e) { toast(e.message || t('toast.err'), 'err'); }
 }
 
-async function syncNode(nodeId) {
+async function refreshNode(nodeId) {
   try {
-    await api('/api/nodes/' + nodeId + '/check', {method: 'POST'});
-    toast(t('nodeSynced'), 'ok');
+    await api('/api/nodes/' + nodeId + '/refresh', {method: 'POST'});
+    toast('نود بروزرسانی شد', 'ok');
     loadNodes();
-  } catch(e) { toast(e.message || t('nodeSyncFailed'), 'err'); }
+  } catch(e) { toast(e.message || 'خطا', 'err'); }
 }
 
 async function syncAllNodes() {
   try {
     var result = await api('/api/nodes/sync-all', {method: 'POST'});
     if (result.synced > 0) {
-      toast(t('nodeSynced') + ' (' + result.synced + ')', 'ok');
+      toast('همگام‌سازی انجام شد (' + result.synced + ')', 'ok');
     } else {
-      toast(t('nodeSynced'), 'ok');
+      toast('همگام‌سازی انجام شد', 'ok');
     }
     loadNodes();
-  } catch(e) { toast(e.message || t('nodeSyncFailed'), 'err'); }
+  } catch(e) { toast(e.message || 'خطا در همگام‌سازی', 'err'); }
+}
+
+// ─── PANEL API KEY ───────────────────────────────────────────────────────────
+async function loadPanelApiKey() {
+  try {
+    var result = await api('/api/panel-api-key');
+    if (result.api_key) {
+      $id('panel-api-key').textContent = result.api_key.substring(0, 12) + '••••' + result.api_key.substring(result.api_key.length - 4);
+    }
+  } catch(e) { /* ignore */ }
+}
+
+function copyPanelApiKey() {
+  var code = $id('panel-api-key');
+  if (!code) return;
+  var fullKey = code.getAttribute('data-full-key');
+  if (fullKey) {
+    navigator.clipboard.writeText(fullKey).then(function() { toast('کپی شد', 'ok'); });
+  } else {
+    api('/api/panel-api-key').then(function(r) {
+      if (r.api_key) {
+        navigator.clipboard.writeText(r.api_key).then(function() { toast('کپی شد', 'ok'); });
+      }
+    });
+  }
+}
+
+async function regeneratePanelApiKey() {
+  if (!confirm('آیا از ساخت کلید جدید اطمینان دارید؟ تمام نودها نیاز به reconnect دارند.')) return;
+  try {
+    await api('/api/panel-api-key/regenerate', {method: 'POST'});
+    toast('کلید جدید ساخته شد - تمام نودها نیاز به reconnect دارند', 'warn');
+    loadPanelApiKey();
+    loadNodes();
+  } catch(e) { toast(e.message || 'خطa', 'err'); }
+}
+
+async function verifyPanelApiKey() {
+  try {
+    var result = await api('/api/panel-api-key/verify', {method: 'POST', body: {}});
+    toast(result.valid ? 'کلید معتبر است' : 'کلید نامعتبر است', result.valid ? 'ok' : 'err');
+  } catch(e) { toast(e.message || 'خطa', 'err'); }
+}
+
+function formatTime(iso) {
+  if (!iso) return '--';
+  var d = new Date(iso);
+  var h = d.getHours();
+  var m = d.getMinutes().toString().padStart(2, '0');
+  return h + ':' + m;
 }
 
 // ─── SERVER INFO IN SETTINGS ───────────────────────────────────────────────

@@ -360,6 +360,16 @@ SETTINGS = {
     "live_monitoring": True,
     "auto_ip_rotation": False,
     "security_token": "spdr_" + secrets.token_urlsafe(24),
+    # SpiderPanel API Key (for remote node authentication)
+    "panel_api_key": "spdr_" + secrets.token_urlsafe(24),
+    # Server info (auto-detected or user-configured)
+    "server_info": {
+        "public_ip": "",
+        "country": "",
+        "country_code": "",
+        "country_flag": "",
+        "detected_at": None,
+    },
     # Custom backgrounds (uploaded by admin)
     "bg_login": "",
     "bg_dashboard": "",
@@ -1390,7 +1400,13 @@ def remote_node_config(node: dict, user: dict, remark_tag: str | None = None) ->
     except Exception:
         port = 443
     path = f"/ws/{config_uuid}"
-    remark = f"Spider-{user.get('username', 'user')}"
+    node_label = str(node.get("name") or node.get("remote_host") or "node").strip()
+    node_flag = str(node.get("remote_flag") or "").strip()
+    node_ip = str(node.get("remote_ip") or "").strip()
+    node_identity = " ".join(x for x in (node_flag, node_ip) if x).strip()
+    remark = f"Spider-{user.get('username', 'user')} · {node_label}"
+    if node_identity:
+        remark += f" · {node_identity}"
     if remark_tag:
         remark += f" {remark_tag}"
     params = ("encryption=none&security=tls&type=ws"
@@ -3453,6 +3469,11 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
 
     await save_state()
     log_activity("inbound", f"اینباند «{ib.get('name', inbound_id)}» ویرایش شد", "info")
+    # The Node inbound is a node selector. Whenever its selection changes,
+    # rebuild per-user node configs immediately and push those users to the
+    # selected remote panels. Deselected nodes are removed from subscriptions.
+    if inbound_id == "Node" and ib.get("system"):
+        asyncio.create_task(refresh_node_inbound_configs(inbound_id))
     asyncio.create_task(_xray_apply())
     # Restart Telegram Proxy if this is a telegram inbound
     if (ib.get("protocol") or "").lower() == "telegram":
@@ -3815,8 +3836,8 @@ async def create_user(request: Request, _=Depends(require_auth)):
             node_inbound = INBOUNDS.get("Node", {})
         selected_node_ids = node_inbound.get("node_ids", [])
         if selected_node_ids:
-            asyncio.create_task(sync_user_to_nodes(
-                user_id, USERS[user_id], inbound_id, selected_node_ids
+            asyncio.create_task(_sync_single_user_to_node(
+                user_id, USERS[user_id], selected_node_ids
             ))
     host = SETTINGS.get("domain") or get_host()
     asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
@@ -3980,17 +4001,17 @@ async def get_user(user_id: str, _=Depends(require_auth)):
 
 @app.delete("/api/users/{user_id}")
 async def delete_user(user_id: str, _=Depends(require_auth)):
-    """Delete a user permanently."""
+    """Delete a user permanently, including remote nodes."""
     async with USERS_LOCK:
         u = USERS.get(user_id)
         if not u:
             raise HTTPException(status_code=404, detail="user not found")
         username = u.get("username", user_id)
+        config_uuid = u.get("config_uuid")
         # Clean up PATH_INDEX and synced link
         old_path = (u.get("path") or "").strip().lstrip("/")
         if old_path:
             PATH_INDEX.pop(old_path, None)
-        config_uuid = u.get("config_uuid")
         if config_uuid:
             PATH_INDEX.pop(config_uuid, None)
         USERS.pop(user_id, None)
@@ -3998,6 +4019,9 @@ async def delete_user(user_id: str, _=Depends(require_auth)):
     if config_uuid:
         async with LINKS_LOCK:
             LINKS.pop(config_uuid, None)
+    # Try to delete from remote nodes
+    if config_uuid:
+        await _delete_user_on_nodes(config_uuid, user_id)
     # If the deleted user used the worker inbound, tell the worker to drop them.
     if WORKER.get("connected") and _user_uses_worker_inbound(u):
         asyncio.create_task(_worker_sync_users())
@@ -4513,7 +4537,124 @@ async def rotate_security_token(_=Depends(require_auth)):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# SPIDERPANEL API KEY MANAGEMENT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/panel-api-key")
+async def get_panel_api_key(_=Depends(require_auth)):
+    """Get current SpiderPanel API Key."""
+    async with SETTINGS_LOCK:
+        key = SETTINGS.get("panel_api_key", "")
+    return {"ok": True, "api_key": key}
+
+
+@app.post("/api/panel-api-key/regenerate")
+async def regenerate_panel_api_key(_=Depends(require_auth)):
+    """Generate a new SpiderPanel API Key."""
+    async with SETTINGS_LOCK:
+        new_key = "spdr_" + secrets.token_urlsafe(32)
+        old_key = SETTINGS.get("panel_api_key")
+        SETTINGS["panel_api_key"] = new_key
+    asyncio.create_task(save_state())
+
+    # Invalidate all nodes that were using the old key
+    async with NODES_LOCK:
+        for node_id, node in NODES.items():
+            if node.get("api_key") == old_key:
+                node["status"] = "unauthorized"
+                node["last_error"] = "Panel API Key changed - requires reconnection"
+
+    log_activity("settings", "SpiderPanel API Key جدید تولید شد - تمام نودها نیاز به reconnect دارند", "warn")
+    return {"ok": True, "api_key": new_key}
+
+
+@app.post("/api/panel-api-key/verify")
+async def verify_panel_api_key(request: Request, _=Depends(require_auth)):
+    """Verify if the provided API Key is valid."""
+    body = await request.json()
+    provided_key = body.get("api_key", "")
+
+    async with SETTINGS_LOCK:
+        valid_key = SETTINGS.get("panel_api_key", "")
+
+    return {"ok": True, "valid": provided_key == valid_key}
+
+
+@app.get("/api/server-info")
+async def get_server_info(request: Request):
+    """Get server information - used by remote nodes for verification."""
+    key = request.headers.get("X-API-Key", "")
+
+    async with SETTINGS_LOCK:
+        valid_key = SETTINGS.get("panel_api_key", "")
+        server_info = SETTINGS.get("server_info", {})
+
+    # Check authentication
+    if key != valid_key:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+
+    # Try to detect IP if not already set
+    if not server_info.get("public_ip"):
+        try:
+            ac = httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=4.0))
+            r = await ac.get("https://api.ipify.org?format=json")
+            if r.status_code == 200:
+                ip = r.json().get("ip", "")
+                server_info["public_ip"] = ip
+                # Get country info
+                r2 = await ac.get(f"https://ipinfo.io/{ip}/json?token=")
+                if r2.status_code == 200:
+                    info = r2.json()
+                    server_info["country"] = info.get("country", "")
+                    server_info["country_code"] = info.get("country", "")
+                    cc = info.get("country", "")
+                    server_info["country_flag"] = _code_to_flag(cc) if cc else ""
+                await ac.aclose()
+                # Save updated server info
+                async with SETTINGS_LOCK:
+                    SETTINGS["server_info"] = server_info
+                asyncio.create_task(save_state())
+        except Exception:
+            pass
+
+    return {
+        "ok": True,
+        "public_ip": server_info.get("public_ip", ""),
+        "country": server_info.get("country", ""),
+        "country_code": server_info.get("country_code", ""),
+        "country_flag": server_info.get("country_flag", ""),
+        "detected_at": server_info.get("detected_at"),
+        "panel_name": "SpiderPanel",
+        "version": "1.0.0",
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # REMOTE NODES — link this panel to other SpiderPanel instances
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _node_base_url(domain: str) -> str:
+    """Normalize an admin-entered node address into an https base URL."""
+    d = str(domain or "").strip().rstrip("/")
+    if not d:
+        return ""
+    if not d.startswith(("http://", "https://")):
+        d = "https://" + d
+    return d
+
+
+# ── Remote nodes (other SpiderPanel instances we sync configs to) ──────────────
+# node_id -> {
+#   name, domain, api_key, country, country_code, country_flag, public_ip,
+#   status, last_seen, last_error, latency_ms, created_at, last_sync,
+#   remote_tls_ws (fetched from /api/server-info)
+# }
+NODES: dict = {}
+NODES_LOCK = asyncio.Lock()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# NODE HELPER FUNCTIONS
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _node_base_url(domain: str) -> str:
@@ -4526,41 +4667,121 @@ def _node_base_url(domain: str) -> str:
     return d
 
 
-async def sync_inbounds_to_nodes(nodes: list) -> int:
-    """Push all inbounds and users to all configured nodes."""
-    import httpx
-    http_client = httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=8.0))
-    sent = 0
+def _generate_node_id() -> str:
+    """Generate a unique node_id like 'node_a8f239'."""
+    return "node_" + secrets.token_hex(6)
+
+
+def _mask_api_key(key: str) -> str:
+    """Mask API key for frontend display."""
+    if not key or len(key) < 8:
+        return "•" * max(len(key), 4)
+    return key[:6] + "••••" + key[-4:]
+
+
+async def _verify_node(node: dict) -> dict:
+    """Verify a remote SpiderPanel node by calling /api/server-info."""
+    base = _node_base_url(node.get("domain", ""))
+    key = str(node.get("api_key") or "")
+    now = datetime.now().isoformat()
+    out = {
+        "last_checked": now,
+        "last_seen": now,
+        "status": "offline",
+        "latency_ms": None,
+        "public_ip": "",
+        "country": "",
+        "country_code": "",
+        "country_flag": "",
+        "remote_tls_ws": {},
+        "last_error": "",
+    }
+    if not base or not key:
+        out["last_error"] = "domain/api_key خالی است"
+        return out
     try:
-        for nid, node in nodes:
-            base = _node_base_url(node.get("domain", ""))
-            key = str(node.get("api_key") or "")
-            if not base or not key:
-                continue
-            async with INBOUNDS_LOCK:
-                ibs = list(INBOUNDS.values())
-            for ib in ibs:
-                try:
-                    payload = {
-                        "inbound_id": ib.get("inbound_id"),
-                        "name": ib.get("name", ""),
-                        "protocol": ib.get("protocol", "vless"),
-                        "network": ib.get("network", "ws"),
-                        "security": ib.get("security", "tls"),
-                        "port": ib.get("port", 443),
-                        "external_domain": ib.get("external_domain", ""),
-                        "external_port": ib.get("external_port"),
-                        "node_ids": ib.get("node_ids", []),
-                    }
-                    r = await http_client.post(f"{base}/api/inbounds", json=payload, headers={"X-Node-Key": key})
-                    if r.status_code == 200:
-                        sent += 1
-                except Exception:
-                    pass
-        await http_client.aclose()
-    except Exception:
-        pass
-    return sent
+        ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=6.0))
+        t0 = time.time()
+        r = await ac.get(f"{base}/api/server-info", headers={"X-API-Key": key})
+        elapsed = time.time() - t0
+        out["latency_ms"] = round(elapsed * 1000)
+        if r.status_code == 401:
+            out["status"] = "unauthorized"
+            out["last_error"] = "API Key نامعتبر است"
+            await ac.aclose()
+            return out
+        if r.status_code == 403:
+            out["status"] = "unauthorized"
+            out["last_error"] = "دسترسی ممنوع"
+            await ac.aclose()
+            return out
+        if r.status_code >= 500:
+            out["status"] = "remote_error"
+            out["last_error"] = f"خطای سرور: {r.status_code}"
+            await ac.aclose()
+            return out
+        if r.status_code != 200:
+            out["last_error"] = f"پاسخ {r.status_code}"
+            await ac.aclose()
+            return out
+        info = r.json() or {}
+        out["status"] = "online"
+        out["public_ip"] = str(info.get("public_ip") or "")
+        out["country"] = str(info.get("country") or "")
+        out["country_code"] = str(info.get("country_code") or "").upper()
+        out["country_flag"] = str(info.get("country_flag") or "")
+        out["last_error"] = ""
+        out["last_seen"] = now
+        # Cache TLS+WS inbound info from remote node
+        tls_ws = info.get("default_tls_ws") or {}
+        if isinstance(tls_ws, dict):
+            out["remote_tls_ws"] = tls_ws
+        await ac.aclose()
+    except httpx.TimeoutException:
+        out["status"] = "offline"
+        out["last_error"] = "Timeout"
+    except httpx.ConnectError as e:
+        out["status"] = "offline"
+        out["last_error"] = f"Connection error: {str(e)[:80]}"
+    except Exception as exc:
+        out["status"] = "offline"
+        out["last_error"] = str(exc)[:160]
+    return out
+
+
+async def _delete_user_on_nodes(user_config_uuid: str, user_id: str) -> list:
+    """Delete a user from all registered nodes (best-effort)."""
+    results = []
+    async with NODES_LOCK:
+        nodes_to_delete = dict(NODES)
+    if not nodes_to_delete:
+        return results
+    async with USERS_LOCK:
+        node_cfgs = dict((USERS.get(user_id) or {}).get("node_configs") or {})
+    for nid, node in nodes_to_delete.items():
+        base = _node_base_url(node.get("domain", ""))
+        key = str(node.get("api_key") or "")
+        if not base or not key:
+            continue
+        try:
+            ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0))
+            r = await ac.delete(f"{base}/api/users/{user_config_uuid}", headers={"X-API-Key": key})
+            if r.status_code in (200, 204):
+                results.append({"node_id": nid, "ok": True})
+                # Remove local config reference
+                if nid in node_cfgs:
+                    del node_cfgs[nid]
+            else:
+                results.append({"node_id": nid, "ok": False, "error": f"HTTP {r.status_code}"})
+            await ac.aclose()
+        except Exception as exc:
+            results.append({"node_id": nid, "ok": False, "error": str(exc)[:80]})
+    if node_cfgs != (USERS.get(user_id) or {}).get("node_configs"):
+        async with USERS_LOCK:
+            u = USERS.get(user_id)
+            if u:
+                u["node_configs"] = node_cfgs
+    return results
 
 
 def _node_public_view(node_id: str, node: dict) -> dict:
@@ -4570,31 +4791,68 @@ def _node_public_view(node_id: str, node: dict) -> dict:
         "node_id": node_id,
         "name": node.get("name") or node.get("domain") or node_id,
         "domain": node.get("domain", ""),
-        "api_key_masked": (key[:6] + "…" + key[-4:]) if len(key) > 12 else ("•" * len(key)),
-        "added_at": node.get("added_at"),
-        "last_status": node.get("last_status", "unknown"),
-        "last_checked": node.get("last_checked"),
+        "api_key_masked": _mask_api_key(key),
+        "country": node.get("country", ""),
+        "country_code": node.get("country_code", ""),
+        "country_flag": node.get("country_flag", ""),
+        "public_ip": node.get("public_ip", ""),
+        "status": node.get("status", "unknown"),
+        "last_seen": node.get("last_seen"),
+        "last_sync": node.get("last_sync"),
         "latency_ms": node.get("latency_ms"),
-        "remote_host": node.get("remote_host", ""),
-        "remote_ip": node.get("remote_ip", ""),
-        "remote_flag": node.get("remote_flag", ""),
-        "remote_users": node.get("remote_users", 0),
-        "error": node.get("error", ""),
+        "last_error": node.get("last_error", ""),
+        "enabled_inbound_count": 0,
     }
 
+
+def _get_panel_api_key() -> str:
+    """Get current panel API key from SETTINGS."""
+    return str(SETTINGS.get("panel_api_key") or "")
+
+
+async def _find_managed_default_tls_ws_on_node(node: dict) -> dict | None:
+    """Try to find the managed default TLS+WS inbound on a remote node."""
+    base = _node_base_url(node.get("domain", ""))
+    key = str(node.get("api_key") or "")
+    if not base or not key:
+        return None
+    try:
+        ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0))
+        r = await ac.get(f"{base}/api/inbounds", headers={"X-API-Key": key})
+        if r.status_code == 200:
+            data = r.json() or {}
+            inbounds = data.get("inbounds", data.get("data", []))
+            if isinstance(inbounds, list):
+                for ib in inbounds:
+                    name = str(ib.get("name") or "").lower()
+                    proto = str(ib.get("protocol") or "").lower()
+                    net = str(ib.get("network") or "").lower()
+                    sec = str(ib.get("security") or "").lower()
+                    if ("tls" in name and "ws" in name) or (proto == "vless" and net == "ws" and sec == "tls"):
+                        await ac.aclose()
+                        return dict(ib)
+        await ac.aclose()
+    except Exception:
+        pass
+    return None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# NODE API ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/api/nodes")
 async def list_nodes(_=Depends(require_auth)):
     async with NODES_LOCK:
         snap = dict(NODES)
     nodes = [_node_public_view(nid, n) for nid, n in snap.items()]
-    nodes.sort(key=lambda x: x.get("added_at") or "", reverse=True)
+    nodes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
     return {"nodes": nodes}
 
 
 @app.post("/api/nodes")
 async def add_node(request: Request, _=Depends(require_auth)):
-    """Register a remote SpiderPanel node and probe it immediately."""
+    """Register a remote SpiderPanel node with verification via /api/server-info."""
     body = await request.json()
     domain = str(body.get("domain") or "").strip()
     api_key = str(body.get("api_key") or "").strip()
@@ -4603,20 +4861,31 @@ async def add_node(request: Request, _=Depends(require_auth)):
         raise HTTPException(status_code=400, detail="دامنه نود الزامی است")
     if not api_key:
         raise HTTPException(status_code=400, detail="API Key نود الزامی است")
+    # Verify key starts with spdr_
+    if not api_key.startswith("spdr_"):
+        raise HTTPException(status_code=400, detail="API Key باید با spdr_ شروع شود")
+    # Check for duplicate domain
     base = _node_base_url(domain)
-    node_id = secrets.token_hex(6)
+    async with NODES_LOCK:
+        for nid, node in NODES.items():
+            if node.get("domain") == base:
+                raise HTTPException(status_code=409, detail="این نود قبلاً اضافه شده است")
+    node_id = _generate_node_id()
+    # Verify the node before saving
+    probe = await _verify_node({
+        "domain": base,
+        "api_key": api_key,
+        "name": name,
+    })
     node = {
         "name": name or base.replace("https://", "").split("/")[0],
         "domain": base,
         "api_key": api_key,
+        "node_id": node_id,
         "added_at": datetime.now().isoformat(),
-        "last_status": "unknown",
-        "last_checked": None,
-        "latency_ms": None,
-        "error": "",
+        "created_at": datetime.now().isoformat(),
+        **probe,
     }
-    probe = await _probe_node(node)
-    node.update(probe)
     async with NODES_LOCK:
         NODES[node_id] = node
     asyncio.create_task(save_state())
@@ -4624,15 +4893,88 @@ async def add_node(request: Request, _=Depends(require_auth)):
     return {"ok": True, "node": _node_public_view(node_id, node)}
 
 
-@app.post("/api/nodes/{node_id}/check")
-async def check_node(node_id: str, _=Depends(require_auth)):
-    """Re-probe one node's reachability and report its status."""
+@app.patch("/api/nodes/{node_id}")
+async def update_node(node_id: str, request: Request, _=Depends(require_auth)):
+    """Update node metadata (name only; domain/api_key require re-verification)."""
+    body = await request.json()
     async with NODES_LOCK:
         node = NODES.get(node_id)
         if not node:
             raise HTTPException(status_code=404, detail="نود پیدا نشد")
         node = dict(node)
-    probe = await _probe_node(node)
+    if "name" in body:
+        new_name = str(body["name"]).strip()[:60]
+        if new_name:
+            node["name"] = new_name
+    if "domain" in body or "api_key" in body:
+        # Re-verify if domain or api_key changes
+        new_domain = str(body.get("domain", node.get("domain", ""))).strip()
+        new_key = str(body.get("api_key", node.get("api_key", ""))).strip()
+        if new_domain != node.get("domain") or new_key != node.get("api_key"):
+            if not new_domain or not new_key:
+                raise HTTPException(status_code=400, detail="domain و api_key الزامی است")
+            if not new_key.startswith("spdr_"):
+                raise HTTPException(status_code=400, detail="API Key باید با spdr_ شروع شود")
+            probe = await _verify_node({"domain": new_domain, "api_key": new_key})
+            if probe["status"] == "offline" and probe["last_error"]:
+                raise HTTPException(status_code=400, detail=probe["last_error"])
+            node.update(probe)
+        node["domain"] = _node_base_url(new_domain)
+        node["api_key"] = new_key
+    async with NODES_LOCK:
+        NODES[node_id] = node
+    asyncio.create_task(save_state())
+    return {"ok": True, "node": _node_public_view(node_id, node)}
+
+
+@app.delete("/api/nodes/{node_id}")
+async def delete_node(node_id: str, _=Depends(require_auth)):
+    """Delete a node and cleanup orphan remote users."""
+    async with NODES_LOCK:
+        node = NODES.pop(node_id, None)
+    if not node:
+        raise HTTPException(status_code=404, detail="نود پیدا نشد")
+    # Clean up node_ids from inbounds
+    async with INBOUNDS_LOCK:
+        for ib in INBOUNDS.values():
+            ids = ib.get("node_ids")
+            if isinstance(ids, list) and node_id in ids:
+                ids.remove(node_id)
+    # Clean up node_configs from users and attempt remote deletion
+    async with USERS_LOCK:
+        orphan_nodes = []
+        for uid, user in USERS.items():
+            cfgs = user.get("node_configs")
+            if isinstance(cfgs, dict) and node_id in cfgs:
+                cuuid = user.get("config_uuid", "")
+                if cuuid:
+                    orphan_nodes.append((uid, cuuid))
+                cfgs.pop(node_id, None)
+    # Attempt to delete users from remote node (best-effort)
+    base = _node_base_url(node.get("domain", ""))
+    key = str(node.get("api_key") or "")
+    for uid, cuuid in orphan_nodes:
+        try:
+            ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0))
+            if cuuid:
+                await ac.delete(f"{base}/api/users/{cuuid}", headers={"X-API-Key": key})
+            await ac.aclose()
+        except Exception:
+            pass
+    asyncio.create_task(save_state())
+    log_activity("node", f"نود «{node.get('name', node_id)}» حذف شد", "warn")
+    return {"ok": True, "deleted": node_id, "cleaned_up_users": len(orphan_nodes)}
+
+
+@app.post("/api/nodes/{node_id}/refresh")
+async def refresh_node(node_id: str, _=Depends(require_auth)):
+    """Manually refresh node status by calling /api/server-info on the remote."""
+    async with NODES_LOCK:
+        node = NODES.get(node_id)
+        if not node:
+            raise HTTPException(status_code=404, detail="نود پیدا نشد")
+        node = dict(node)
+    probe = await _verify_node(node)
     async with NODES_LOCK:
         if node_id in NODES:
             NODES[node_id].update(probe)
@@ -4641,89 +4983,380 @@ async def check_node(node_id: str, _=Depends(require_auth)):
     return {"ok": True, "node": _node_public_view(node_id, node)}
 
 
-@app.delete("/api/nodes/{node_id}")
-async def delete_node(node_id: str, _=Depends(require_auth)):
+@app.get("/api/nodes/{node_id}/health")
+async def node_health(node_id: str, _=Depends(require_auth)):
+    """Get health status of a node."""
     async with NODES_LOCK:
-        node = NODES.pop(node_id, None)
-    if not node:
-        raise HTTPException(status_code=404, detail="نود پیدا نشد")
-    # Drop the node from any inbound that had it selected.
-    async with INBOUNDS_LOCK:
-        for _ib in INBOUNDS.values():
-            ids = _ib.get("node_ids")
-            if isinstance(ids, list) and node_id in ids:
-                ids.remove(node_id)
-    asyncio.create_task(save_state())
-    log_activity("node", f"نود «{node.get('name', node_id)}» حذف شد", "err")
-    return {"ok": True, "deleted": node_id}
+        node = NODES.get(node_id)
+        if not node:
+            raise HTTPException(status_code=404, detail="نود پیدا نشد")
+        node = dict(node)
+    probe = await _verify_node(node)
+    return {"ok": True, **probe}
 
 
 @app.post("/api/nodes/sync-all")
 async def sync_all_nodes(_=Depends(require_auth)):
-    """Trigger sync of all inbounds AND users to all configured nodes."""
+    """Trigger sync of users to all configured nodes."""
     async with NODES_LOCK:
         nodes = list(NODES.items())
     if not nodes:
         return {"ok": True, "synced": 0}
-    sent = await sync_inbounds_to_nodes(nodes)
+    total = 0
     async with USERS_LOCK:
-        users_to_sync = [(uid, u) for uid, u in USERS.items() if u.get("inbound_ids", []) and "Node" in u.get("inbound_ids", [])]
-    if users_to_sync:
-        results = []
-        for nid, node in nodes:
-            base = _node_base_url(node.get("domain", ""))
-            key = str(node.get("api_key") or "")
-            if not base or not key:
-                continue
-            for uid, u in users_to_sync:
-                try:
-                    results.append(await sync_user_to_nodes(uid, u, "Node", [nid]))
-                except Exception:
-                    pass
-    return {"ok": True, "synced": sent}
+        users = [(uid, u) for uid, u in USERS.items() if u.get("config_uuid") and (u.get("inbound_ids") or [])]
+    for nid, node in nodes:
+        base = _node_base_url(node.get("domain", ""))
+        key = str(node.get("api_key") or "")
+        if not base or not key:
+            continue
+        for uid, u in users:
+            try:
+                result = await _sync_single_user_to_node(uid, u, [nid])
+                total += result.get("sent", 0)
+            except Exception:
+                pass
+        # Refresh node status after sync
+        probe = await _verify_node(node)
+        async with NODES_LOCK:
+            if nid in NODES:
+                NODES[nid].update(probe)
+    return {"ok": True, "synced": total}
 
 
-async def _probe_node(node: dict) -> dict:
-    """Ask a remote panel for its identity — proves domain + API key both work."""
-    base = _node_base_url(node.get("domain", ""))
-    key = str(node.get("api_key") or "")
-    started = time.time()
-    out = {
-        "last_checked": datetime.now().isoformat(),
-        "last_status": "offline",
-        "latency_ms": None,
-        "remote_host": "",
-        "remote_ip": "",
-        "remote_flag": "",
-        "remote_users": 0,
-        "error": "",
-    }
-    if not base or not key:
-        out["error"] = "domain/api_key خالی است"
-        return out
+async def _sync_single_user_to_node(user_id: str, user: dict, node_ids: list) -> dict:
+    """Sync a single user to selected nodes. Returns counts."""
+    results = []
+    async with NODES_LOCK:
+        targets = {nid: dict(NODES[nid]) for nid in node_ids if nid in NODES}
+    if not targets:
+        return {"sent": 0, "failed": 0}
+    origin = SETTINGS.get("domain") or get_host()
+    for nid, node in targets.items():
+        base = _node_base_url(node.get("domain", ""))
+        key = str(node.get("api_key") or "")
+        if not base or not key:
+            continue
+        try:
+            ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=8.0))
+            payload = {
+                "username": user.get("username"),
+                "config_uuid": user.get("config_uuid"),
+                "traffic_limit_bytes": user.get("traffic_limit_bytes", 0),
+                "expire_at": user.get("expire_at"),
+                "concurrent_connections": user.get("concurrent_connections", 0),
+                "status": user.get("status", "active"),
+                "path": f"/ws/{user.get('config_uuid')}",
+                "from_node": origin,
+            }
+            r = await ac.post(f"{base}/api/node/sync-user", json=payload, headers={"X-API-Key": key})
+            remote_json = r.json() if r.status_code == 200 else {}
+            if r.status_code == 200 and remote_json.get("config"):
+                async with USERS_LOCK:
+                    local_user = USERS.get(user_id)
+                    if local_user is not None:
+                        node_cfgs = dict(local_user.get("node_configs") or {})
+                        node_cfgs[nid] = remote_json["config"]
+                        local_user["node_configs"] = node_cfgs
+                results.append({"node_id": nid, "ok": True, "sent": 1})
+            else:
+                results.append({"node_id": nid, "ok": False, "failed": 1})
+            await ac.aclose()
+        except Exception as exc:
+            results.append({"node_id": nid, "ok": False, "error": str(exc)[:80]})
+    sent = sum(1 for r in results if r.get("ok"))
+    failed = sum(1 for r in results if not r.get("ok"))
+    return {"sent": sent, "failed": failed}
+
+
+def _selected_node_ids_for_user(user: dict) -> list[str]:
+    """Get all unique node IDs selected across user's inbounds."""
+    inbound_ids = list(user.get("inbound_ids") or [])
+    selected = set()
+    for iid in inbound_ids:
+        async def _gather():
+            ib = INBOUNDS.get(iid)
+            if ib:
+                for nid in (ib.get("node_ids") or []):
+                    selected.add(str(nid).strip())
+        try:
+            import asyncio as _aio
+            _aio.run(_gather())
+        except Exception:
+            pass
+    return list(selected)
+
+
+async def _reconcile_node_selections() -> dict:
+    """Reconcile all per-user node configs based on inbound selections.
+
+    This is called when the Node inbound selection changes.
+    For each user:
+    - Determine which nodes are selected (union across all inbounds)
+    - Generate/update configs for selected nodes
+    - Remove configs for deselected nodes
+    - Sync users to newly selected nodes
+    - Delete users from deselected nodes
+    """
     try:
-        ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(12.0, connect=6.0))
-        r = await ac.get(f"{base}/api/node/identity", headers={"X-Node-Key": key})
-        out["latency_ms"] = round((time.time() - started) * 1000)
-        if r.status_code == 401:
-            out["error"] = "API Key نامعتبر است"
-            return out
-        if r.status_code != 200:
-            out["error"] = f"پاسخ {r.status_code}"
-            return out
-        info = r.json() or {}
-        out["last_status"] = "online"
-        out["remote_host"] = str(info.get("host") or "")
-        out["remote_ip"] = str(info.get("ip") or "")
-        out["remote_flag"] = str(info.get("flag") or "")
-        out["remote_tls_ws"] = dict(info.get("default_tls_ws") or {})
-        out["remote_users"] = int(info.get("users") or 0)
-        # Backfill the node name the first time we learn the real host.
-        if not node.get("name") or node.get("name") == base.replace("https://", "").split("/")[0]:
-            out["name"] = out["remote_host"] or node.get("name") or ""
+        async with INBOUNDS_LOCK:
+            ib = dict(INBOUNDS.get("Node") or {})
+            if not ib or not ib.get("system"):
+                return
+            selected = [str(n).strip() for n in (ib.get("node_ids") or []) if str(n).strip()]
+        async with NODES_LOCK:
+            nodes = {nid: dict(NODES[nid]) for nid in selected if nid in NODES}
+        async with USERS_LOCK:
+            users = [(uid, dict(u)) for uid, u in USERS.items()
+                     if "Node" in list(u.get("inbound_ids") or [])]
+
+        for uid, snapshot in users:
+            new_cfgs = {}
+            for nid, node in nodes.items():
+                cfg = remote_node_config(node, snapshot, f"Node-{node.get('name') or nid}")
+                if cfg:
+                    new_cfgs[nid] = cfg
+            # Also keep existing configs for nodes still in selection
+            existing = dict(snapshot.get("node_configs") or {})
+            for k, v in existing.items():
+                if k not in new_cfgs:
+                    new_cfgs[k] = v
+            async with USERS_LOCK:
+                current = USERS.get(uid)
+                if current is not None:
+                    current["node_configs"] = new_cfgs
+                    snapshot = dict(current)
+            if nodes:
+                try:
+                    await _sync_single_user_to_node(uid, snapshot, list(nodes.keys()))
+                except Exception as exc:
+                    logger.warning("node sync failed for user %s: %s", uid, exc)
+
+        await save_state()
     except Exception as exc:
-        out["error"] = str(exc)[:160]
-    return out
+        logger.warning("reconcile_node_selections failed: %s", exc)
+
+
+@app.post("/api/inbounds/{inbound_id}/sync-nodes")
+async def sync_inbound_nodes(inbound_id: str, _=Depends(require_auth)):
+    """Push every user on this inbound out to the nodes selected on it."""
+    async with INBOUNDS_LOCK:
+        ib = INBOUNDS.get(inbound_id)
+        if not ib:
+            raise HTTPException(status_code=404, detail="inbound not found")
+        node_ids = [n for n in (ib.get("node_ids") or []) if n]
+    if not node_ids:
+        raise HTTPException(status_code=400, detail="هیچ نودی روی این اینباند انتخاب نشده")
+
+    async with NODES_LOCK:
+        targets = {nid: dict(NODES[nid]) for nid in node_ids if nid in NODES}
+    if not targets:
+        raise HTTPException(status_code=400, detail="نودهای انتخاب‌شده معتبر نیستند")
+
+    async with USERS_LOCK:
+        users = [
+            dict(u, user_id=uid)
+            for uid, u in USERS.items()
+            if inbound_id in ((u.get("inbound_ids") or ([u.get("inbound_id")] if u.get("inbound_id") else [])))
+        ]
+
+    origin = SETTINGS.get("domain") or get_host()
+    results = []
+    for nid, node in targets.items():
+        sent, failed = 0, []
+        base = _node_base_url(node.get("domain", ""))
+        key = str(node.get("api_key") or "")
+        for u in users:
+            payload = {
+                "username": u.get("username"),
+                "config_uuid": u.get("config_uuid"),
+                "traffic_limit_bytes": u.get("traffic_limit_bytes", 0),
+                "expire_at": u.get("expire_at"),
+                "concurrent_connections": u.get("concurrent_connections", 0),
+                "status": u.get("status", "active"),
+                "path": f"/ws/{u.get('config_uuid')}",
+                "from_node": origin,
+            }
+            try:
+                ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=8.0))
+                r = await ac.post(f"{base}/api/node/sync-user", json=payload, headers={"X-API-Key": key})
+                if r.status_code == 200:
+                    sent += 1
+                    try:
+                        remote_json = r.json() or {}
+                        if remote_json.get("config"):
+                            async with USERS_LOCK:
+                                local_uid = u.get("user_id")
+                                local_user = USERS.get(local_uid)
+                                if local_user is not None:
+                                    node_cfgs = dict(local_user.get("node_configs") or {})
+                                    node_cfgs[nid] = remote_json["config"]
+                                    local_user["node_configs"] = node_cfgs
+                    except Exception:
+                        pass
+                else:
+                    failed.append(f"{u.get('username')}: HTTP {r.status_code}")
+                await ac.aclose()
+            except Exception as exc:
+                failed.append(f"{u.get('username')}: {str(exc)[:80]}")
+        probe = await _verify_node(node)
+        async with NODES_LOCK:
+            if nid in NODES:
+                NODES[nid].update(probe)
+        results.append({
+            "node_id": nid,
+            "name": node.get("name") or node.get("domain"),
+            "sent": sent,
+            "failed": failed,
+            "status": probe.get("status"),
+        })
+
+    asyncio.create_task(save_state())
+    log_activity("node", f"سینک {len(users)} کاربر روی {len(targets)} نود انجام شد", "ok")
+    return {"ok": True, "users": len(users), "results": results}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# EXISTING NODE HANDLER ENDPOINTS (for backward compatibility with remote nodes)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/node/identity")
+async def node_identity(request: Request):
+    """Public handshake endpoint: a peer panel presents our panel_api_key as
+    X-API-Key and gets back this panel's host/ip/flag + user count.
+    """
+    key = request.headers.get("X-API-Key") or request.query_params.get("key") or ""
+    async with SETTINGS_LOCK:
+        expected = _get_panel_api_key()
+    if not key or not expected or not secrets.compare_digest(key, expected):
+        raise HTTPException(status_code=401, detail="invalid node key")
+    host = SETTINGS.get("domain") or get_host()
+    ident = await _node_identity(host)
+    async with USERS_LOCK:
+        users = len(USERS)
+    default_iid = find_default_tls_ws_inbound_id()
+    default_ib = dict(INBOUNDS.get(default_iid, {})) if default_iid else {}
+    return {
+        "ok": True, "host": host, "ip": ident.get("ip", ""), "flag": ident.get("flag", ""),
+        "users": users, "version": "2.0",
+        "default_tls_ws": {
+            "id": default_iid or "", "name": default_ib.get("name", ""),
+            "domain": default_ib.get("domain") or host,
+            "port": default_ib.get("port") or 443,
+            "external_port": default_ib.get("external_port") or 443,
+            "network": default_ib.get("network", "ws"),
+            "security": default_ib.get("security", "tls"),
+        },
+    }
+
+
+@app.get("/api/node/ping")
+async def node_ping(request: Request):
+    """Public latency probe used by a peer panel to measure RTT."""
+    key = request.headers.get("X-API-Key") or request.query_params.get("key") or ""
+    async with SETTINGS_LOCK:
+        expected = _get_panel_api_key()
+    if not key or not expected or not secrets.compare_digest(key, expected):
+        raise HTTPException(status_code=401, detail="invalid node key")
+    return {"ok": True, "t": time.time()}
+
+
+@app.get("/api/node/users/{username}")
+async def node_get_user(username: str, request: Request):
+    """Let a peer panel read back the sync state it previously pushed."""
+    key = request.headers.get("X-API-Key") or request.query_params.get("key") or ""
+    async with SETTINGS_LOCK:
+        expected = _get_panel_api_key()
+    if not key or not expected or not secrets.compare_digest(key, expected):
+        raise HTTPException(status_code=401, detail="invalid node key")
+    async with USERS_LOCK:
+        for uid, u in USERS.items():
+            if u.get("username") == username:
+                return {
+                    "ok": True,
+                    "user_id": uid,
+                    "username": username,
+                    "config_uuid": u.get("config_uuid", ""),
+                    "status": u.get("status", "active"),
+                    "from_node": u.get("from_node", ""),
+                }
+    raise HTTPException(status_code=404, detail="user not found")
+
+
+@app.post("/api/node/sync-user")
+async def node_sync_user(request: Request):
+    """Receive a user pushed by a peer panel with the same config_uuid."""
+    key = request.headers.get("X-API-Key") or request.query_params.get("key") or ""
+    async with SETTINGS_LOCK:
+        expected = _get_panel_api_key()
+    if not key or not expected or not secrets.compare_digest(key, expected):
+        raise HTTPException(status_code=401, detail="invalid node key")
+
+    body = await request.json()
+    username = str(body.get("username") or "").strip()[:40]
+    config_uuid = str(body.get("config_uuid") or "").strip()
+    if not username or not config_uuid:
+        raise HTTPException(status_code=400, detail="username و config_uuid الزامی است")
+
+    traffic_limit_bytes = int(body.get("traffic_limit_bytes") or 0)
+    expire_at = body.get("expire_at")
+    concurrent = int(body.get("concurrent_connections") or 0)
+    from_node = str(body.get("from_node") or "").strip()
+    path = str(body.get("path") or "").strip()
+    relay_inbound_id = find_default_tls_ws_inbound_id()
+    relay_inbound = INBOUNDS.get(relay_inbound_id, {}) if relay_inbound_id else {}
+    if not relay_inbound_id or not is_default_tls_ws_inbound(relay_inbound):
+        raise HTTPException(status_code=503, detail=f"{DEFAULT_TLS_WS_INBOUND_NAME} not found")
+    path = f"/ws/{config_uuid}"
+
+    async with USERS_LOCK:
+        target_uid = next(
+            (uid for uid, u in USERS.items() if u.get("config_uuid") == config_uuid),
+            None,
+        )
+        if target_uid is None:
+            target_uid = generate_short_id()
+        existing = USERS.get(target_uid, {})
+        USERS[target_uid] = {
+            **existing,
+            "username": username,
+            "protocol": "vless",
+            "traffic_limit_bytes": traffic_limit_bytes,
+            "traffic_used_bytes": existing.get("traffic_used_bytes", 0),
+            "expire_at": expire_at,
+            "concurrent_connections": concurrent,
+            "created_at": existing.get("created_at") or datetime.now().isoformat(),
+            "status": str(body.get("status") or "active"),
+            "server": "node-sync",
+            "config_uuid": config_uuid,
+            "subscription_uuid": existing.get("subscription_uuid") or secrets.token_urlsafe(16),
+            "sni": "", "path": path, "transport_type": "ws",
+            "inbound_id": relay_inbound_id, "inbound_ids": [relay_inbound_id],
+            "relay_inbound_id": relay_inbound_id, "from_node": from_node,
+            "synced_at": datetime.now().isoformat(),
+        }
+        LINKS.setdefault(config_uuid, {})
+        LINKS[config_uuid].update({
+            "label": username,
+            "limit_bytes": traffic_limit_bytes,
+            "created_at": USERS[target_uid]["created_at"],
+            "active": USERS[target_uid]["status"] == "active",
+            "expires_at": expire_at,
+            "note": f"نود: {from_node or 'unknown'}",
+            "is_default": False,
+            "sub_id": None,
+            "protocol": "vless-ws", "path": path, "user_id": target_uid,
+            "inbound_id": relay_inbound_id, "relay_enabled": True,
+            "relay_inbound_id": relay_inbound_id,
+        })
+    _rebuild_path_index()
+    asyncio.create_task(save_state())
+    node_user = dict(USERS[target_uid])
+    node_cfg = generate_user_config(target_uid, node_user, relay_inbound_id)
+    log_activity("node", f"کاربر «{username}» از نود {from_node or '?'} سینک شد", "ok")
+    return {"ok": True, "user_id": target_uid, "config_uuid": config_uuid,
+            "inbound_id": relay_inbound_id, "inbound_name": DEFAULT_TLS_WS_INBOUND_NAME,
+            "config": node_cfg}
 
 
 async def _node_identity(host: str) -> dict:
@@ -5636,56 +6269,39 @@ async def node_sync_user(request: Request):
             "config": node_cfg}
 
 
-async def sync_user_to_nodes(user_id: str, user: dict, primary_inbound_id: str, node_ids: list) -> dict:
-    """Sync a single newly-created user to all selected nodes on Inbound 'Node'."""
-    results = []
-    async with NODES_LOCK:
-        targets = {nid: dict(NODES[nid]) for nid in node_ids if nid in NODES}
-    if not targets:
-        return {"skipped": True, "reason": "no valid nodes"}
-    origin = SETTINGS.get("domain") or get_host()
-    for nid, node in targets.items():
-        base = _node_base_url(node.get("domain", ""))
-        key = str(node.get("api_key") or "")
-        try:
-            ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=8.0))
-            payload = {
-                "username": user.get("username"),
-                "config_uuid": user.get("config_uuid"),
-                "traffic_limit_bytes": user.get("traffic_limit_bytes", 0),
-                "expire_at": user.get("expire_at"),
-                "concurrent_connections": user.get("concurrent_connections", 0),
-                "status": user.get("status", "active"),
-                "path": f"/ws/{user.get('config_uuid')}",
-                "from_node": origin,
-            }
-            r = await ac.post(f"{base}/api/node/sync-user", json=payload, headers={"X-Node-Key": key})
-            remote_json = r.json() if r.status_code == 200 else {}
-            probe = await _probe_node(node)
-            async with NODES_LOCK:
-                if nid in NODES:
-                    NODES[nid].update(probe)
-            if r.status_code == 200 and remote_json.get("config"):
-                async with USERS_LOCK:
-                    local_user = USERS.get(user_id)
-                    if local_user is not None:
-                        node_cfgs = dict(local_user.get("node_configs") or {})
-                        node_cfgs[nid] = remote_json["config"]
-                        local_user["node_configs"] = node_cfgs
-            results.append({
-                "node_id": nid, "name": node.get("name") or node.get("domain"),
-                "ok": r.status_code == 200, "status": probe.get("last_status"),
-                "config": remote_json.get("config", "") if r.status_code == 200 else "",
-            })
-        except Exception as exc:
-            results.append({
-                "node_id": nid,
-                "name": node.get("name") or node.get("domain"),
-                "ok": False,
-                "error": str(exc)[:80],
-                "status": "error",
-            })
-    return {"ok": True, "results": results}
+async def refresh_node_inbound_configs(inbound_id: str = "Node"):
+    """Reconcile all per-user configs for the Node selector inbound.
+
+    Selection is authoritative: every selected node gets a config on that
+    node's exact remote «پیش‌فرض TLS + WS» inbound, and deselected nodes are
+    removed from the user's node_configs map.
+    """
+    try:
+        async with INBOUNDS_LOCK:
+            ib = dict(INBOUNDS.get(inbound_id) or {})
+            if not ib or not ib.get("system"):
+                return
+            selected = [str(n).strip() for n in (ib.get("node_ids") or []) if str(n).strip()]
+        async with NODES_LOCK:
+            nodes = {nid: dict(NODES[nid]) for nid in selected if nid in NODES}
+        async with USERS_LOCK:
+            users = [(uid, dict(u)) for uid, u in USERS.items()
+                     if inbound_id in list(u.get("inbound_ids") or [])]
+
+        for uid, snapshot in users:
+            new_cfgs = {}
+            for nid, node in nodes.items():
+                cfg = remote_node_config(node, snapshot, f"Node-{node.get('name') or nid}")
+                if cfg:
+                    new_cfgs[nid] = cfg
+            async with USERS_LOCK:
+                current = USERS.get(uid)
+                if current is not None:
+                    current["node_configs"] = new_cfgs
+
+        await save_state()
+    except Exception as exc:
+        logger.warning("refresh_node_inbound_configs failed: %s", exc)
 
 
 @app.post("/api/inbounds/{inbound_id}/sync-nodes")
