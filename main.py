@@ -412,8 +412,9 @@ USER_IP_MAP: dict = defaultdict(set)  # user_id → set of IPs used
 USER_IP_MAP_LOCK = asyncio.Lock()
 
 # ── Cloudflare Worker manager ──────────────────────────────────────────────
-# Railway hosts the control plane; worker traffic flows Client → Worker → target.
-# The Cloudflare API token remains server-side. Worker is single-location.
+# Railway only hosts the panel; user traffic flows Client → Worker → Proxy IP.
+# The API token lives ONLY here (server-side, persisted to /data state), never
+# sent to the frontend. `proxies` maps a country code → {country, proxy, port}.
 WORKER: dict = {
     "connected": False,
     "account_id": "",
@@ -441,9 +442,13 @@ WORKER: dict = {
     "worker_users_online": 0,
     "worker_traffic_bytes": 0,
     "worker_user_count": 0,
+    "proxies": {},
     "last_sync": "",
     "last_error": "",
+    "source_url": "https://raw.githubusercontent.com/NiREvil/vless/main/sub/ProxyIP-Daily.md",
     "auto_sync": True,
+    "sync_error": "",
+    "sync_count": 0,
     # Tunnel: dedicated KV + inbound (user → Railway → Worker → site)
     "tunnel_kv_namespace_id": "",
     "tunnel_kv_namespace_title": "",
@@ -456,6 +461,7 @@ WORKER: dict = {
 }
 WORKER_LOCK = asyncio.Lock()
 # Serialize source syncs (hourly loop + manual button can't overlap).
+WORKER_SYNC_LOCK = asyncio.Lock()
 
 # ── Telegram Proxy Instances ────────────────────────────────────────────────
 # Maps inbound_id → MTProtoProxyServer instance
@@ -876,14 +882,15 @@ async def startup():
         _wdom_now = _worker_safe_domain(WORKER.get("worker_domain"))
         if not has_worker and _wdom_now:
             INBOUNDS["default-worker"] = {
-                "name": "Worker",
+                "name": "Worker (Multi-Location)",
                 "protocol": "worker",
                 "port": 443,
                 "network": "ws",
                 "security": "tls",
                 "domain": _wdom_now,
                 "external_domain": _wdom_now,
-                "sni": _wdom_now,
+                "sni": "www.hcaptcha.com",
+                "spoof_ip": "8.6.112.4",
                 "external_port": 443,
                 "fingerprint": "chrome",
                 "reality_settings": {},
@@ -1051,23 +1058,6 @@ async def startup():
     if WORKER.get("connected"):
         await _ensure_worker_inbound()
 
-    # Worker migration: single-location only. Remove legacy multi-location/source state.
-    async with WORKER_LOCK:
-        for _k in ("proxies", "source_url", "sync_error", "sync_count"):
-            WORKER.pop(_k, None)
-        WORKER.setdefault("auto_sync", True)
-    for _iid, _ib in INBOUNDS.items():
-        if (_ib.get("protocol") or "").lower() == "worker":
-            _ib["name"] = "Worker"
-            _ib["sni"] = _worker_safe_domain(WORKER.get("worker_domain")) or _ib.get("sni") or ""
-            _ib.pop("spoof_ip", None)
-            _ib.pop("proxy_pool", None)
-            _ib.pop("countries", None)
-    for _uid, _u in USERS.items():
-        if _user_uses_worker_inbound(_u):
-            _cuuid = _u.get("config_uuid") or _uid
-            _u["path"] = f"/ws/{_cuuid}"
-
     # User path migration: each user's path must match their WS inbound. A user
     # who has a WS (or worker) inbound must have path /ws/{config_uuid} so the
     # FastAPI relay (/ws/{uuid}) can tunnel it. Old users created when reality
@@ -1104,6 +1094,7 @@ async def startup():
     global xhttp_router
     # router is already defined in this module
     app.include_router(router)
+    asyncio.create_task(_worker_proxy_sync_loop())
     asyncio.create_task(_worker_auto_sync_loop())
     asyncio.create_task(_xray_client_audit_loop())
 
@@ -1232,6 +1223,30 @@ async def _sync_tg_traffic(user_id: str, nbytes: int):
     except Exception:
         pass
 
+
+# Worker proxy source sync — hourly pull from the daily GitHub list and push to
+# the deployed Cloudflare Worker (Railway is the control plane; the Worker gets
+# a fresh country → proxy map without the user doing anything).
+WORKER_SYNC_INTERVAL = int(os.environ.get("WORKER_SYNC_INTERVAL", 3600))  # seconds
+
+
+async def _worker_proxy_sync_loop():
+    """Background loop: every hour, if the worker is connected and auto-sync is
+    on, fetch the daily proxy source, parse it into country → proxy and re-deploy
+    the worker. Failures are recorded and retried next tick."""
+    # First tick quickly so the panel starts with fresh proxies.
+    await asyncio.sleep(30)
+    while True:
+        try:
+            if WORKER.get("connected"):
+                if WORKER.get("auto_sync"):
+                    await _sync_worker_proxies_from_source()
+                # Worker owns runtime traffic counters; pull them back to Railway
+                # so the panel dashboard/subscription always reflects reality.
+                await _worker_pull_all_users()
+        except Exception as e:
+            logger.warning(f"worker sync failed: {e}")
+        await asyncio.sleep(min(WORKER_SYNC_INTERVAL, 30))
 
 WORKER_AUTO_SYNC_INTERVAL = int(os.environ.get("WORKER_AUTO_SYNC_INTERVAL", 300))  # seconds
 
@@ -1614,7 +1629,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             addr_ip, addr_port = addr, "443"
         addr_ip, addr_port = addr_ip.strip(), addr_port.strip()
 
-    ## WORKER (single-location via Cloudflare Worker)
+    # ── WORKER (multi-location via Cloudflare Worker) ──
     if proto == "worker":
         wcfgs = _worker_configs(user_id, user, inbound, "", remark_tag, addr_ip, addr_port)
         if wcfgs:
@@ -1919,9 +1934,8 @@ def _worker_configs(user_id: str, user: dict, inbound: dict, stored_path: str, b
     cfg_uuid = user.get("config_uuid", "")
     uname = user.get("username", user_id)
 
-    # Worker config: single-location exact path. Persist it on the panel user too.
+    # Worker config: simple path /ws/{uuid}
     wpath = f"/ws/{cfg_uuid}"
-    user["path"] = wpath
     address = addr_ip if addr_ip else wdomain
     port = addr_port if addr_port else wport
     rem = quote(f"Spider-{uname}")
@@ -3519,7 +3533,6 @@ async def list_users(_=Depends(require_auth)):
 async def create_user(request: Request, _=Depends(require_auth)):
     """Create a new user with protocol config, traffic limit, and expiry."""
     body = await request.json()
-    logger.info("Create user request received: inbound_ids=%s username=%s", body.get("inbound_ids"), body.get("username"))
     _raw_name = (body.get("username") or "").strip()[:40]
     _auto_name = not _raw_name
     username = _raw_name or f"user-{secrets.token_hex(3)}"
@@ -3542,20 +3555,8 @@ async def create_user(request: Request, _=Depends(require_auth)):
     inbound_ids = [str(x).strip() for x in raw_ids if str(x).strip()]
     if inbound_id and inbound_id not in inbound_ids:
         inbound_ids.insert(0, inbound_id)
-    if not inbound_ids:
-        raise HTTPException(
-            status_code=400,
-            detail="Select at least one inbound. No inbound is selected.",
-        )
-    inbound_id = inbound_ids[0]
-
-    # Reject stale/unknown inbound ids before creating the user.
-    _unknown_inbounds = [iid for iid in inbound_ids if iid not in INBOUNDS]
-    if _unknown_inbounds:
-        raise HTTPException(
-            status_code=400,
-            detail="Unknown inbound: " + ", ".join(_unknown_inbounds),
-        )
+    if inbound_ids:
+        inbound_id = inbound_ids[0]
     proxy_ip = str(body.get("proxy_ip") or "").strip()
     proxy_ips = [str(x).strip() for x in (body.get("proxy_ips") or []) if str(x).strip()][:3]
     # Cloudflare Worker routing: when enabled + worker connected, the user's
@@ -7653,7 +7654,7 @@ async def scan_railway_ips(_=Depends(require_auth)):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CLOUDFLARE PAGES WORKER MANAGER — single-location relay via Cloudflare Pages Advanced Mode
+# CLOUDFLARE PAGES WORKER MANAGER — multi-location proxy via Cloudflare Pages Advanced Mode
 # Traffic: Client → Worker Domain → Cloudflare Worker → Selected Proxy IP → Internet
 # Railway only hosts the panel/API; it is NOT in the VPN data path.
 # ══════════════════════════════════════════════════════════════════════════════
@@ -7753,13 +7754,20 @@ def _worker_public() -> dict:
         "worker_user_count": int(WORKER.get("worker_user_count") or 0),
         "last_sync": WORKER.get("last_sync", ""),
         "last_error": WORKER.get("last_error", ""),
+        "source_url": WORKER.get("source_url", ""),
         "auto_sync": bool(WORKER.get("auto_sync", True)),
+        "sync_error": WORKER.get("sync_error", ""),
+        "sync_count": int(WORKER.get("sync_count", 0)),
         "token_link": CF_TOKEN_LINK,
         "tunnel_enabled": bool(WORKER.get("tunnel_enabled", False)),
         "tunnel_kv_namespace_id": WORKER.get("tunnel_kv_namespace_id", ""),
         "tunnel_kv_namespace_title": WORKER.get("tunnel_kv_namespace_title", ""),
         "reverse_kv_namespace_id": WORKER.get("reverse_kv_namespace_id", ""),
         "reverse_kv_namespace_title": WORKER.get("reverse_kv_namespace_title", ""),
+        "proxies": [
+            {"code": code, **dict(p)}
+            for code, p in sorted((WORKER.get("proxies") or {}).items())
+        ],
     }
 
 
@@ -8143,8 +8151,9 @@ async def _worker_sync_users() -> dict:
                             "limit_bytes": limit,
                             "expire": deadline,
                             "used_bytes": int(u.get("traffic_used_bytes") or 0),
+                            "proxy_ip": "",
                             "concurrent_connections": int(u.get("concurrent_connections") or 0),
-                            "path": f"/ws/{cuuid}",
+                            "countries": [],
                         },
                     )
                 if r.status_code in (200, 204):
@@ -8223,31 +8232,21 @@ async def _ensure_worker_inbound() -> bool:
         wid = next((i for i, ib in INBOUNDS.items() if (ib.get("protocol") or "").lower() == "worker"), None)
         if wid:
             ib = INBOUNDS[wid]
-            if ib.get("name") != "Worker":
-                ib["name"] = "Worker"
-                changed = True
             if (ib.get("domain") or "") != wdom or (ib.get("external_domain") or "") != wdom:
                 ib["domain"] = wdom
                 ib["external_domain"] = wdom
                 changed = True
-            if ib.get("sni") != wdom:
-                ib["sni"] = wdom
-                changed = True
-            if "spoof_ip" in ib:
-                ib.pop("spoof_ip", None)
-                changed = True
-            ib.pop("proxy_pool", None)
-            ib.pop("countries", None)
         else:
             INBOUNDS["default-worker"] = {
-                "name": "Worker",
+                "name": "Worker (Multi-Location)",
                 "protocol": "worker",
                 "port": 443,
                 "network": "ws",
                 "security": "tls",
                 "domain": wdom,
                 "external_domain": wdom,
-                "sni": _wdom_now,
+                "sni": "www.hcaptcha.com",
+                "spoof_ip": "8.6.112.4",
                 "external_port": 443,
                 "fingerprint": "chrome",
                 "reality_settings": {},
@@ -8297,7 +8296,7 @@ async def _worker_push_config() -> dict:
                 "expire": deadline,
                 "used_bytes": int(u.get("traffic_used_bytes") or 0),
                 "concurrent_connections": int(u.get("concurrent_connections") or 0),
-                "path": f"/ws/{cuuid}",
+                "countries": [],
                 "disabled": (u.get("status") or "active") != "active",
             })
     try:
@@ -8358,9 +8357,174 @@ async def _worker_pull_status() -> dict:
             WORKER["remote_status"] = "unreachable"
         return {"ok": False, "detail": str(e)}
 
+async def _worker_control_update() -> dict:
+    """Keep worker KV synchronized (no multi-location anymore)."""
+    domain = str(WORKER.get("worker_domain") or "").strip().lower()
+    ctrl = str(WORKER.get("control_token") or "")
+    if not domain or not ctrl or domain in ("localhost", "0.0.0.0", "127.0.0.1"):
+        return {"ok": False, "detail": "worker not connected / no control token"}
+    # Single-location worker - no routes to sync
+    try:
+        # Single-location worker - nothing to sync
+        return {"ok": True, "detail": "no multi-location to sync"}
+    except Exception as e:
+        return {"ok": False, "detail": str(e)}
+
+
+# ── Daily proxy source sync ──────────────────────────────────────────────────
+# Source file format (ProxyIP-Daily.md by NiREvil):
+#   ## 🇩🇪 Germany (517 proxies)      ← flag emoji encodes the ISO code
+#   <details><summary>...</summary>
+#   | IP | ISP | Location | Risk Score |
+#   | <pre><code>94.141.123.243</code></pre> | ISP | Hesse, Frankfurt | badge |
+# ISP-grouped sections (Google/Amazon/…) have no flag → skipped.
+_FLAG_RE = re.compile(r"^##\s*([\U0001F1E6-\U0001F1FF]{2})\s*([^\s(][^()]*?)\s*\(\d+\s*proxies\)")
+_IPCELL_RE = re.compile(r"<pre><code>\s*((?:\d{1,3}\.){3}\d{1,3}|[a-z0-9.-]+\.[a-z]{2,})\s*</code></pre>", re.I)
+# A few sections show only a bare code (e.g. "AD") instead of a full name.
+_CODE_NAME = {
+    "AD": "Andorra", "BA": "Bosnia & Herzegovina", "BD": "Bangladesh",
+    "DO": "Dominican Republic", "IS": "Iceland", "KG": "Kyrgyzstan", "SY": "Syria",
+}
+
+
+def _flag_to_code(flag: str) -> str:
+    """Decode a flag emoji (regional indicators) into an ISO 3166-1 alpha-2 code."""
+    cps = [ord(c) for c in flag]
+    if len(cps) < 2 or not all(0x1F1E6 <= c <= 0x1F1FF for c in cps):
+        return ""
+    return "".join(chr(0x41 + (c - 0x1F1E6)) for c in cps)
+
+
+def _code_to_flag(code: str) -> str:
+    """Encode an ISO 3166-1 alpha-2 code into a flag emoji."""
+    code = str(code or "").strip().upper()
+    if len(code) != 2 or not code.isalpha():
+        return ""
+    return chr(0x1F1E6 + (ord(code[0]) - ord('A'))) + chr(0x1F1E6 + (ord(code[1]) - ord('A')))
+
+
+def _parse_proxy_daily(text: str, limit_per_country: int = 3) -> dict:
+    """Parse the daily markdown into {code: {country, proxy, port}}.
+
+    For each country section the first `limit_per_country` IP cells are kept
+    (rows are sorted best-first by risk score). Only sections with a flag emoji
+    are used; ISP-grouped sections are skipped.
+    """
+    out: dict = {}
+    lines = text.splitlines()
+    i = 0
+    n = len(lines)
+    while i < n:
+        m = _FLAG_RE.match(lines[i].strip())
+        if not m:
+            i += 1
+            continue
+        code = _flag_to_code(m.group(1)).lower()
+        name = (m.group(2) or "").strip()
+        if not code:
+            i += 1
+            continue
+        if len(name) == 2 and name.isupper():
+            name = _CODE_NAME.get(name.upper(), name)
+        # Collect IP cells until the next '## ' section header.
+        picked: list[str] = []
+        j = i + 1
+        while j < n:
+            line = lines[j].strip()
+            if line.startswith("## ") or line.startswith("---"):
+                break
+            if line.startswith("|") and "<pre><code>" in line:
+                cell = _IPCELL_RE.search(line)
+                if cell and cell.group(1) not in picked:
+                    picked.append(cell.group(1))
+                    if len(picked) >= limit_per_country:
+                        break
+            j += 1
+        if picked:
+            out[code] = {
+                "country": name or code.upper(),
+                "proxy": picked[0],
+                "port": 443,
+                "proxies": picked,
+            }
+        i = j
+    return out
+
+
+async def _fetch_proxy_daily(url: str) -> str:
+    """Fetch the daily proxy markdown, preferring the raw GitHub URL."""
+    url = str(url or "").strip()
+    if not url:
+        raise ValueError("منبع پروکسی تنظیم نشده است")
+    # GitHub blob page → raw URL so we get the file, not HTML.
+    m = re.match(r"^https://github\.com/([^/]+)/([^/]+)/blob/(.+)$", url)
+    if m:
+        url = f"https://raw.githubusercontent.com/{m.group(1)}/{m.group(2)}/{m.group(3)}"
+    async with httpx.AsyncClient(timeout=40, follow_redirects=True) as client:
+        r = await client.get(url)
+    if r.status_code != 200:
+        raise ValueError(f"دریافت منبع ناموفق بود (HTTP {r.status_code})")
+    return r.text
+
+
+async def _sync_worker_proxies_from_source() -> dict:
+    """Fetch + parse the daily proxy source and push it to the deployed worker.
+
+    Returns a summary dict. Under WORKER_SYNC_LOCK so the hourly loop and the
+    manual button never run concurrently.
+    """
+    async with WORKER_SYNC_LOCK:
+        source_url = WORKER.get("source_url", "")
+        try:
+            text = await _fetch_proxy_daily(source_url)
+            parsed = _parse_proxy_daily(text)
+            if not parsed:
+                raise ValueError("در منبع، کشوری پیدا نشد (قالب تغییر کرده؟)")
+            async with WORKER_LOCK:
+                # Merge: entries manually added/edited in the panel (manual=True)
+                # survive the source refresh, so admin edits are never wiped out.
+                manual = {
+                    code: p for code, p in (WORKER.get("proxies") or {}).items()
+                    if p.get("manual")
+                }
+                parsed.update(manual)
+                WORKER["proxies"] = parsed
+                WORKER["sync_count"] = int(WORKER.get("sync_count", 0)) + 1
+            deploy_ok = True
+            if WORKER.get("connected"):
+                sc, sd = await _worker_deploy()
+                deploy_ok = sc in (200, 201, 409)
+                if not deploy_ok:
+                    raise ValueError((sd.get("errors") or [{}])[0].get("message", "deploy failed"))
+                # After deploy, tell the worker the new map via its admin API.
+                await _worker_control_update()
+            # Keep the default Worker inbound pointed at the worker domain.
+            await _ensure_worker_inbound()
+            async with WORKER_LOCK:
+                WORKER["last_sync"] = now_ir().isoformat(timespec="seconds")
+                WORKER["sync_error"] = ""
+                WORKER["last_error"] = ""
+            asyncio.create_task(save_state())
+            log_activity("worker", f"پروکسی‌های Worker از منبع بروزرسانی شد ({len(parsed)} کشور)", "ok")
+            return {
+                "ok": True,
+                "countries": len(parsed),
+                "count": sum(len(v.get("proxies") or [v.get("proxy")]) for v in parsed.values()),
+                "deployed": deploy_ok,
+            }
+        except Exception as e:
+            msg = str(e)
+            async with WORKER_LOCK:
+                WORKER["sync_error"] = msg
+                WORKER["last_error"] = msg
+            asyncio.create_task(save_state())
+            logger.warning(f"worker proxy sync failed: {msg}")
+            return {"ok": False, "error": msg}
+
+
 @app.get("/api/worker")
 async def worker_get(_=Depends(require_auth)):
-    """Worker status (token is never exposed)."""
+    """Worker status + proxy map (token is never exposed)."""
     async with WORKER_LOCK:
         return {"ok": True, **_worker_public()}
 
@@ -8455,6 +8619,7 @@ async def worker_setup(request: Request, _=Depends(require_auth)):
 
     ctrl_res = await _worker_push_config()
     if not ctrl_res.get("ok"):
+        await _worker_control_update()
         await _worker_sync_users()
 
     await _worker_pull_all_users()
@@ -8485,6 +8650,7 @@ async def worker_sync(_=Depends(require_auth)):
         # Prefer the single remote-control push; fall back to per-user sync.
         push = await _worker_push_config()
         if not push.get("ok"):
+            await _worker_control_update()
             await _worker_sync_users()
         await _worker_pull_all_users()
         await _ensure_worker_inbound()
@@ -8501,14 +8667,150 @@ async def worker_sync(_=Depends(require_auth)):
     return out
 
 
+@app.post("/api/worker/sync-source")
+async def worker_sync_source(_=Depends(require_auth)):
+    """Fetch the daily proxy source now, update the pool and re-deploy."""
+    res = await _sync_worker_proxies_from_source()
+    if not res.get("ok"):
+        return JSONResponse(status_code=400, content={"ok": False, "error": res.get("error")})
+    async with WORKER_LOCK:
+        return {"ok": True, **_worker_public(), "sync": res}
+
+
+@app.post("/api/worker/settings")
+async def worker_settings(request: Request, _=Depends(require_auth)):
+    """Update worker source URL / auto-sync preference."""
+    body = await request.json()
+    async with WORKER_LOCK:
+        if "source_url" in body:
+            src = str(body["source_url"] or "").strip()
+            if src:
+                WORKER["source_url"] = src
+        if "auto_sync" in body:
+            WORKER["auto_sync"] = bool(body["auto_sync"])
+        out = {"ok": True, **_worker_public()}
+    asyncio.create_task(save_state())
+    return out
+
+
+@app.post("/api/worker/heartbeat")
+async def worker_heartbeat(_=Depends(require_auth)):
+    """Ping the worker's /panel/status and refresh remote counters (traffic,
+    online users, user count). Called by the UI on a timer."""
+    if not WORKER.get("connected"):
+        raise HTTPException(status_code=400, detail="worker is not connected")
+    res = await _worker_pull_status()
+    async with WORKER_LOCK:
+        out = {"ok": bool(res.get("ok")), "detail": res.get("detail", ""), **_worker_public()}
+    return out
+
+@app.delete("/api/worker")
+async def worker_disconnect(_=Depends(require_auth)):
+    """Remove the worker connection (keeps nothing sensitive)."""
+    async with WORKER_LOCK:
+        WORKER.clear()
+        WORKER.update({
+            "connected": False,
+            "account_id": "",
+            "worker_name": "",
+            "worker_domain": "",
+            "worker_url": "",
+            "pages_project_name": "",
+            "pages_project_id": "",
+            "pages_url": "",
+            "token": "",
+            "kv_namespace_id": "",
+            "kv_namespace_title": "",
+            "remote_status": "",
+            "last_heartbeat": "",
+            "worker_users_online": 0,
+            "worker_traffic_bytes": 0,
+            "worker_user_count": 0,
+            "proxies": {},
+            "last_sync": "",
+            "last_error": "",
+            "source_url": "https://raw.githubusercontent.com/NiREvil/vless/main/sub/ProxyIP-Daily.md",
+            "auto_sync": True,
+            "sync_error": "",
+            "sync_count": 0,
+        })
+    asyncio.create_task(save_state())
+    log_activity("worker", "Worker قطع شد", "warn")
+    return {"ok": True}
+
+
+@app.post("/api/worker/proxies")
+async def worker_add_proxy(request: Request, _=Depends(require_auth)):
+    """Add or update a proxy country entry, then re-deploy the worker."""
+    body = await request.json()
+    code = str(body.get("code") or "").strip().lower()
+    country = str(body.get("country") or "").strip()
+    proxy = str(body.get("proxy") or "").strip()
+    port = int(body.get("port") or 443)
+    if not code or not country or not proxy:
+        raise HTTPException(status_code=400, detail="code, country and proxy are required")
+    if not re.fullmatch(r"[a-z0-9_-]{1,16}", code):
+        raise HTTPException(status_code=400, detail="invalid country code (a-z0-9_-)")
+    async with WORKER_LOCK:
+        (WORKER.setdefault("proxies", {}))[code] = {"country": country, "proxy": proxy, "port": max(1, min(65535, port)), "manual": True}
+    if WORKER.get("connected"):
+        await worker_sync(None)
+    else:
+        asyncio.create_task(save_state())
+    async with WORKER_LOCK:
+        return {"ok": True, **_worker_public()}
+
+
+@app.delete("/api/worker/proxies/{code}")
+async def worker_del_proxy(code: str, _=Depends(require_auth)):
+    """Remove a proxy country entry and re-deploy."""
+    async with WORKER_LOCK:
+        (WORKER.get("proxies") or {}).pop(code.lower(), None)
+    if WORKER.get("connected"):
+        await worker_sync(None)
+    else:
+        asyncio.create_task(save_state())
+    async with WORKER_LOCK:
+        return {"ok": True, **_worker_public()}
+
+
+@app.get("/api/worker/locations")
+async def worker_locations(_=Depends(require_auth)):
+    """Location status list for the Map tab. Prefers live data from the worker."""
+    async with WORKER_LOCK:
+        if WORKER.get("connected") and WORKER.get("worker_url"):
+            try:
+                async with httpx.AsyncClient(timeout=12) as client:
+                    r = await client.get(f"{WORKER['worker_url']}/api/locations")
+                if r.status_code == 200:
+                    return {"ok": True, "locations": r.json()}
+            except Exception:
+                pass
+            return {"ok": True, "locations": [
+                {"country": p.get("country"), "code": c, "proxy": p.get("proxy"),
+                 "port": p.get("port", 443), "status": "online", "ping": 0}
+                for c, p in (WORKER.get("proxies") or {}).items()
+            ]}
+    return {"ok": True, "locations": []}
+
+
 @app.get("/api/worker/inbounds")
 async def worker_inbounds(_=Depends(require_auth)):
+    """Return worker inbounds with their country options for user creation modal."""
     async with INBOUNDS_LOCK:
-        out=[]
+        worker_inbounds = []
         for iid, ib in INBOUNDS.items():
             if (ib.get("protocol") or "").lower() == "worker":
-                out.append({"inbound_id": iid, "name": ib.get("name", "Worker"), "domain": ib.get("domain", ""), "path": "/ws/{uuid}"})
-    return {"ok": True, "inbounds": out}
+                worker_inbounds.append({
+                    "inbound_id": iid,
+                    "name": ib.get("name", "Worker"),
+                    "domain": ib.get("domain", ""),
+                    "countries": [
+                        {"code": c, "country": p.get("country", c.upper())}
+                        for c, p in (WORKER.get("proxies") or {}).items()
+                    ]
+                })
+    return {"ok": True, "inbounds": worker_inbounds}
 
 
 # ══════════════════════════════════════════════════════════════════════════════

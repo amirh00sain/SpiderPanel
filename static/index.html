@@ -1078,7 +1078,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
         <div class="panel">
           <div class="panel-h" style="justify-content:space-between">
             <span class="glow" data-i18n="tab.users">مدیریت کاربران</span>
-            <button type="button" class="btn btn-p" onclick="openCreateUser(); return false;">
+            <button class="btn btn-p" onclick="openCreateUser()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span data-i18n="newUser">کاربر جدید</span>
             </button>
@@ -1238,6 +1238,24 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
           <div class="spd-acc" style="margin-top:10px">
             <button type="button" class="spd-acc-head" onclick="spdToggleAcc('worker-main',this)" aria-expanded="false"><span class="spd-acc-title"><strong data-i18n="workerMainTitle">Worker</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
             <div class="spd-acc-body" id="acc-worker-main">
+
+          <!-- DAILY PROXY SOURCE (always available) -->
+          <div class="panel-h" style="margin-top:2px;border-top:1px solid var(--border);padding-top:14px">
+            <span class="glow" data-i18n="proxySource">منبع پروکسی روزانه</span>
+            <span id="wk-source-count" class="badge badge-g" style="margin-right:auto"></span>
+          </div>
+          <div class="set-row">
+            <span class="set-lbl" data-i18n="autoSyncHourly">بروزرسانی خودکار (ساعتی)</span>
+            <button type="button" class="ios-switch" id="wk-auto" onclick="workerToggleAuto()" data-i18n-title="autoSyncHourly" title="بروزرسانی خودکار ساعتی"></button>
+          </div>
+          <div class="set-row" style="border-bottom:none;flex-wrap:wrap;gap:6px">
+            <button class="btn btn-p btn-sm" onclick="workerSyncSource()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
+              <span data-i18n="updateNow">بروزرسانی از منبع</span>
+            </button>
+            <span id="wk-source-status" style="font-size:11px;color:var(--txt2);width:100%"></span>
+          </div>
+
           <!-- SETUP (not connected) -->
           <div id="worker-setup">
             <div class="scn-hint px-hint" data-i18n="workerSetupTip">پنل را به Cloudflare متصل کنید تا یک پروژه Pages اختصاصی ساخته شود، worker.js داخل آن Deploy شود و یک KV اختصاصی به آن متصل شود.</div>
@@ -1506,7 +1524,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
 <!-- CREATE USER -->
 <div class="modal" id="mod-user"><div class="modal-c" style="max-width:680px">
   <div class="modal-t"><span class="glow" data-i18n="createUser">ایجاد کاربر جدید</span></div>
-  <form onsubmit="submitCreateUser(event); return false;">
+  <form onsubmit="submitCreateUser(event)">
     <div class="f-r">
       <div class="f-g"><label data-i18n="username">نام کاربری</label><input type="text" id="cu-name" placeholder="خالی = تصادفی"></div>
       <div class="f-g"><label data-i18n="conn">اتصال همزمان</label><input type="number" id="cu-conn" placeholder="∞ نامحدود"></div>
@@ -1524,7 +1542,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
     </div>
     <div class="modal-btns">
       <button type="button" class="btn btn-g" onclick="closeModal('mod-user')"><span data-i18n="cancel">انصراف</span></button>
-      <button type="button" class="btn btn-p" id="cu-submit" onclick="submitCreateUser(event)"><span data-i18n="submitUser">ایجاد کاربر</span></button>
+      <button type="submit" class="btn btn-p" id="cu-submit"><span data-i18n="submitUser">ایجاد کاربر</span></button>
     </div>
   </form>
 </div></div>
@@ -1687,7 +1705,7 @@ var LANG = localStorage.getItem('spider-lang') || 'fa';
 var I18N = {
   fa: {
     'dash': 'داشبورد', 'navGroup': 'مدیریت', 'advanced': 'پیشرفته', 'networkTotal': 'مجموع ارسال + دریافت', 'users': 'کاربران', 'inbounds': 'اینباندها', 'scanner': 'اسکنر IP', 'worker': 'Worker', 'settings': 'تنظیمات', 'contact': 'Contact Me', 'logout': 'خروج',
-    'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک پروژه Pages اختصاصی ساخته شود، worker.js داخل آن Deploy شود و یک KV اختصاصی به آن متصل شود.', 'cfToken': 'Cloudflare API Token', 'getToken': 'گرفتن توکن', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت ریموت', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'Pages Project', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف Worker', 'workerUrl': 'Worker URL', 'lastSync': 'آخرین Sync', 'lastError': 'آخرین خطا', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال Sync...', 'synced': 'Sync شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Pages با مسیر /ws/{uuid} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'یک پروژه Pages جدید با نام تصادفی (spider-xxxxxx) و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
+    'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک پروژه Pages اختصاصی ساخته شود، worker.js داخل آن Deploy شود و یک KV اختصاصی به آن متصل شود.', 'cfToken': 'Cloudflare API Token', 'getToken': 'گرفتن توکن', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت ریموت', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'Pages Project', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف Worker', 'workerUrl': 'Worker URL', 'lastSync': 'آخرین Sync', 'lastError': 'آخرین خطا', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'افزودن کشور', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'noProxyYet': 'هنوز کشوری اضافه نکرده‌اید', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال Sync...', 'synced': 'Sync شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'proxyCodePrompt': 'کد کشور (مثلا de):', 'proxyCountryPrompt': 'نام کشور:', 'proxyHostPrompt': 'آدرس Proxy IP (مثلا de.example.com):', 'proxyPortPrompt': 'پورت Proxy IP:', 'proxySaved': 'کشور ذخیره و Worker بروزرسانی شد', 'confirmDelProxy': 'این کشور حذف شود؟', 'proxyDeleted': 'کشور حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Pages با مسیر /ws/{uuid} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'یک پروژه Pages جدید با نام تصادفی (spider-xxxxxx) و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
     'tab.dash': 'داشبورد', 'tab.users': 'مدیریت کاربران', 'tab.inbounds': 'مدیریت اینباندها', 'tab.scanner': 'اسکنر آی‌پی', 'tab.settings': 'تنظیمات',
     'inboundFixedHint': 'فقط اینباندهای پیش‌فرض پنل استفاده می‌شوند. WS/TLS به‌صورت خودکار با دامنه اصلی پنل آماده است؛ Reality را با دامنه و پورت خودتان تکمیل کنید (کلید pbk به‌صورت خودکار ساخته می‌شود).', 'inboundFixed': 'افزودن اینباند غیرفعال است — فقط اینباندهای پیش‌فرض.', 'inboundAuto': 'این اینباند خودکار است و نیازی به تنظیم ندارد.',
     'newUser': 'کاربر جدید', 'newInbound': 'اینباند جدید', 'domain': 'دامنه',
@@ -1706,7 +1724,7 @@ var I18N = {
     'createUser': 'ایجاد کاربر جدید', 'editUser': 'ویرایش کاربر', 'username': 'نام کاربری', 'conn': 'اتصال همزمان', 'volume': 'حجم', 'unit': 'واحد', 'expire': 'اعتبار', 'day': 'روز', 'month': 'ماه',
     'inboundsMulti': 'اینباندها (چندتایی)', 'noInboundOpt': 'اینباندی وجود ندارد',
     'inboundPickHint': 'برای هر اینباند، گزینه‌های مخصوصش نمایش داده می‌شود: Worker → انتخاب کشور؛ VLESS غیرپیش‌فرض → Cloudflare و Railway؛ Reality → بدون گزینه.',
-    
+    'workerCountries': 'کشورهای چندمنطقه‌ای (برای هر کشور یک تیک فعال کنید):',
     'addCfIps': 'افزودن ۱۰ کانفیگ با IPهای Cloudflare اسکن‌شده',
     'addRailwayIps': 'افزودن ۱۰ کانفیگ با IPهای Railway اسکن‌شده',
     'realityNoExtra': 'Reality گزینه اضافه‌ای ندارد — فقط کانفیگ اصلی Reality.',
@@ -1748,7 +1766,7 @@ var I18N = {
   },
   en: {
     'dash': 'Dashboard', 'navGroup': 'Management', 'advanced': 'Advanced', 'networkTotal': 'Total sent + received', 'users': 'Users', 'inbounds': 'Inbounds', 'scanner': 'IP Scanner', 'worker': 'Worker', 'settings': 'Settings', 'contact': 'Contact Me', 'logout': 'Logout',
-    'workerSetupTip': 'Connect the panel to Cloudflare to create a dedicated Pages project, deploy worker.js, and attach a private KV namespace automatically.', 'cfToken': 'Cloudflare API Token', 'getToken': 'Get Token', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Pages Project', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'Worker URL', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Pages Worker domain with the /ws/{uuid} path.', 'workerAutoName': 'A dedicated Pages project is created with a random name (spider-xxxxxx) and its own dedicated KV — no project name is needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
+    'workerSetupTip': 'Connect the panel to Cloudflare to create a dedicated Pages project, deploy worker.js, and attach a private KV namespace automatically.', 'cfToken': 'Cloudflare API Token', 'getToken': 'Get Token', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Pages Project', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'Worker URL', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'Add Country', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'noProxyYet': 'No country added yet', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'proxyCodePrompt': 'Country code (e.g. de):', 'proxyCountryPrompt': 'Country name:', 'proxyHostPrompt': 'Proxy IP host (e.g. de.example.com):', 'proxyPortPrompt': 'Proxy IP port:', 'proxySaved': 'Country saved, worker updated', 'confirmDelProxy': 'Delete this country?', 'proxyDeleted': 'Country deleted', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Pages Worker domain with the /ws/{uuid} path.', 'workerAutoName': 'A dedicated Pages project is created with a random name (spider-xxxxxx) and its own dedicated KV — no project name is needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
     'tab.dash': 'Dashboard', 'tab.users': 'Manage Users', 'tab.inbounds': 'Manage Inbounds', 'tab.scanner': 'IP Scanner', 'tab.settings': 'Settings',
     'inboundFixedHint': 'Only the panel’s default inbounds are used. WS/TLS is ready automatically with the panel’s main domain; fill Reality’s domain & ports yourself (pbk is auto-generated).', 'inboundFixed': 'Adding inbounds is disabled — only the default inbounds.', 'inboundAuto': 'This inbound is automatic — nothing to configure.',
     'newUser': 'New User', 'newInbound': 'New Inbound', 'domain': 'Domain',
@@ -1766,8 +1784,8 @@ var I18N = {
     'contactSub': 'Get in touch with me for support and collaboration',
     'createUser': 'Create New User', 'editUser': 'Edit User', 'username': 'Username', 'conn': 'Concurrent Connections', 'volume': 'Traffic', 'unit': 'Unit', 'expire': 'Expiry', 'day': 'Day', 'month': 'Month',
     'inboundsMulti': 'Inbounds (multi-select)', 'noInboundOpt': 'No inbounds available',
-    'inboundPickHint': 'Each inbound shows its own options: Worker → single location, TLS → scanned-IP switch, Reality → no extra options.',
-    
+    'inboundPickHint': 'Each inbound shows its own options: Worker → choose countries, TLS → scanned-IP switch, Reality → no extra options.',
+    'workerCountries': 'Multi-location countries (tick each country you want):',
     'addCfIps': 'Add 10 configs with scanned Cloudflare IPs',
     'addRailwayIps': 'Add 10 configs with scanned Railway IPs',
     'realityNoExtra': 'Reality needs no extras — only the main Reality config.',
@@ -2131,6 +2149,7 @@ async function loadAll() {
   loadDashboard();
   loadUsers();
   loadInbounds();
+  loadProxyCountries();
   // Keep the worker proxy pool warm so the create-user country dropdowns work
   // even before the Worker tab is opened.
   if (typeof loadWorker === 'function') loadWorker();
@@ -2254,7 +2273,7 @@ function _userAccHead(u, idx) {
   var inboundName = u.inbound_name || (u.inbound_id ? u.inbound_id.substring(0,8) : t('default'));
   return '<button type="button" class="spd-acc-head" onclick="spdToggleAcc(\'ua-' + u.user_id + '\',this)" aria-expanded="false">' +
     '<span class="spd-acc-title"><strong>' + esc(u.username) + '</strong></span>' +
-    '<span class="spd-acc-badges">' + _userStatus(u) + ' <span class="badge badge-b">' + esc(inboundName) + '</span>' + '</span>' +
+    '<span class="spd-acc-badges">' + _userStatus(u) + ' <span class="badge badge-b">' + esc(inboundName) + '</span>' + (u.proxy_country ? ' <span class="badge badge-p">' + esc(u.proxy_country) + '</span>' : '') + '</span>' +
     '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span>' +
   '</button>';
 }
@@ -2300,6 +2319,10 @@ if (window.matchMedia) {
 // ─── User CRUD (SIMPLIFIED) ───
 async function openCreateUser() {
   cuInboundState = { picks: {}, countries: {} };
+  // Refresh worker proxy pool so the country dropdowns are current, then render.
+  if (typeof loadWorker === 'function') {
+    try { await loadWorker(); } catch(e) {}
+  }
   populateInboundSelects();
   $id('cu-name').value = '';
   $id('cu-vol').value = '';
@@ -2311,52 +2334,68 @@ async function openCreateUser() {
 }
 
 async function submitCreateUser(e) {
-  if (e && typeof e.preventDefault === 'function') e.preventDefault();
-  var btn = $id('cu-submit');
-  if (!btn || btn.disabled) return false;
-  btn.disabled = true;
-  btn.textContent = t('creatingUser');
+  e.preventDefault();
+  var btn = $id('cu-submit'); btn.disabled = true; btn.textContent = t('creatingUser');
   var v = parseFloat($id('cu-vol').value) || 0, vu = $id('cu-vol-u').value;
   var ex = parseInt($id('cu-exp').value) || 0, eu = $id('cu-exp-u').value;
   var inbound_ids = selectedInboundIds();
-  // No implicit/default inbound: require the user to explicitly select one or more.
-  if (!inbound_ids.length) {
-    toast('حداقل یک اینباند را انتخاب کنید', 'err');
-    btn.disabled = false; btn.textContent = t('submitUser');
-    return false;
-  }
-  var cuSw = cuCustomStates();
+  // Per-inbound custom-IP switches + worker countries.
+  var cuSw = cuCustomStates();   // { inboundId: {cf:bool, railway:bool} }
+  var cuCountries = cuWorkerCountries();  // { inboundId: [codes] }
   var cfIds = inbound_ids.filter(function(i){ return cuSw[i] && cuSw[i].cf; });
   var rwIds = inbound_ids.filter(function(i){ return cuSw[i] && cuSw[i].railway; });
+  // Aggregate selected countries across ALL worker inbounds so every country
+  // picked in any worker inbound's dropdown produces its own /ws/{uuid} config.
+  var allCountries = [];
+  Object.keys(cuCountries).forEach(function(ibId) {
+    (cuCountries[ibId] || []).forEach(function(c) {
+      if (allCountries.indexOf(c) === -1) allCountries.push(c);
+    });
+  });
+  // The first picked worker inbound becomes the primary (for worker routing).
+  var workerInboundIds = inbound_ids.filter(function(i) {
+    var ib = ALL_IB.find(function(x) { return x.inbound_id === i; });
+    return ib && (ib.protocol || '').toLowerCase() === 'worker';
+  });
+  var primaryWorkerIb = workerInboundIds[0] || Object.keys(cuCountries)[0] || null;
+  var firstCountry = allCountries[0] || '';
   try {
     var r = await api('/api/users', {method: 'POST', body: {
-      username: ($id('cu-name').value || '').trim(),
+      username: $id('cu-name').value,
       traffic_limit_gb: vu === 'GB' ? v : v / 1024,
       expire_days: eu === 'months' ? ex * 30 : ex,
       concurrent_connections: parseInt($id('cu-conn').value) || 0,
       inbound_ids: inbound_ids,
+      proxy_countries: allCountries,
+      proxy_country: firstCountry,
+      proxy_ip_enabled: !!allCountries.length,
+      // Mark which inbounds want scanned custom-IP configs (worker→cf, tls→railway).
       custom_ip_inbounds: { cf: cfIds, railway: rwIds }
     }});
-    toast((r.username || 'User') + ' ' + t('userCreated'), 'ok');
+    toast(r.username + ' ' + t('userCreated'), 'ok');
     closeModal('mod-user');
-    await loadAll();
-  } catch(err) {
-    console.error('create user failed', err);
-    toast(err && err.message ? err.message : t('toast.err'), 'err');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = t('submitUser');
-  }
-  return false;
+    loadAll();
+  } catch(e) { toast(e.message || t('toast.err'), 'err'); }
+  btn.disabled = false; btn.textContent = t('submitUser');
 }
 
 var EU_INBOUND_PICKS = {};
+var EU_COUNTRIES = {};  // inboundId -> { worker: [codes] }
 function renderEditInboundPicker(u) {
   var wrap = $id('eu-inbound');
   if (!wrap) return;
   var cur = u.inbound_ids || (u.inbound_id ? [u.inbound_id] : []);
   EU_INBOUND_PICKS = {};
   cur.forEach(function(i) { EU_INBOUND_PICKS[i] = true; });
+  // Initialize country state from user's existing proxy_countries
+  if (!Object.keys(EU_COUNTRIES).length) {
+    var existingCountries = u.proxy_countries || [];
+    ALL_IB.forEach(function(ib) {
+      if ((ib.protocol || '').toLowerCase() === 'worker') {
+        EU_COUNTRIES[ib.inbound_id] = { worker: existingCountries.slice() };
+      }
+    });
+  }
   var html = '';
   ALL_IB.forEach(function(ib) {
     var id = ib.inbound_id;
@@ -2372,12 +2411,35 @@ function renderEditInboundPicker(u) {
       '<div class="ib-pick-check"><span class="material-symbols-outlined">check</span></div>' +
     '</div>';
     if (selected && type === 'worker') {
-      // Worker is single-location; no country selector.
+      var sel = EU_COUNTRIES[id] || {};
+      var chipHtml = '';
+      (window.cuWorkerProxies ? cuWorkerProxies() : []).forEach(function(p) {
+        var flag = window.cuCodeToFlag ? cuCodeToFlag(p.code) : '';
+        var checked = (sel.worker || []).indexOf(p.code) !== -1 ? ' selected' : '';
+        chipHtml += '<span class="country-tick' + checked + '" data-code="' + esc(p.code) + '" onclick="euPickWorkerCountry(\'' + esc(id) + '\',this)">' +
+          '<span class="ck material-symbols-outlined">check</span>' + flag + ' ' + esc(p.country || p.code) + '</span>';
+      });
+      html += '<div style="flex-basis:100%;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-top:4px">';
+      html += '<div style="font-size:11px;color:var(--txt2);margin-bottom:6px">' + (t('workerCountries') || 'Worker Countries') + '</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;direction:ltr;text-align:left">' + chipHtml + '</div>';
+      html += '</div>';
     }
   });
   wrap.innerHTML = html || '<span style="font-size:11px;color:var(--txt2)">' + t('noInboundOpt') + '</span>';
 }
 
+function euPickWorkerCountry(ibId, el) {
+  el.classList.toggle('selected');
+  var arr = EU_COUNTRIES[ibId] = EU_COUNTRIES[ibId] || {};
+  arr.worker = arr.worker || [];
+  var code = el.getAttribute('data-code');
+  var idx = arr.worker.indexOf(code);
+  if (el.classList.contains('selected')) {
+    if (idx === -1) arr.worker.push(code);
+  } else {
+    if (idx !== -1) arr.worker.splice(idx, 1);
+  }
+}
 function euToggleIbPick(el) {
   var id = el.getAttribute('data-id');
   if (EU_INBOUND_PICKS[id]) delete EU_INBOUND_PICKS[id]; else EU_INBOUND_PICKS[id] = true;
@@ -2390,6 +2452,7 @@ function selectedEditInboundIds() {
 function editUser(uid) {
   var u = ALL_USERS.find(function(x) { return x.user_id === uid; });
   if (!u) return;
+  EU_COUNTRIES = {};
   $id('eu-id').value = uid;
   $id('eu-name').value = u.username || '';
   $id('eu-vol').value = (u.traffic_limit_bytes ? (u.traffic_limit_bytes / 1073741824).toFixed(0) : '0');
@@ -2410,6 +2473,14 @@ async function submitEditUser(e) {
     var saved = localStorage.getItem('spider-spoof-settings');
     if (saved) { var s = JSON.parse(saved); fakeSni = s.fakeSni || ''; spoofIp = s.spoofIp || ''; }
   } catch(e) {}
+  // Collect all selected worker countries from EU_COUNTRIES
+  var allEuCountries = [];
+  Object.keys(EU_COUNTRIES).forEach(function(ibId) {
+    var c = EU_COUNTRIES[ibId] || {};
+    (c.worker || []).forEach(function(code) {
+      if (allEuCountries.indexOf(code) === -1) allEuCountries.push(code);
+    });
+  });
   try {
     await api('/api/users/' + uid, {method: 'PATCH', body: {
       username: $id('eu-name').value,
@@ -2421,7 +2492,8 @@ async function submitEditUser(e) {
       fake_sni: fakeSni,
       spoof_ip: spoofIp,
       inbound_ids: selectedEditInboundIds(),
-
+      proxy_countries: allEuCountries,
+      proxy_country: allEuCountries[0] || ''
     }});
     toast(t('toast.userUpdated'), 'ok');
     closeModal('mod-edit-user');
@@ -2538,9 +2610,12 @@ function renderInbounds() {
 }
 
 function populateInboundSelects() {
-  // Never auto-select an inbound. The user must explicitly choose
-  // exactly the inbound(s) they want for this user.
-  if (!cuInboundState || !cuInboundState.picks) cuInboundState = {picks:{}, countries:{}};
+  // Default-select every inbound so per-inbound options show immediately.
+  if (!Object.keys(cuInboundState.picks).length) {
+    cuInboundState.picks = {};
+    ALL_IB.forEach(function(ib){ cuInboundState.picks[ib.inbound_id] = true; });
+    cuInboundState.countries = {};
+  }
   cuRenderInboundOpts();
 }
 
@@ -2550,9 +2625,12 @@ function toggleIbPick(el) {
 
 function selectedInboundIds() {
   var ids = [];
-  Object.keys(cuInboundState.picks || {}).forEach(function(id) {
+  Object.keys(cuInboundState.picks).forEach(function(id) {
     if (cuInboundState.picks[id]) ids.push(id);
   });
+  if (!ids.length) {
+    document.querySelectorAll('.ib-pick.selected').forEach(function(c){ ids.push(c.getAttribute('data-id')); });
+  }
   return ids;
 }
 
@@ -3049,6 +3127,9 @@ function togglePanelAudio() {
   }).catch(function(){});
 })();
 
+// The old Leaflet map + proxy-IP selector was removed — per-inbound options
+// (worker countries, scanned-IP switches) live inside the create-user modal.
+function loadProxyCountries(){}  // kept as no-op for loadAll()
 
 // ═══ IP SCANNER ═══
 var SCN_CF_RANGES = [];
@@ -3777,7 +3858,7 @@ async function tunnelCreate() {
 }
 
 // ═══ CLOUDFLARE WORKER (proxy manager) ═══
-var WK_STATE = {connected: false};
+var WK_STATE = {connected: false, proxies: []};
 
 async function loadWorker() {
   var setup = $id('worker-setup');
@@ -3817,14 +3898,61 @@ async function loadWorker() {
       var sEl = $id('worker-sync');
       if (sEl) sEl.textContent = w.last_sync || '—';
       var eEl = $id('worker-error');
-      if (eEl) eEl.textContent = w.last_error || '';
+      if (eEl) eEl.textContent = (w.sync_error || w.last_error) || '';
+      renderWorkerProxies();
       workerHeartbeat();
     }
     var autoEl = $id('wk-auto');
     if (autoEl) autoEl.classList.toggle('on', !!w.auto_sync);
+    var cntEl = $id('wk-source-count');
+    if (cntEl) cntEl.textContent = (w.proxies ? w.proxies.length : 0) + ' ' + t('countries');
+    var stEl = $id('wk-source-status');
+    if (stEl) stEl.textContent = (w.sync_count ? t('syncsDone') + ': ' + w.sync_count : '');
   } catch(e) {
     if (badge) { badge.textContent = t('disconnected'); badge.className = 'badge badge-r'; }
   }
+}
+
+// Compact proxy pool: a single country dropdown (with flags) that lists the
+// current worker locations without making the page huge.
+function renderWorkerProxies() {
+  var el = $id('worker-proxies');
+  if (!el) return;
+  var list = WK_STATE.proxies || [];
+  if (!list.length) { el.innerHTML = '<div class="scn-empty" data-i18n="noProxyYet">هنوز کشوری اضافه نکرده‌اید</div>'; return; }
+  var opts = '';
+  list.forEach(function(p) {
+    var flag = cuCodeToFlag(p.code);
+    var ips = (p.proxies && p.proxies.length) ? p.proxies : [p.proxy];
+    opts += '<option value="' + esc(p.code) + '">' + flag + ' ' + esc(p.country || p.code) + ' — ' + esc(ips[0]) + (ips.length > 1 ? ' +' + (ips.length - 1) : '') + '</option>';
+  });
+  el.innerHTML =
+    '<select id="wk-proxy-select" class="f-g" onchange="wkEditSelectedProxy(this)" style="direction:ltr;text-align:left">' +
+      '<option value="">— ' + esc(t('pickCountry')) + ' —</option>' + opts +
+    '</select>' +
+    '<div style="display:flex;gap:6px;margin-top:8px">' +
+      '<button class="btn btn-sm btn-b" onclick="wkEditSelected()">' + esc(t('edit')) + '</button>' +
+      '<button class="btn btn-sm btn-r" onclick="wkDeleteSelected()">' + esc(t('delete')) + '</button>' +
+    '</div>';
+}
+
+function wkSelectedCode() {
+  var s = $id('wk-proxy-select');
+  return s ? s.value : '';
+}
+
+function wkEditSelectedProxy() { /* keep select state; actions read the value */ }
+
+function wkEditSelected() {
+  var code = wkSelectedCode();
+  if (!code) { toast(t('pickCountry'), 'warn'); return; }
+  workerEditProxy(code);
+}
+
+function wkDeleteSelected() {
+  var code = wkSelectedCode();
+  if (!code) { toast(t('pickCountry'), 'warn'); return; }
+  workerDelProxy(code);
 }
 
 async function workerSetup() {
@@ -3883,6 +4011,26 @@ function workerToggleAuto() {
     .catch(function(e){ toast(e.message, 'err'); sw.classList.toggle('on'); });
 }
 
+async function workerSyncSource() {
+  var st = $id('wk-source-status');
+  if (st) st.textContent = t('updatingFromSource') + '...';
+  try {
+    var r = await api('/api/worker/sync-source', {method: 'POST'});
+    if (st) {
+      st.textContent = (r.sync && r.sync.ok)
+        ? t('sourceUpdated') + ': ' + r.sync.countries + ' ' + t('countries') + ' — ' + r.sync.count + ' IP'
+        : t('sourceError');
+      st.style.color = (r.sync && r.sync.ok) ? 'var(--green)' : 'var(--red)';
+    }
+    if (r.sync && r.sync.ok) toast(t('sourceUpdated') + ' ✓', 'ok');
+    else toast(t('sourceError'), 'err');
+    loadWorker();
+  } catch(e) {
+    if (st) { st.textContent = e.message || t('sourceError'); st.style.color = 'var(--red)'; }
+    toast(e.message || t('sourceError'), 'err');
+  }
+}
+
 async function workerDisconnect() {
   if (!confirm(t('confirmRemoveWorker'))) return;
   try {
@@ -3892,6 +4040,47 @@ async function workerDisconnect() {
   } catch(e) { toast(e.message, 'err'); }
 }
 
+function workerAddProxy() {
+  var code = prompt(t('proxyCodePrompt'));
+  if (code === null || !code.trim()) return;
+  code = code.trim().toLowerCase();
+  var country = prompt(t('proxyCountryPrompt'));
+  if (country === null || !country.trim()) return;
+  var proxy = prompt(t('proxyHostPrompt'));
+  if (proxy === null || !proxy.trim()) return;
+  var port = prompt(t('proxyPortPrompt'), '443');
+  workerSaveProxy(code, country, proxy, port, null);
+}
+
+function workerEditProxy(code) {
+  var p = (WK_STATE.proxies || []).find(function(x){ return x.code === code; });
+  if (!p) return;
+  var country = prompt(t('proxyCountryPrompt'), p.country || p.code);
+  if (country === null) return;
+  var proxy = prompt(t('proxyHostPrompt'), p.proxy);
+  if (proxy === null) return;
+  var port = prompt(t('proxyPortPrompt'), String(p.port || 443));
+  workerSaveProxy(code, country, proxy, port, p);
+}
+
+async function workerSaveProxy(code, country, proxy, port, existing) {
+  try {
+    var w = await api('/api/worker/proxies', {method: 'POST', body: {code: code, country: country, proxy: proxy, port: parseInt(port) || 443}});
+    WK_STATE = w;
+    toast(t('proxySaved'), 'ok');
+    loadWorker();
+  } catch(e) { toast(e.message || t('toast.err'), 'err'); }
+}
+
+async function workerDelProxy(code) {
+  if (!confirm(t('confirmDelProxy'))) return;
+  try {
+    var w = await api('/api/worker/proxies/' + encodeURIComponent(code), {method: 'DELETE'});
+    WK_STATE = w;
+    toast(t('proxyDeleted'), 'ok');
+    loadWorker();
+  } catch(e) { toast(e.message, 'err'); }
+}
 
 // ═══ PER-INBOUND CONFIG OPTIONS (create-user modal) ═══
 // For each selected inbound:
@@ -3900,6 +4089,16 @@ async function workerDisconnect() {
 //   - reality → nothing (Reality can't use scanned IPs / proxy)
 //   - worker → the same iOS switch additionally adds 10 Cloudflare scanned-IP configs
 var cuInboundState = { picks: {}, countries: {} };
+var cuWorkerProxyList = (WK_STATE && WK_STATE.proxies) || [];
+function cuWorkerProxies() { return (WK_STATE && WK_STATE.proxies) || cuWorkerProxyList; }
+
+function cuInboundType(ib) {
+  var p = (ib && ib.protocol || '').toLowerCase();
+  if (p === 'worker') return 'worker';
+  if (p === 'telegram') return 'telegram';
+  if (p === 'reality' || (ib && ib.security || '').toLowerCase() === 'reality') return 'reality';
+  return 'tls';
+}
 
 function cuToggleIbPick(el) {
   el.classList.toggle('selected');
@@ -3917,6 +4116,18 @@ function cuToggleIpSwitch(ibId, el) {
   else if (type === 'railway') cuInboundState.countries[ibId].railway = on;
 }
 
+function cuPickWorkerCountries(ibId, el) {
+  el.classList.toggle('selected');
+  var arr = cuInboundState.countries[ibId] = cuInboundState.countries[ibId] || {};
+  arr.worker = arr.worker || [];
+  var code = el.getAttribute('data-code');
+  var idx = arr.worker.indexOf(code);
+  if (el.classList.contains('selected')) {
+    if (idx === -1) arr.worker.push(code);
+  } else {
+    if (idx !== -1) arr.worker.splice(idx, 1);
+  }
+}
 
 function cuCustomStates() {
   var out = {};
@@ -3929,6 +4140,14 @@ function cuCustomStates() {
   return out;
 }
 
+function cuWorkerCountries() {
+  var out = {};
+  Object.keys(cuInboundState.countries || {}).forEach(function(id) {
+    var c = cuInboundState.countries[id] || {};
+    if (c.worker && c.worker.length) out[id] = c.worker;
+  });
+  return out;
+}
 
 function cuRenderInboundOpts() {
   var wrap = $id('cu-inbound');
@@ -3942,16 +4161,31 @@ function cuRenderInboundOpts() {
     var meta = proto + ' · ' + (ib.network || 'ws').toUpperCase() + ' · ' + (ib.security || 'tls').toUpperCase();
     html += '<div class="ib-pick' + (selected ? ' selected' : '') + '" data-id="' + esc(id) + '" onclick="cuToggleIbPick(this)">' +
       '<div class="ib-pick-ic"><span class="material-symbols-outlined">' + (type === 'worker' ? 'bolt' : type === 'reality' ? 'shield' : 'cloud') + '</span></div>' +
-      '<div class="ib-pick-info"><div class="ib-pick-name">' + esc(ib.name) + '</div>' +
-      '<div class="ib-pick-meta">' + esc(meta) + '</div></div>' +
-      '<div class="ib-pick-check"><span class="material-symbols-outlined">check</span></div></div>';
+      '<div class="ib-pick-info">' +
+        '<div class="ib-pick-name">' + esc(ib.name) + '</div>' +
+        '<div class="ib-pick-meta">' + esc(meta) + '</div>' +
+      '</div>' +
+      '<div class="ib-pick-check"><span class="material-symbols-outlined">check</span></div>' +
+    '</div>';
     if (selected) {
       html += '<div class="ib-opts" data-for="' + esc(id) + '" style="flex-basis:100%">';
       if (type === 'worker') {
-        var selw = cuInboundState.countries[id] || {};
-        html += '<div class="px-hint" style="margin:0">Worker — single location · /ws/{uuid}</div>' +
-          '<div class="set-row" style="padding:0;border:none"><span class="set-lbl" style="font-size:11px">' + t('addCfIps') + '</span>' +
-          '<button type="button" class="ios-switch' + (selw.cf ? ' on' : '') + '" data-type="cf" onclick="cuToggleIpSwitch(\'' + esc(id) + '\',this)"></button></div>';
+        var sel = cuInboundState.countries[id] || {};
+        var chipHtml = '';
+        cuWorkerProxies().forEach(function(p) {
+          var flag = window.cuCodeToFlag ? cuCodeToFlag(p.code) : '';
+          var checked = (sel.worker || []).indexOf(p.code) !== -1 ? ' selected' : '';
+          chipHtml += '<span class="country-tick' + checked + '" data-code="' + esc(p.code) + '" onclick="cuPickWorkerCountries(\'' + esc(id) + '\',this)">' +
+            '<span class="ck material-symbols-outlined">check</span>' + flag + ' ' + esc(p.country || p.code) + '</span>';
+        });
+        html += '<div class="set-row" style="padding:0;border:none;flex-wrap:wrap">' +
+          '<span class="set-lbl" style="width:100%">' + t('workerCountries') + '</span>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;direction:ltr;text-align:left">' + chipHtml + '</div>' +
+        '</div>' +
+        '<div class="set-row" style="padding:0;border:none">' +
+          '<span class="set-lbl" style="font-size:11px">' + t('addCfIps') + '</span>' +
+          '<button type="button" class="ios-switch' + (sel.cf ? ' on' : '') + '" data-type="cf" onclick="cuToggleIpSwitch(\'' + esc(id) + '\',this)"></button>' +
+        '</div>';
       } else if (type === 'tls' && (ib.protocol || '').toLowerCase() === 'vless' && !String(id).toLowerCase().startsWith('default')) {
         var selt = cuInboundState.countries[id] || {};
         html += '<div class="set-row" style="padding:0;border:none"><span class="set-lbl" style="font-size:11px">Cloudflare IP</span>' +
