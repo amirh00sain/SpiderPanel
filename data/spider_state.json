@@ -23,7 +23,7 @@
     "bandwidth_limit_mbps": 100,
     "live_monitoring": true,
     "auto_ip_rotation": false,
-    "security_token": "jfE_q8ca761HtI1hG8sD1Q",
+    "security_token": "spdr_O6o2EqA3iyLn3sWgRcYJ0h9zlJHm5UEY",
     "bg_login": "",
     "bg_dashboard": "",
     "bg_sub": "",
@@ -49,7 +49,8 @@
       "scMaxEachPostBytes": "1000000",
       "scMaxBufferedPosts": 30,
       "scStreamUpServerSecs": "20-80"
-    }
+    },
+    "country_flag": "🇩🇪"
   },
   "groups": {},
   "inbounds": {
@@ -106,7 +107,7 @@
       "domain": "localhost",
       "external_domain": "",
       "sni": "",
-      "external_port": "",
+      "external_port": 8081,
       "fingerprint": "chrome",
       "reality_settings": {},
       "xhttp_settings": {},
@@ -151,8 +152,23 @@
     "reverse_kv_namespace_id": "",
     "reverse_kv_namespace_title": ""
   },
-  "nodes": {},
+  "nodes": {
+    "3803db04c641": {
+      "name": "Test Node",
+      "domain": "https://beneficial-radiance-production-051b.up.railway.app/spider",
+      "api_key": "spdr_7i_9ZSy7RLFnTidJ6rhl85e8qAEFyXGw",
+      "added_at": "2026-09-18T10:28:48.674574",
+      "last_status": "offline",
+      "last_checked": "2026-09-18T10:28:48.674584",
+      "latency_ms": 783,
+      "error": "پاسخ 404",
+      "remote_host": "",
+      "remote_ip": "",
+      "remote_flag": "",
+      "remote_users": 0
+    }
+  },
   "password_hash": "fcb3149c23e642e467520646d99c50a045d0a5908fda6468b74fab1e851a08fa",
   "saved_secret": "spider-panel-secret-key-v2",
-  "saved_at": "2026-09-18T09:24:12.033462"
+  "saved_at": "2026-09-18T10:28:49.457964"
 }

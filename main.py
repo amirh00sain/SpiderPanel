@@ -2748,8 +2748,18 @@ async def api_me(request: Request):
     auth = await is_valid_session(request.cookies.get(SESSION_COOKIE))
     ip = await _get_external_ip()
     flag = SETTINGS.get("country_flag") or ""
+    country_name = ""
+    # Auto-detect flag if missing
+    if not flag and ip:
+        try:
+            r = await _node_identity(ip)
+            flag = r.get("flag", "")
+            country_name = r.get("country_name", "")
+            SETTINGS["country_flag"] = flag
+        except Exception:
+            pass
     api_key = SETTINGS.get("security_token") or ""
-    return {"authenticated": auth, "ip": ip, "flag": flag, "api_key": api_key}
+    return {"authenticated": auth, "ip": ip, "flag": flag, "country_name": country_name, "api_key": api_key}
 
 @app.patch("/api/me")
 async def update_api_key(request: Request, token=Depends(require_auth)):
@@ -2758,11 +2768,22 @@ async def update_api_key(request: Request, token=Depends(require_auth)):
     new_key = str(body.get("api_key") or "").strip()
     if not new_key or len(new_key) < 8:
         raise HTTPException(status_code=400, detail="API key must be at least 8 characters")
+    # Auto-prefix if not present
     if not new_key.startswith("spdr_"):
-        raise HTTPException(status_code=400, detail="API key must start with 'spdr_'")
+        new_key = "spdr_" + new_key
     SETTINGS["security_token"] = new_key
     await save_state()
     log_activity("auth", "API key updated", "ok")
+    return {"ok": True, "api_key": new_key}
+
+
+@app.post("/api/me/generate-key")
+async def generate_api_key(_=Depends(require_auth)):
+    """Generate a random API key automatically."""
+    new_key = "spdr_" + secrets.token_urlsafe(24)
+    SETTINGS["security_token"] = new_key
+    await save_state()
+    log_activity("auth", "API key generated", "ok")
     return {"ok": True, "api_key": new_key}
 
 @app.post("/api/change-password")
@@ -4639,13 +4660,27 @@ async def delete_node(node_id: str, _=Depends(require_auth)):
 
 @app.post("/api/nodes/sync-all")
 async def sync_all_nodes(_=Depends(require_auth)):
-    """Trigger sync of all inbounds to all configured nodes."""
+    """Trigger sync of all inbounds AND users to all configured nodes."""
     async with NODES_LOCK:
         nodes = list(NODES.items())
     if not nodes:
         return {"ok": True, "synced": 0}
-    result = await sync_inbounds_to_nodes(nodes)
-    return {"ok": True, "synced": result}
+    sent = await sync_inbounds_to_nodes(nodes)
+    async with USERS_LOCK:
+        users_to_sync = [(uid, u) for uid, u in USERS.items() if u.get("inbound_ids", []) and "Node" in u.get("inbound_ids", [])]
+    if users_to_sync:
+        results = []
+        for nid, node in nodes:
+            base = _node_base_url(node.get("domain", ""))
+            key = str(node.get("api_key") or "")
+            if not base or not key:
+                continue
+            for uid, u in users_to_sync:
+                try:
+                    results.append(await sync_user_to_nodes(uid, u, "Node", [nid]))
+                except Exception:
+                    pass
+    return {"ok": True, "synced": sent}
 
 
 async def _probe_node(node: dict) -> dict:
@@ -4705,7 +4740,7 @@ async def _node_identity(host: str) -> dict:
             flag = _code_to_flag(cc) if cc else ""
     except Exception:
         pass
-    return {"host": host, "ip": ip, "flag": flag}
+    return {"host": host, "ip": ip, "flag": flag, "country_name": cc or ""}
 
 
 _main = None

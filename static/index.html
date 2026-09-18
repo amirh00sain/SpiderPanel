@@ -574,6 +574,12 @@ html[lang="en"] body, html[lang="en"] .sidebar, html[lang="en"] .panel, html[lan
 .btn-g{background:var(--input-bg);color:var(--txt);border:1px solid rgba(255,255,255,.08)}.btn-g:hover{background:var(--nav-bg);color:var(--neon);border-color:var(--border-glow)}
 .btn-r{background:rgba(255,35,82,.1);color:var(--spider-red);border:1px solid rgba(255,35,82,.2)}.btn-r:hover{background:rgba(255,35,82,.2)}
 .btn-gr{background:rgba(22,163,74,.1);color:var(--green);border:1px solid rgba(22,163,74,.2)}.btn-b{background:rgba(68,138,255,.1);color:var(--blue);border:1px solid rgba(68,138,255,.2)}
+[data-theme="light"] .btn-p{color:#000!important}
+[data-theme="light"] .btn-g{color:#000!important}
+[data-theme="light"] .btn-r{color:#c00!important}
+[data-theme="light"] .btn-b{color:#006!important}
+[data-theme="light"] .btn-gr{color:#060!important}
+[data-theme="light"] .btn-glass{color:#000!important}
 .btn-sm{padding:5px 12px;font-size:11px;border-radius:10px}
 .btn-glass{background:rgba(255,255,255,.08);color:var(--txt);border:1px solid rgba(255,255,255,.12);padding:4px 8px;font-size:10px;border-radius:8px}
 .btn-glass:hover{background:rgba(255,255,255,.15);color:var(--neon);border-color:rgba(255,255,255,.25)}
@@ -897,6 +903,10 @@ tr{animation:fadeIn .3s ease}
 [data-theme="light"] .btn-p{background:#000000!important;color:#ffffff!important;box-shadow:0 6px 18px rgba(0,0,0,.18)!important}
 .btn-g,.lang-btn{background:#111111!important;color:#ffffff!important;border:1px solid #2a2a2a!important}
 [data-theme="light"] .btn-g,[data-theme="light"] .lang-btn{background:#ffffff!important;color:#000000!important;border-color:#cfcfcf!important}
+.btn-r{background:rgba(255,35,82,.25)!important;color:#ffffff!important}
+[data-theme="light"] .btn-r{background:rgba(255,35,82,.85)!important}
+.btn-b{background:rgba(68,138,255,.25)!important;color:#ffffff!important}
+[data-theme="light"] .btn-b{background:rgba(68,138,255,.85)!important}
 .nav-item:hover{background:#111111!important;color:#ffffff!important}.nav-item.active{background:#1a1a1a!important;color:#ffffff!important;border-color:#ffffff!important}
 [data-theme="light"] .nav-item:hover{background:#f1f1f1!important;color:#000000!important}.nav-item.active{border-color:#ffffff!important}
 [data-theme="light"] .nav-item.active{background:#eeeeee!important;color:#000000!important;border-color:#000000!important}
@@ -2766,27 +2776,31 @@ function editInbound(iid) {
     if (!nodeWrap) {
       nodeWrap = document.createElement('div');
       nodeWrap.id = 'ib-node-select';
-      nodeWrap.className = 'node-select-wrap';
-      nodeWrap.innerHTML = '<div class="divider"></div><div style="font-size:11px;color:var(--txt2);margin-bottom:8px">Node Selection</div>' +
-        '<div style="display:flex;flex-direction:column;gap:6px"></div>';
-      var nodeContainer = nodeWrap.querySelector('.node-select-wrap');
-      nodeContainer.appendChild(document.createElement('div'));
+      nodeWrap.style.cssText = 'margin-top:14px;padding-top:14px;border-top:1px solid var(--border)';
+      nodeWrap.innerHTML = '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">انتخاب نودها (که کاربر در آن‌ها ساخته شود)</div>' +
+        '<div id="ib-node-list" style="display:flex;flex-direction:column;gap:6px"></div>';
+      modal.querySelector('.modal-c').appendChild(nodeWrap);
     }
-    var nodeContainer = $id('ib-node-select').querySelector('.node-select-wrap div:last-child');
+    var nodeContainer = $id('ib-node-list');
     nodeContainer.innerHTML = '';
-    ALL_NODES.forEach(function(node) {
-      var div = document.createElement('label');
-      div.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer';
-      var checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.value = node.node_id;
-      checkbox.checked = nodeIds.indexOf(node.node_id) >= 0;
-      div.appendChild(checkbox);
-      var span = document.createElement('span');
-      span.textContent = node.name || node.domain;
-      div.appendChild(span);
-      nodeContainer.appendChild(div);
-    });
+    if (!ALL_NODES || ALL_NODES.length === 0) {
+      nodeContainer.innerHTML = '<span style="font-size:11px;color:var(--txt2)">هنوز نودی اضافه نشده</span>';
+    } else {
+      ALL_NODES.forEach(function(node) {
+        var div = document.createElement('label');
+        div.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:6px;border-radius:8px';
+        var checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = node.node_id;
+        checkbox.checked = nodeIds.indexOf(node.node_id) >= 0;
+        div.appendChild(checkbox);
+        var span = document.createElement('span');
+        span.textContent = node.name || node.domain;
+        div.appendChild(span);
+        nodeContainer.appendChild(div);
+      });
+    }
+    nodeWrap.classList.remove('hidden');
   }
 
   if (isTg) {
@@ -4395,8 +4409,12 @@ async function syncNode(nodeId) {
 
 async function syncAllNodes() {
   try {
-    await api('/api/nodes/sync-all', {method: 'POST'});
-    toast(t('nodeSynced'), 'ok');
+    var result = await api('/api/nodes/sync-all', {method: 'POST'});
+    if (result.synced > 0) {
+      toast(t('nodeSynced') + ' (' + result.synced + ')', 'ok');
+    } else {
+      toast(t('nodeSynced'), 'ok');
+    }
     loadNodes();
   } catch(e) { toast(e.message || t('nodeSyncFailed'), 'err'); }
 }
@@ -4410,10 +4428,11 @@ async function loadServerInfo() {
     var apiKey = info.api_key || '';
     var maskedKey = apiKey.length > 8 ? apiKey.substring(0, 8) + '••••••••' : (apiKey || '--');
     window._fullApiKey = apiKey;
-    var html = '<div class="set-row"><span class="set-lbl">' + t('serverIp') + '</span><span dir="ltr" style="font-size:12px">' + (info.ip || '--') + ' ' + (info.flag || '') + '</span></div>' +
+    var flagHtml = (info.flag || '') + ' ' + (info.country_name || '');
+    var html = '<div class="set-row"><span class="set-lbl">' + t('serverIp') + '</span><span dir="ltr" style="font-size:12px">' + (info.ip || '--') + ' ' + flagHtml + '</span></div>' +
       '<div class="set-row"><span class="set-lbl">' + t('apiKey') + '</span><span dir="ltr" style="font-size:11px;font-family:monospace" id="api-key-display">' + maskedKey + '</span>' +
       (apiKey ? '<button type="button" class="btn-glass" onclick="copyApiKey()">' + t('copyApiKey') + '</button>' : '') +
-      '<button type="button" class="btn-glass" onclick="changeApiKey()">تغییر</button>' +
+      '<button type="button" class="btn-glass" onclick="generateApiKey()">تولید خودکار</button>' +
       '</div>';
     wrap.innerHTML = html;
   } catch(e) { console.error('loadServerInfo:', e); }
@@ -4425,14 +4444,14 @@ function copyApiKey() {
   });
 }
 
-async function changeApiKey() {
-  var newKey = prompt('API Key جدید را وارد کنید (حداقل ۸ کاراکتر):', '');
-  if (!newKey || newKey.length < 8) return;
+async function generateApiKey() {
   try {
-    await api('/api/me', {method: 'PATCH', body: {api_key: newKey}});
-    window._fullApiKey = newKey;
-    loadServerInfo();
-    toast('API Key تغییر کرد', 'ok');
+    var r = await api('/api/me/generate-key', {method: 'POST'});
+    if (r.ok && r.api_key) {
+      window._fullApiKey = r.api_key;
+      loadServerInfo();
+      toast('API Key جدید تولید شد', 'ok');
+    }
   } catch(e) { toast(e.message || 'خطا', 'err'); }
 }
 
