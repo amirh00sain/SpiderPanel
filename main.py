@@ -5,6 +5,7 @@ import re
 import random
 import sys
 import hashlib
+import ipaddress
 
 # Ensure the app directory is on the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -20,6 +21,7 @@ from collections import deque, defaultdict
 import base64
 import io
 import logging
+from dataclasses import dataclass
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("Spider-Gateway")
@@ -394,6 +396,72 @@ SETTINGS_LOCK = asyncio.Lock()
 # ── Inbounds (for user config generation) ────────────────────────────────
 INBOUNDS: dict = {}  # inbound_id → {name, protocol, port, network, security, domain, sni, external_port, fingerprint, reality_settings, xhttp_settings, created_at}
 INBOUNDS_LOCK = asyncio.Lock()
+
+# FastAPI VLESS relay is intentionally restricted to this exact inbound.
+# Other WS/TLS inbounds must never enter the panel relay path.
+RELAY_INBOUND_NAME = "پیش‌فرض TLS + WS"
+NODE_SYSTEM_INBOUND_ID = "Node"
+
+
+def _is_relay_inbound(ib: dict | None) -> bool:
+    """True only for the exact canonical VLESS/TLS/WS relay inbound."""
+    if not ib:
+        return False
+    return (
+        str(ib.get("name") or "").strip() == RELAY_INBOUND_NAME
+        and str(ib.get("protocol") or "").lower() == "vless"
+        and str(ib.get("network") or "").lower() == "ws"
+        and str(ib.get("security") or "").lower() == "tls"
+    )
+
+
+def _default_tls_ws_inbound_id() -> str | None:
+    """Find the canonical inbound by name + VLESS/WS/TLS properties."""
+    for iid, ib in INBOUNDS.items():
+        if _is_relay_inbound(ib):
+            return iid
+    return None
+
+
+def _user_relay_inbound_id(user: dict | None) -> str | None:
+    """Return the user's canonical relay inbound id, if selected."""
+    if not user:
+        return None
+    ids = user.get("inbound_ids") or []
+    if not ids and user.get("inbound_id"):
+        ids = [user.get("inbound_id")]
+    for iid in ids:
+        ib = INBOUNDS.get(iid)
+        if _is_relay_inbound(ib):
+            return iid
+    return None
+
+
+async def _link_uses_relay_inbound(uuid: str) -> bool:
+    """Enforce the hard rule: /ws/{uuid} relay is only for the canonical inbound."""
+    async with LINKS_LOCK:
+        link = LINKS.get(uuid)
+    if not link:
+        return False
+    user_id = link.get("user_id")
+    if user_id:
+        async with USERS_LOCK:
+            user = USERS.get(user_id)
+            return _user_relay_inbound_id(user) is not None
+    # Legacy default link is retained for backward compatibility, but only
+    # while the canonical relay inbound exists.
+    if link.get("is_default"):
+        return _default_tls_ws_inbound_id() is not None
+    return False
+
+
+async def _remote_default_relay_inbound() -> tuple[str, dict] | None:
+    """Return the local canonical relay inbound record for node sync."""
+    iid = _default_tls_ws_inbound_id()
+    if not iid:
+        return None
+    return iid, dict(INBOUNDS[iid])
+
 
 # ── Groups ─────────────────────────────────────────────────────────────────
 GROUPS: dict = {}  # group_id → {name, description, user_ids, ip_pool, rules, created_at}
@@ -792,11 +860,48 @@ async def startup():
         limits=limits, timeout=timeout, follow_redirects=True,
     )
     await load_state()
-    # Auto-create default inbound if none exist
+    # Ensure the one and only FastAPI-relay inbound has the exact canonical
+    # name used by every Spider Panel. Older builds called it
+    # "VLESS+WS پیش‌فرض"; migrate that record instead of creating a duplicate.
     async with INBOUNDS_LOCK:
-        if not INBOUNDS:
+        _relay_iid = next(
+            (iid for iid, ib in INBOUNDS.items()
+             if str(ib.get("name") or "").strip() == RELAY_INBOUND_NAME),
+            None,
+        )
+        if _relay_iid is not None:
+            _relay_ib = INBOUNDS[_relay_iid]
+            _changed = False
+            for _k, _v in (("protocol", "vless"), ("network", "ws"), ("security", "tls")):
+                if str(_relay_ib.get(_k) or "").lower() != _v:
+                    _relay_ib[_k] = _v
+                    _changed = True
+            if _changed:
+                _relay_ib["port"] = 443
+                _relay_ib["external_domain"] = ""
+                _relay_ib["external_port"] = ""
+                asyncio.create_task(save_state())
+                log_activity("inbound", f"تنظیمات «{RELAY_INBOUND_NAME}» به TLS + WS پیش‌فرض اصلاح شد", "ok")
+
+        if _relay_iid is None:
+            _legacy_iid = next(
+                (iid for iid, ib in INBOUNDS.items()
+                 if str(ib.get("name") or "").strip() == "VLESS+WS پیش‌فرض"
+                 and str(ib.get("protocol") or "").lower() == "vless"
+                 and str(ib.get("network") or "").lower() == "ws"
+                 and str(ib.get("security") or "").lower() == "tls"),
+                None,
+            )
+            if _legacy_iid is not None:
+                INBOUNDS[_legacy_iid]["name"] = RELAY_INBOUND_NAME
+                _relay_iid = _legacy_iid
+                asyncio.create_task(save_state())
+                log_activity("inbound", f"نام اینباند پیش‌فرض به «{RELAY_INBOUND_NAME}» تغییر کرد", "ok")
+
+        if _relay_iid is None:
+            # No relay inbound exists yet. Create exactly one canonical record.
             INBOUNDS["default"] = {
-                "name": "VLESS+WS پیش‌فرض",
+                "name": RELAY_INBOUND_NAME,
                 "protocol": "vless",
                 "port": 443,
                 "network": "ws",
@@ -811,7 +916,7 @@ async def startup():
                 "created_at": datetime.now().isoformat(),
             }
             asyncio.create_task(save_state())
-            log_activity("inbound", "اینباند پیش‌فرض VLESS+WS ساخته شد", "ok")
+            log_activity("inbound", f"اینباند «{RELAY_INBOUND_NAME}» ساخته شد", "ok")
         # Auto-create a default Reality+xhttp inbound (needs real Xray to serve)
         has_reality = any(
             ib.get("network") == "xhttp" and ib.get("protocol") == "reality"
@@ -2202,20 +2307,12 @@ async def subscription_handler(identifier: str, request: Request):
                 node_inbound = INBOUNDS.get("Node", {})
             node_ids = node_inbound.get("node_ids", [])
             if node_ids:
+                stored_node_configs = target_user.get("node_configs") or {}
                 for nid in node_ids:
-                    async with NODES_LOCK:
-                        node = NODES.get(nid, {})
-                    if node:
-                        node_cfg = generate_user_config(
-                            target_uid, target_user, "Node",
-                            addr=f"{node.get('remote_ip', '')}:{node.get('external_port', '443')}" if node.get('remote_ip') else None
-                        )
-                        if node_cfg:
-                            # Add node-specific tag
-                            remark_tag = f"Node-{node.get('name', node.get('remote_host', nid))}"
-                            node_cfg = generate_user_config(target_uid, target_user, "Node", addr=None, remark_tag=remark_tag)
-                            if node_cfg:
-                                configs.append(node_cfg)
+                    node_cfg_entry = stored_node_configs.get(nid) or {}
+                    node_cfg = node_cfg_entry.get("config") if isinstance(node_cfg_entry, dict) else None
+                    if node_cfg:
+                        configs.append(node_cfg)
 
 
             if not configs:
@@ -2767,6 +2864,13 @@ async def ws_uuid_handler(ws: WebSocket, uuid: str):
     # /ws/live is registered later — handle it here since param route matches first
     if uuid == "live":
         await websocket_live_stats(ws)
+        return
+    # HARD GATE: the FastAPI VLESS relay is only valid for the canonical
+    # VLESS + TLS + WS inbound named «پیش‌فرض TLS + WS». Other inbounds must
+    # never be routed through this /ws relay endpoint.
+    if not await _link_uses_relay_inbound(uuid):
+        await ws.accept()
+        await ws.close(code=1008, reason="relay disabled for this inbound")
         return
     await websocket_tunnel(ws, uuid)
 
@@ -3427,6 +3531,7 @@ async def create_user(request: Request, _=Depends(require_auth)):
             "path": path,
             "transport_type": transport_type,
             "telegram_secret": "",
+            "node_configs": {},
         }
         _path = USERS[user_id].get("path", "").strip().lstrip("/")
 
@@ -3501,26 +3606,48 @@ async def create_user(request: Request, _=Depends(require_auth)):
             # Rebuild its secret list and restart the listener now.
             for _tg_iid in [i for i in inbound_ids if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"]:
                 asyncio.create_task(_restart_telegram_proxy(_tg_iid))
-    # If Inbound "Node" was selected, sync user to all selected nodes
+    node_sync_result = None
+    returned_config = None
+
+    # If Inbound "Node" was selected, synchronously provision the same UUID on
+    # every selected Spider Panel and collect the real remote configs. The local
+    # management inbound "Node" itself is never used as a VLESS relay inbound.
     if inbound_ids and "Node" in inbound_ids:
         async with INBOUNDS_LOCK:
-            node_inbound = INBOUNDS.get("Node", {})
+            node_inbound = INBOUNDS.get(NODE_SYSTEM_INBOUND_ID, {})
         selected_node_ids = node_inbound.get("node_ids", [])
         if selected_node_ids:
-            asyncio.create_task(sync_user_to_nodes(
+            node_sync_result = await sync_user_to_nodes(
                 user_id, USERS[user_id], inbound_id, selected_node_ids
-            ))
+            )
+            async with USERS_LOCK:
+                stored_cfgs = dict(USERS.get(user_id, {}).get("node_configs") or {})
+                current_user = dict(USERS.get(user_id, {}))
+            for _nid in selected_node_ids:
+                _entry = stored_cfgs.get(_nid) or {}
+                if isinstance(_entry, dict) and _entry.get("config"):
+                    returned_config = _entry["config"]
+                    break
+        else:
+            current_user = dict(USERS.get(user_id, {}))
+    else:
+        current_user = dict(USERS.get(user_id, {}))
+        returned_config = generate_user_config(user_id, current_user, inbound_id)
+
     host = SETTINGS.get("domain") or get_host()
     asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
-    return {
+    result = {
         "user_id": user_id,
-        **USERS[user_id],
+        **current_user,
         "password_hash": None,
         "config_url": f"https://{host}/api/users/{user_id}/config",
         "qr_url": f"https://{host}/api/users/{user_id}/qr",
         "subscription_url": f"https://{host}/api/users/{user_id}/subscription",
-        "config": generate_user_config(user_id, USERS[user_id], inbound_id),
+        "config": returned_config or "",
     }
+    if node_sync_result is not None:
+        result["node_sync"] = node_sync_result
+    return result
 
 @app.patch("/api/users/{user_id}/toggle")
 async def toggle_user(user_id: str, _=Depends(require_auth)):
@@ -3693,9 +3820,16 @@ async def get_single_user(user_id: str, _=Depends(require_auth)):
         user["password_hash"] = None  # Never expose hash
     auto_check_user_expiry(user)
     host = SETTINGS.get("domain") or get_host()
+    _single_cfg = generate_user_config(user_id, user, user.get("inbound_id"))
+    if NODE_SYSTEM_INBOUND_ID in (user.get("inbound_ids") or []):
+        _cfgs = user.get("node_configs") or {}
+        _single_cfg = next(
+            ((entry or {}).get("config") for entry in _cfgs.values() if isinstance(entry, dict) and entry.get("config")),
+            _single_cfg,
+        )
     return {
         **user,
-        "config": generate_user_config(user_id, user, user.get("inbound_id")),
+        "config": _single_cfg,
         "config_url": f"https://{host}/api/users/{user_id}/config",
         "qr_url": f"https://{host}/api/users/{user_id}/qr",
         "subscription_url": f"https://{host}/api/users/{user_id}/subscription",
@@ -3774,9 +3908,16 @@ async def get_user_config(user_id: str, _=Depends(require_auth)):
         u = USERS.get(user_id)
         if not u:
             raise HTTPException(status_code=404, detail="user not found")
-        config = generate_user_config(user_id, u, u.get("inbound_id"))
-        username = u.get("username")
-        protocol = u.get("protocol")
+        user = dict(u)
+        config = generate_user_config(user_id, user, user.get("inbound_id"))
+        if NODE_SYSTEM_INBOUND_ID in (user.get("inbound_ids") or []):
+            _cfgs = user.get("node_configs") or {}
+            config = next(
+                ((entry or {}).get("config") for entry in _cfgs.values() if isinstance(entry, dict) and entry.get("config")),
+                config,
+            )
+        username = user.get("username")
+        protocol = user.get("protocol")
     host = SETTINGS.get("domain") or get_host()
     return {
         "user_id": user_id,
@@ -4746,11 +4887,12 @@ def _req_client_ip(request: Request) -> str:
 
 
 async def _open_tcp_from_header(first_chunk: bytes, uuid: str = "", proxy_override: str = ""):
-    command, address, port, payload = await parse_vless_header(first_chunk)
+    req = parse_vless_header(first_chunk)
+    command, address, port, payload = req.command, req.address, req.port, req.payload
     # Route outbound through the user's proxy IP (same as WS relay).
     # proxy_connect is in main.py
     reader, writer = await asyncio.wait_for(
-        _proxy_connect(uuid, address, port, proxy_override=proxy_override or None),
+        proxy_connect(uuid, address, port, proxy_override=proxy_override or None),
         timeout=TCP_CONNECT_TIMEOUT,
     )
     _tune_socket(writer)
@@ -4773,7 +4915,7 @@ async def _get_or_create_session(uuid: str, mode: str, session_id: str, ip: str 
     همچنین IP واقعی کانفیگ را در USER_IP_MAP ثبت می‌کند و در صورت رسیدن
     کاربر به حداکثر IPهای مجاز، ارتباط را رد می‌کند.
     """
-    # using inline functions from main
+    m = _get_main()
     if not await m.enforce_ip_limit_for_link(uuid, ip):
         raise HTTPException(status_code=403, detail="ip limit reached")
     async with XHTTP_LOCK:
@@ -5069,10 +5211,40 @@ async def stream_up_upload_proxy(proxy: str, uuid: str, session_id: str, request
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# VLESS Relay — بهینه‌شده برای حداکثر throughput
+# VLESS Relay — canonical TLS/WS inbound only
 # ══════════════════════════════════════════════════════════════════════════════
 
-RELAY_BUF_LOCAL = 256 * 1024
+RELAY_BUF_LOCAL = 512 * 1024
+RELAY_TCP_CONNECT_TIMEOUT = 10.0
+RELAY_FIRST_PACKET_TIMEOUT = 15.0
+RELAY_TRAFFIC_FLUSH_BYTES = 256 * 1024
+RELAY_TRAFFIC_FLUSH_INTERVAL = 0.25
+RELAY_UDP_IDLE_TIMEOUT = 120.0
+RELAY_UDP_WS_BATCH_BYTES = 64 * 1024
+RELAY_UDP_WS_BATCH_DELAY = 0.003
+RELAY_UDP_SOCKET_BUFFER = 1024 * 1024
+RELAY_UDP_QUEUE_MAX = 1024
+RELAY_STATE_SAVE_DELAY = 2.0
+_RELAY_STATE_SAVE_TASK = None
+_RELAY_STATE_SAVE_LOCK = asyncio.Lock()
+
+
+def _schedule_state_save(m):
+    global _RELAY_STATE_SAVE_TASK
+    if _RELAY_STATE_SAVE_TASK is not None and not _RELAY_STATE_SAVE_TASK.done():
+        return
+
+    async def _save_later():
+        try:
+            await asyncio.sleep(RELAY_STATE_SAVE_DELAY)
+            await m.save_state()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("debounced save_state failed")
+
+    _RELAY_STATE_SAVE_TASK = asyncio.create_task(_save_later())
+
 
 def _ws_client_ip(ws: WebSocket) -> str:
     fwd = ws.headers.get("x-forwarded-for")
@@ -5083,90 +5255,392 @@ def _ws_client_ip(ws: WebSocket) -> str:
         return real_ip.strip()
     return ws.client.host if ws.client else "نامشخص"
 
-async def parse_vless_header(chunk: bytes):
+
+class VLESSHeaderError(ValueError):
+    pass
+
+
+@dataclass(slots=True)
+class _VLESSRequest:
+    version: int
+    command: int
+    address: str
+    port: int
+    payload: bytes
+
+
+def parse_vless_header(chunk: bytes) -> _VLESSRequest:
+    """Parse a VLESS request header synchronously (no needless coroutine)."""
     if len(chunk) < 24:
-        raise ValueError("chunk too small")
-    pos = 1
+        raise VLESSHeaderError("VLESS header too small")
+
+    pos = 0
+    version = chunk[pos]
+    pos += 1
+
+    if pos + 16 > len(chunk):
+        raise VLESSHeaderError("truncated UUID")
     pos += 16
-    addon_len = chunk[pos]; pos += 1 + addon_len
-    command = chunk[pos]; pos += 1
-    port = int.from_bytes(chunk[pos:pos+2], "big"); pos += 2
-    addr_type = chunk[pos]; pos += 1
-    if addr_type == 1:
-        address = ".".join(str(b) for b in chunk[pos:pos+4]); pos += 4
-    elif addr_type == 2:
-        dlen = chunk[pos]; pos += 1
-        address = chunk[pos:pos+dlen].decode("utf-8", errors="ignore"); pos += dlen
-    elif addr_type == 3:
-        ab = chunk[pos:pos+16]; pos += 16
-        address = ":".join(f"{ab[i]:02x}{ab[i+1]:02x}" for i in range(0, 16, 2))
+
+    if pos >= len(chunk):
+        raise VLESSHeaderError("missing addons length")
+    addon_len = chunk[pos]
+    pos += 1
+    if pos + addon_len > len(chunk):
+        raise VLESSHeaderError("truncated addons")
+    pos += addon_len
+
+    if pos >= len(chunk):
+        raise VLESSHeaderError("missing command")
+    command = chunk[pos]
+    pos += 1
+    if command not in (1, 2):
+        raise VLESSHeaderError(f"unsupported VLESS command: {command}")
+
+    if pos + 2 > len(chunk):
+        raise VLESSHeaderError("missing port")
+    port = int.from_bytes(chunk[pos:pos + 2], "big")
+    pos += 2
+
+    if pos >= len(chunk):
+        raise VLESSHeaderError("missing address type")
+    addr_type = chunk[pos]
+    pos += 1
+
+    if addr_type == 1:  # IPv4
+        if pos + 4 > len(chunk):
+            raise VLESSHeaderError("truncated IPv4")
+        address = ".".join(str(b) for b in chunk[pos:pos + 4])
+        pos += 4
+    elif addr_type == 2:  # Domain
+        if pos >= len(chunk):
+            raise VLESSHeaderError("missing domain length")
+        dlen = chunk[pos]
+        pos += 1
+        if dlen <= 0 or pos + dlen > len(chunk):
+            raise VLESSHeaderError("truncated domain")
+        address = chunk[pos:pos + dlen].decode("utf-8", errors="strict")
+        pos += dlen
+    elif addr_type == 3:  # IPv6
+        if pos + 16 > len(chunk):
+            raise VLESSHeaderError("truncated IPv6")
+        address = str(ipaddress.IPv6Address(chunk[pos:pos + 16]))
+        pos += 16
     else:
-        raise ValueError(f"unknown addr type: {addr_type}")
-    return command, address, port, chunk[pos:]
+        raise VLESSHeaderError(f"unknown address type: {addr_type}")
+
+    return _VLESSRequest(
+        version=version,
+        command=command,
+        address=address,
+        port=port,
+        payload=chunk[pos:],
+    )
+
+
+def _vless_response_header(version: int) -> bytes:
+    return bytes((version & 0xFF, 0))
+
+
+class _RelayTrafficMeter:
+    """Batch traffic accounting so high-throughput relay loops avoid shared locks."""
+    __slots__ = ("uuid", "pending", "last_flush", "closed")
+
+    def __init__(self, uuid: str):
+        self.uuid = uuid
+        self.pending = 0
+        self.last_flush = time.monotonic()
+        self.closed = False
+
+    async def add(self, amount: int, *, force: bool = False) -> bool:
+        if amount <= 0:
+            return True
+        if self.closed:
+            return False
+        self.pending += amount
+        now = time.monotonic()
+        if force or self.pending >= RELAY_TRAFFIC_FLUSH_BYTES or now - self.last_flush >= RELAY_TRAFFIC_FLUSH_INTERVAL:
+            return await self.flush()
+        return True
+
+    async def flush(self) -> bool:
+        if self.closed:
+            return False
+        amount = self.pending
+        if amount <= 0:
+            self.last_flush = time.monotonic()
+            return True
+
+        self.pending = 0
+        self.last_flush = time.monotonic()
+        m = _get_main()
+
+        async with m.LINKS_LOCK:
+            link = m.LINKS.get(self.uuid)
+            if link is None or not m.is_link_allowed(link):
+                return False
+            link["used_bytes"] = link.get("used_bytes", 0) + amount
+            stats["total_bytes"] = stats.get("total_bytes", 0) + amount
+            hourly_traffic[m.now_ir().strftime("%H:00")] += amount
+            user_id = link.get("user_id")
+
+        if user_id:
+            async with m.USERS_LOCK:
+                user = m.USERS.get(user_id)
+                if user:
+                    user["traffic_used_bytes"] = user.get("traffic_used_bytes", 0) + amount
+        return True
+
+    async def close(self):
+        if self.closed:
+            return
+        try:
+            await self.flush()
+        finally:
+            self.closed = True
+
+
+def _relay_conn_bytes(conn_id: str, amount: int):
+    conn = connections.get(conn_id)
+    if conn is not None:
+        conn["bytes"] = conn.get("bytes", 0) + amount
+
+
+def _tune_relay_tcp_socket(sock):
+    if sock is None:
+        return
+    for level, opt, value in (
+        (socket.IPPROTO_TCP, socket.TCP_NODELAY, 1),
+        (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+        (socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024),
+        (socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024),
+    ):
+        try:
+            sock.setsockopt(level, opt, value)
+        except OSError:
+            pass
+
+
+def _tune_relay_udp_socket(sock):
+    if sock is None:
+        return
+    for opt, value in (
+        (socket.SO_SNDBUF, RELAY_UDP_SOCKET_BUFFER),
+        (socket.SO_RCVBUF, RELAY_UDP_SOCKET_BUFFER),
+    ):
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, opt, value)
+        except OSError:
+            pass
+
 
 async def check_and_use(uid: str, n: int) -> bool:
-    m = _get_main()
-    async with m.LINKS_LOCK:
-        link = m.LINKS.get(uid)
-        if link is None:
-            return False
-        if not m.is_link_allowed(link):
-            return False
-        link["used_bytes"] += n
-        stats["total_bytes"] += n
-        hourly_traffic[m.now_ir().strftime("%H:00")] += n
+    """Compatibility helper used by other main.py relay paths."""
+    meter = _RelayTrafficMeter(uid)
+    ok = await meter.add(n, force=True)
+    await meter.close()
+    return ok
 
-    # Sync traffic back to user (so subscription page shows real usage)
-    user_id = link.get("user_id")
-    if user_id:
-        async with m.USERS_LOCK:
-            u = m.USERS.get(user_id)
-            if u:
-                u["traffic_used_bytes"] = u.get("traffic_used_bytes", 0) + n
 
-    return True
-
-async def relay_ws_to_tcp(ws: WebSocket, writer: asyncio.StreamWriter, conn_id: str, uid: str):
+async def relay_ws_to_tcp(ws, writer, conn_id, meter):
     try:
         while True:
-            msg = await ws.receive()
-            if msg["type"] == "websocket.disconnect":
-                break
-            data = msg.get("bytes") or (msg.get("text") or "").encode()
+            data = await ws.receive_bytes()
             if not data:
                 continue
-            if not await check_and_use(uid, len(data)):
-                await ws.close(code=1008, reason="quota/disabled/unknown")
-                break
-            stats["total_requests"] += 1
-            connections[conn_id]["bytes"] += len(data)
+            if not await meter.add(len(data)):
+                try:
+                    await ws.close(code=1008, reason="quota/disabled")
+                except Exception:
+                    pass
+                return
+            stats["total_requests"] = stats.get("total_requests", 0) + 1
+            _relay_conn_bytes(conn_id, len(data))
             writer.write(data)
-            if writer.transport.get_write_buffer_size() > RELAY_BUF_LOCAL:
+            transport = writer.transport
+            if transport and transport.get_write_buffer_size() >= RELAY_BUF_LOCAL:
                 await writer.drain()
-    except (WebSocketDisconnect, Exception):
+    except WebSocketDisconnect:
         pass
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        logger.debug("WS->TCP ended [%s]: %s", conn_id, exc)
     finally:
         try:
             writer.write_eof()
         except Exception:
             pass
 
-async def relay_tcp_to_ws(ws: WebSocket, reader: asyncio.StreamReader, conn_id: str, uid: str):
+
+async def relay_tcp_to_ws(ws, reader, conn_id, meter, version):
     first = True
     try:
         while True:
             data = await reader.read(RELAY_BUF_LOCAL)
             if not data:
                 break
-            if not await check_and_use(uid, len(data)):
-                await ws.close(code=1008, reason="quota/disabled/unknown")
-                break
-            connections[conn_id]["bytes"] += len(data)
-            payload = (b"\x00\x00" + data) if first else data
+            if not await meter.add(len(data)):
+                try:
+                    await ws.close(code=1008, reason="quota/disabled")
+                except Exception:
+                    pass
+                return
+            _relay_conn_bytes(conn_id, len(data))
+            await ws.send_bytes(
+                (_vless_response_header(version) + data) if first else data
+            )
             first = False
-            await ws.send_bytes(payload)
-    except Exception:
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        logger.debug("TCP->WS ended [%s]: %s", conn_id, exc)
+
+
+class _RelayUDPProtocol(asyncio.DatagramProtocol):
+    def __init__(self):
+        self.transport = None
+        self.queue = asyncio.Queue(maxsize=RELAY_UDP_QUEUE_MAX)
+        self.error = None
+
+    def connection_made(self, transport):
+        self.transport = transport
+        _tune_relay_udp_socket(transport.get_extra_info("socket"))
+
+    def datagram_received(self, data, addr):
+        if not data:
+            return
+        try:
+            self.queue.put_nowait(data)
+        except asyncio.QueueFull:
+            logger.debug("UDP queue full; packet dropped")
+
+    def error_received(self, exc):
+        self.error = exc
+        logger.debug("UDP socket error: %s", exc)
+
+    def connection_lost(self, exc):
+        if exc:
+            self.error = exc
+
+
+class _VLESSUDPFrameBuffer:
+    __slots__ = ("buffer",)
+
+    def __init__(self):
+        self.buffer = bytearray()
+
+    def feed(self, data: bytes) -> list[bytes]:
+        if data:
+            self.buffer.extend(data)
+        packets = []
+        while len(self.buffer) >= 2:
+            packet_len = int.from_bytes(self.buffer[:2], "big")
+            if packet_len > 65535:
+                raise VLESSHeaderError(f"UDP packet too large: {packet_len}")
+            total = 2 + packet_len
+            if len(self.buffer) < total:
+                break
+            packets.append(bytes(self.buffer[2:total]))
+            del self.buffer[:total]
+        return packets
+
+
+async def _open_relay_udp(m, address: str, port: int, proxy_override: str = None):
+    """Use SOCKS5 UDP when available; otherwise direct UDP."""
+    return await proxy_udp_connect(address, port, proxy_override=proxy_override)
+
+
+async def relay_ws_to_udp(ws, transport, frame_buffer, conn_id, meter):
+    try:
+        while True:
+            data = await ws.receive_bytes()
+            if not data:
+                continue
+            for packet in frame_buffer.feed(data):
+                if not packet:
+                    continue
+                if not await meter.add(len(packet)):
+                    try:
+                        await ws.close(code=1008, reason="quota/disabled")
+                    except Exception:
+                        pass
+                    return
+                stats["total_requests"] = stats.get("total_requests", 0) + 1
+                _relay_conn_bytes(conn_id, len(packet))
+                transport.sendto(packet)
+    except WebSocketDisconnect:
         pass
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        logger.debug("WS->UDP ended [%s]: %s", conn_id, exc)
+
+
+async def relay_udp_to_ws(ws, protocol, conn_id, meter, version):
+    first_response = True
+    pending = None
+    try:
+        while True:
+            if pending is None:
+                try:
+                    packet = await asyncio.wait_for(
+                        protocol.queue.get(),
+                        timeout=RELAY_UDP_IDLE_TIMEOUT,
+                    )
+                except asyncio.TimeoutError:
+                    return
+            else:
+                packet, pending = pending, None
+
+            if not packet:
+                continue
+
+            batch = bytearray()
+            frame = len(packet).to_bytes(2, "big") + packet
+            batch.extend(frame)
+            if not await meter.add(len(packet)):
+                try:
+                    await ws.close(code=1008, reason="quota/disabled")
+                except Exception:
+                    pass
+                return
+            _relay_conn_bytes(conn_id, len(packet))
+            batch_started = time.monotonic()
+
+            while len(batch) < RELAY_UDP_WS_BATCH_BYTES:
+                remaining = RELAY_UDP_WS_BATCH_DELAY - (time.monotonic() - batch_started)
+                if remaining <= 0:
+                    break
+                try:
+                    extra = await asyncio.wait_for(protocol.queue.get(), timeout=remaining)
+                except asyncio.TimeoutError:
+                    break
+                if not extra:
+                    continue
+                extra_frame = len(extra).to_bytes(2, "big") + extra
+                if len(batch) + len(extra_frame) > RELAY_UDP_WS_BATCH_BYTES:
+                    pending = extra
+                    break
+                batch.extend(extra_frame)
+                if not await meter.add(len(extra)):
+                    try:
+                        await ws.close(code=1008, reason="quota/disabled")
+                    except Exception:
+                        pass
+                    return
+                _relay_conn_bytes(conn_id, len(extra))
+
+            payload = bytes(batch)
+            if first_response:
+                payload = _vless_response_header(version) + payload
+                first_response = False
+            await ws.send_bytes(payload)
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        logger.debug("UDP->WS ended [%s]: %s", conn_id, exc)
+
 
 async def websocket_tunnel(ws: WebSocket, uuid: str, proxy_override: str = None):
     if proxy_override:
@@ -5175,6 +5649,7 @@ async def websocket_tunnel(ws: WebSocket, uuid: str, proxy_override: str = None)
             proxy_override = unquote(proxy_override)
         except Exception:
             pass
+
     await ws.accept()
     m = _get_main()
 
@@ -5182,7 +5657,6 @@ async def websocket_tunnel(ws: WebSocket, uuid: str, proxy_override: str = None)
         link = m.LINKS.get(uuid)
 
     if not m.is_link_allowed(link):
-        logger.warning(f"WS rejected uuid={uuid[:8]}… (link={'not found' if link is None else 'disabled/expired'})")
         await ws.close(code=1008, reason="not authorized")
         return
 
@@ -5194,86 +5668,156 @@ async def websocket_tunnel(ws: WebSocket, uuid: str, proxy_override: str = None)
         "transport": "vless-ws",
         "connected_at": datetime.now().isoformat(),
         "bytes": 0,
+        "mode": "unknown",
     }
-    logger.info(f"WS [{conn_id}] uuid={uuid[:8]}… ip={ip} total={len(connections)}")
-    m.log_activity("connection", f"اتصال جدید از {ip} (کانفیگ {link.get('label','?')})", "info")
-
-    # Enforce per-user IP limit using the real connection IP
-    if not await m.enforce_ip_limit_for_link(uuid, ip):
-        logger.warning(f"WS rejected uuid={uuid[:8]}… ip={ip}: IP limit reached")
-        await ws.close(code=1008, reason="ip limit reached")
-        return
-    writer = None
+    logger.info("WS [%s] uuid=%s ip=%s total=%d", conn_id, uuid[:8], ip, len(connections))
 
     try:
-        first_msg = await asyncio.wait_for(ws.receive(), timeout=15.0)
-        if first_msg["type"] == "websocket.disconnect":
-            return
-        first_chunk = first_msg.get("bytes") or (first_msg.get("text") or "").encode()
+        m.log_activity("connection", f"اتصال جدید از {ip} (کانفیگ {link.get('label', '?')})", "info")
+    except Exception:
+        pass
+
+    if not await m.enforce_ip_limit_for_link(uuid, ip):
+        await ws.close(code=1008, reason="ip limit reached")
+        connections.pop(conn_id, None)
+        return
+
+    writer = None
+    udp_transport = None
+    relay_tasks = set()
+    meter = _RelayTrafficMeter(uuid)
+
+    try:
+        first_chunk = await asyncio.wait_for(
+            ws.receive_bytes(),
+            timeout=RELAY_FIRST_PACKET_TIMEOUT,
+        )
         if not first_chunk:
             return
 
-        command, address, port, payload = await parse_vless_header(first_chunk)
+        request = parse_vless_header(first_chunk)
 
-        if not await check_and_use(uuid, len(first_chunk)):
+        # First request is checked immediately; later packets are batched.
+        if not await meter.add(len(first_chunk), force=True):
             await ws.close(code=1008, reason="quota/disabled")
             return
 
-        stats["total_requests"] += 1
-        connections[conn_id]["bytes"] += len(first_chunk)
-        logger.info(f"[{conn_id}] → {address}:{port}")
+        stats["total_requests"] = stats.get("total_requests", 0) + 1
+        _relay_conn_bytes(conn_id, len(first_chunk))
+        logger.info("[%s] %s -> %s:%d", conn_id, "TCP" if request.command == 1 else "UDP", request.address, request.port)
 
-        # Route the outbound connection through the user's selected proxy IP(s),
-        # so egress shows the proxy IP instead of the Railway host.
-        reader, writer = await m.proxy_connect(uuid, address, port, proxy_override=proxy_override)
-        sock = writer.transport.get_extra_info('socket')
-        if sock:
-            import socket
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        if request.command == 1:
+            connections[conn_id]["mode"] = "tcp"
+            reader, writer = await m.proxy_connect(
+                uuid,
+                request.address,
+                request.port,
+                proxy_override=proxy_override,
+            )
+            _tune_relay_tcp_socket(writer.transport.get_extra_info("socket"))
 
-        if payload:
-            writer.write(payload)
-            await writer.drain()
+            if request.payload:
+                writer.write(request.payload)
+                if writer.transport.get_write_buffer_size() >= RELAY_BUF_LOCAL:
+                    await writer.drain()
+
+            relay_tasks = {
+                asyncio.create_task(relay_ws_to_tcp(ws, writer, conn_id, meter)),
+                asyncio.create_task(relay_tcp_to_ws(ws, reader, conn_id, meter, request.version)),
+            }
+
+        elif request.command == 2:
+            connections[conn_id]["mode"] = "udp"
+            udp_transport, udp_protocol = await _open_relay_udp(
+                m,
+                request.address,
+                request.port,
+                proxy_override=proxy_override,
+            )
+            frame_buffer = _VLESSUDPFrameBuffer()
+
+            if request.payload:
+                for packet in frame_buffer.feed(request.payload):
+                    if packet:
+                        udp_transport.sendto(packet)
+
+            relay_tasks = {
+                asyncio.create_task(relay_ws_to_udp(ws, udp_transport, frame_buffer, conn_id, meter)),
+                asyncio.create_task(relay_udp_to_ws(ws, udp_protocol, conn_id, meter, request.version)),
+            }
+        else:
+            raise VLESSHeaderError(f"unsupported command: {request.command}")
 
         done, pending = await asyncio.wait(
-            {
-                asyncio.create_task(relay_ws_to_tcp(ws, writer, conn_id, uuid)),
-                asyncio.create_task(relay_tcp_to_ws(ws, reader, conn_id, uuid)),
-            },
+            relay_tasks,
             return_when=asyncio.FIRST_COMPLETED,
         )
-        for t in pending:
-            t.cancel()
+        for task in pending:
+            task.cancel()
+        for task in done:
             try:
-                await t
+                await task
             except asyncio.CancelledError:
                 pass
+            except Exception as exc:
+                logger.debug("relay task failed [%s]: %s", conn_id, exc)
 
-        asyncio.create_task(m.save_state())
+        _schedule_state_save(m)
 
     except WebSocketDisconnect:
         pass
     except asyncio.TimeoutError:
-        stats["total_errors"] += 1
+        stats["total_errors"] = stats.get("total_errors", 0) + 1
         error_logs.append({"error": "connection timeout", "time": datetime.now().isoformat()})
-    except Exception as exc:
-        stats["total_errors"] += 1
+    except VLESSHeaderError as exc:
+        stats["total_errors"] = stats.get("total_errors", 0) + 1
         error_logs.append({"error": str(exc), "time": datetime.now().isoformat()})
-        logger.error(f"WS error [{conn_id}]: {exc}")
+        try:
+            await ws.close(code=1002, reason="invalid VLESS request")
+        except Exception:
+            pass
+    except Exception as exc:
+        stats["total_errors"] = stats.get("total_errors", 0) + 1
+        error_logs.append({"error": str(exc), "time": datetime.now().isoformat()})
+        logger.exception("WS error [%s]: %s", conn_id, exc)
     finally:
-        if writer:
+        for task in relay_tasks:
+            if not task.done():
+                task.cancel()
+        for task in relay_tasks:
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                pass
+
+        if writer is not None:
             try:
                 writer.close()
                 await writer.wait_closed()
             except Exception:
                 pass
+
+        if udp_transport is not None:
+            try:
+                udp_transport.close()
+            except Exception:
+                pass
+
+        try:
+            await meter.close()
+        except Exception:
+            logger.exception("traffic flush failed [%s]", conn_id)
+
         connections.pop(conn_id, None)
-        # Release the IP so USER_IP_MAP reflects live concurrent connections
         try:
             asyncio.create_task(m.release_ip_for_link(uuid, ip))
         except Exception:
             pass
-        logger.info(f"WS closed [{conn_id}] total={len(connections)}")
+
+        _schedule_state_save(m)
+        logger.info("WS closed [%s] total=%d", conn_id, len(connections))
 
 
 @app.get("/api/node/identity")
@@ -5337,6 +5881,39 @@ async def node_get_user(username: str, request: Request):
     raise HTTPException(status_code=404, detail="user not found")
 
 
+@app.get("/api/node/config/{config_uuid}")
+async def node_get_config(config_uuid: str, request: Request):
+    """Return the exact config generated from the canonical remote TLS/WS inbound."""
+    key = request.headers.get("X-Node-Key") or request.query_params.get("key") or ""
+    async with SETTINGS_LOCK:
+        expected = str(SETTINGS.get("security_token") or "")
+    if not key or not expected or not secrets.compare_digest(key, expected):
+        raise HTTPException(status_code=401, detail="invalid node key")
+
+    async with USERS_LOCK:
+        target_uid = next((uid for uid, u in USERS.items() if u.get("config_uuid") == config_uuid), None)
+        user = dict(USERS[target_uid]) if target_uid else None
+    if not user:
+        raise HTTPException(status_code=404, detail="user not found")
+
+    inbound_id = _user_relay_inbound_id(user) or _default_tls_ws_inbound_id()
+    if not inbound_id or not _is_relay_inbound(INBOUNDS.get(inbound_id)):
+        raise HTTPException(status_code=503, detail=f"inbound '{RELAY_INBOUND_NAME}' not found")
+
+    config = generate_user_config(target_uid, user, inbound_id)
+    if not config:
+        raise HTTPException(status_code=404, detail="config unavailable")
+
+    return {
+        "ok": True,
+        "config_uuid": config_uuid,
+        "inbound_name": RELAY_INBOUND_NAME,
+        "transport": "ws",
+        "security": "tls",
+        "config": config,
+    }
+
+
 @app.post("/api/node/sync-user")
 async def node_sync_user(request: Request):
     """Receive a user pushed by a peer panel.
@@ -5360,7 +5937,14 @@ async def node_sync_user(request: Request):
     expire_at = body.get("expire_at")
     concurrent = int(body.get("concurrent_connections") or 0)
     from_node = str(body.get("from_node") or "").strip()
-    path = str(body.get("path") or "").strip()
+
+    # A node-synced user is ALWAYS created on the canonical remote inbound
+    # named «پیش‌فرض TLS + WS». The local management inbound «Node» is never
+    # sent to the remote panel.
+    target_inbound_id = _default_tls_ws_inbound_id()
+    if not target_inbound_id:
+        raise HTTPException(status_code=503, detail=f"remote inbound '{RELAY_INBOUND_NAME}' not found")
+    path = f"/ws/{config_uuid}"
 
     async with USERS_LOCK:
         # Reuse the record if this UUID already arrived from the same origin —
@@ -5388,6 +5972,8 @@ async def node_sync_user(request: Request):
             "sni": "",
             "path": path,
             "transport_type": "ws",
+            "inbound_id": target_inbound_id,
+            "inbound_ids": [target_inbound_id],
             "from_node": from_node,
             "synced_at": datetime.now().isoformat(),
         }
@@ -5433,9 +6019,36 @@ async def sync_user_to_nodes(user_id: str, user: dict, primary_inbound_id: str, 
                 "concurrent_connections": user.get("concurrent_connections", 0),
                 "status": user.get("status", "active"),
                 "path": f"/ws/{user.get('config_uuid')}",
+                "target_inbound": RELAY_INBOUND_NAME,
                 "from_node": origin,
             }
             r = await ac.post(f"{base}/api/node/sync-user", json=payload, headers={"X-Node-Key": key})
+            remote_config = None
+            if r.status_code == 200:
+                try:
+                    cr = await ac.get(
+                        f"{base}/api/node/config/{user.get('config_uuid')}",
+                        headers={"X-Node-Key": key},
+                    )
+                    if cr.status_code == 200:
+                        remote_config = (cr.json() or {}).get("config") or None
+                except Exception:
+                    remote_config = None
+
+            if remote_config:
+                async with USERS_LOCK:
+                    local_user = USERS.get(user_id)
+                    if local_user is not None:
+                        cfgs = local_user.setdefault("node_configs", {})
+                        cfgs[nid] = {
+                            "config": remote_config,
+                            "name": node.get("name") or node.get("domain") or nid,
+                            "domain": node.get("domain", ""),
+                            "remote_ip": node.get("remote_ip", ""),
+                            "flag": node.get("remote_flag", ""),
+                            "inbound_name": RELAY_INBOUND_NAME,
+                        }
+
             probe = await _probe_node(node)
             async with NODES_LOCK:
                 if nid in NODES:
@@ -5445,6 +6058,7 @@ async def sync_user_to_nodes(user_id: str, user: dict, primary_inbound_id: str, 
                 "name": node.get("name") or node.get("domain"),
                 "ok": r.status_code == 200,
                 "status": probe.get("last_status"),
+                "config_received": bool(remote_config),
             })
         except Exception as exc:
             results.append({
@@ -5500,6 +6114,7 @@ async def sync_inbound_nodes(inbound_id: str, _=Depends(require_auth)):
                 "concurrent_connections": u.get("concurrent_connections", 0),
                 "status": u.get("status", "active"),
                 "path": f"/ws/{u.get('config_uuid')}",
+                "target_inbound": RELAY_INBOUND_NAME,
                 "from_node": origin,
             }
             try:
@@ -5507,6 +6122,27 @@ async def sync_inbound_nodes(inbound_id: str, _=Depends(require_auth)):
                 r = await ac.post(f"{base}/api/node/sync-user", json=payload, headers={"X-Node-Key": key})
                 if r.status_code == 200:
                     sent += 1
+                    try:
+                        cr = await ac.get(
+                            f"{base}/api/node/config/{u.get('config_uuid')}",
+                            headers={"X-Node-Key": key},
+                        )
+                        if cr.status_code == 200:
+                            remote_config = (cr.json() or {}).get("config") or None
+                            if remote_config:
+                                async with USERS_LOCK:
+                                    local_user = USERS.get(u.get("user_id"))
+                                    if local_user is not None:
+                                        local_user.setdefault("node_configs", {})[nid] = {
+                                            "config": remote_config,
+                                            "name": node.get("name") or node.get("domain") or nid,
+                                            "domain": node.get("domain", ""),
+                                            "remote_ip": node.get("remote_ip", ""),
+                                            "flag": node.get("remote_flag", ""),
+                                            "inbound_name": RELAY_INBOUND_NAME,
+                                        }
+                    except Exception:
+                        pass
                 else:
                     failed.append(f"{u.get('username')}: HTTP {r.status_code}")
             except Exception as exc:
@@ -6403,7 +7039,9 @@ async def _resolve_proxy_targets(token: str):
     token = str(token or "").strip()
     if not token:
         return []
-    host = token
+    # Accept proxy schemes here too (socks5://, http://, ...), while keeping
+    # the original token available to _parse_proxy_entry() for auth/protocol.
+    host = re.sub(r"^(?:socks5h?|socks4|http|https|turn|sstp)://", "", token, flags=re.I)
     port = 443
     # port from "host:port"
     if "]" in host:
@@ -6492,6 +7130,251 @@ def _build_vless_connect_header(uuid: str, address: str, port: int) -> bytes:
     ubytes = bytes.fromhex(raw_uuid)
     return (b"\x00" + ubytes + b"\x00\x01"
             + bytes([port >> 8, port & 0xff]) + bytes([atype]) + ab)
+
+
+
+class _Socks5UDPProtocol(asyncio.DatagramProtocol):
+    """SOCKS5 UDP response decoder: removes RFC 1928 UDP header and queues payload."""
+    def __init__(self):
+        self.transport = None
+        self.queue = asyncio.Queue(maxsize=RELAY_UDP_QUEUE_MAX)
+        self.error = None
+        self.relay_addr = None
+
+    def connection_made(self, transport):
+        self.transport = transport
+        try:
+            _tune_relay_udp_socket(transport.get_extra_info("socket"))
+        except Exception:
+            pass
+
+    def datagram_received(self, data, addr):
+        # RSV(2) + FRAG(1) + ATYP(1) + ADDR + PORT + DATA
+        if len(data) < 4:
+            return
+        if data[0:2] != b"\x00\x00" or data[2] != 0:
+            return
+        pos = 4
+        atyp = data[3]
+        try:
+            if atyp == 1:
+                if len(data) < pos + 4 + 2:
+                    return
+                pos += 4
+            elif atyp == 3:
+                if len(data) < pos + 1:
+                    return
+                dlen = data[pos]
+                pos += 1
+                if len(data) < pos + dlen + 2:
+                    return
+                pos += dlen
+            elif atyp == 4:
+                if len(data) < pos + 16 + 2:
+                    return
+                pos += 16
+            else:
+                return
+            pos += 2
+            payload = data[pos:]
+            if not payload:
+                return
+            try:
+                self.queue.put_nowait(payload)
+            except asyncio.QueueFull:
+                logger.debug("SOCKS5 UDP queue full; packet dropped")
+        except Exception:
+            return
+
+    def error_received(self, exc):
+        self.error = exc
+        logger.debug("SOCKS5 UDP error: %s", exc)
+
+
+class _Socks5UDPTransport:
+    """Tiny transport adapter exposing sendto()/close() for the relay loop."""
+    __slots__ = ("udp_transport", "control_writer", "relay_addr", "target_address", "target_port")
+
+    def __init__(self, udp_transport, control_writer, relay_addr, target_address, target_port):
+        self.udp_transport = udp_transport
+        self.control_writer = control_writer
+        self.relay_addr = relay_addr
+        self.target_address = target_address
+        self.target_port = target_port
+
+    @staticmethod
+    def _encode_address(address: str):
+        try:
+            return 0x01, socket.inet_aton(address)
+        except OSError:
+            if ":" in address:
+                return 0x04, socket.inet_pton(socket.AF_INET6, address)
+            encoded = address.encode("idna")
+            if len(encoded) > 255:
+                raise ValueError("UDP domain too long")
+            return 0x03, bytes([len(encoded)]) + encoded
+
+    def sendto(self, data: bytes):
+        atyp, encoded = self._encode_address(self.target_address)
+        packet = (
+            b"\x00\x00\x00"
+            + bytes([atyp])
+            + encoded
+            + int(self.target_port).to_bytes(2, "big")
+            + data
+        )
+        self.udp_transport.sendto(packet, self.relay_addr)
+
+    def close(self):
+        try:
+            self.udp_transport.close()
+        finally:
+            try:
+                self.control_writer.close()
+            except Exception:
+                pass
+
+
+async def _socks5_negotiate(rdr, wtr, proxy):
+    methods = (
+        bytes([0x05, 0x02, 0x00, 0x02])
+        if proxy.get("username")
+        else bytes([0x05, 0x01, 0x00])
+    )
+    wtr.write(methods)
+    await wtr.drain()
+    resp = await asyncio.wait_for(rdr.readexactly(2), timeout=4.0)
+    if resp[0] != 0x05:
+        raise ConnectionError("invalid SOCKS5 greeting")
+    if resp[1] == 0x02:
+        if not proxy.get("username"):
+            raise ConnectionError("SOCKS5 requires authentication")
+        ub = str(proxy.get("username") or "").encode()
+        pb = str(proxy.get("password") or "").encode()
+        if len(ub) > 255 or len(pb) > 255:
+            raise ConnectionError("SOCKS5 credentials too long")
+        wtr.write(bytes([0x01, len(ub)]) + ub + bytes([len(pb)]) + pb)
+        await wtr.drain()
+        auth = await asyncio.wait_for(rdr.readexactly(2), timeout=4.0)
+        if auth[1] != 0:
+            raise ConnectionError("SOCKS5 authentication failed")
+    elif resp[1] != 0x00:
+        raise ConnectionError(f"SOCKS5 unsupported auth method {resp[1]}")
+
+
+async def _socks5_udp_connect(proxy: dict, address: str, port: int):
+    """Open RFC 1928 UDP ASSOCIATE and return (transport_adapter, protocol)."""
+    rdr, control_writer = await asyncio.wait_for(
+        asyncio.open_connection(proxy["hostname"], proxy["port"]),
+        timeout=5.0,
+    )
+    try:
+        await _socks5_negotiate(rdr, control_writer, proxy)
+
+        # UDP ASSOCIATE request: wildcard address/port.
+        req = b"\x05\x03\x00\x01\x00\x00\x00\x00\x00\x00"
+        control_writer.write(req)
+        await control_writer.drain()
+        head = await asyncio.wait_for(rdr.readexactly(4), timeout=5.0)
+        if head[0] != 0x05 or head[1] != 0x00:
+            raise ConnectionError(f"SOCKS5 UDP ASSOCIATE failed code={head[1]}")
+
+        atyp = head[3]
+        if atyp == 1:
+            raw_addr = await asyncio.wait_for(rdr.readexactly(4), timeout=5.0)
+            relay_host = socket.inet_ntoa(raw_addr)
+        elif atyp == 3:
+            ln = (await asyncio.wait_for(rdr.readexactly(1), timeout=5.0))[0]
+            raw_addr = await asyncio.wait_for(rdr.readexactly(ln), timeout=5.0)
+            relay_host = raw_addr.decode("idna", errors="ignore")
+        elif atyp == 4:
+            raw_addr = await asyncio.wait_for(rdr.readexactly(16), timeout=5.0)
+            relay_host = socket.inet_ntop(socket.AF_INET6, raw_addr)
+        else:
+            raise ConnectionError("invalid SOCKS5 UDP relay address type")
+
+        relay_port = int.from_bytes(
+            await asyncio.wait_for(rdr.readexactly(2), timeout=5.0),
+            "big",
+        )
+
+        # 0.0.0.0/:: means use the proxy's reachable address.
+        if relay_host in ("0.0.0.0", "::"):
+            relay_host = proxy["hostname"].strip("[]")
+
+        loop = asyncio.get_running_loop()
+        udp_transport, protocol = await loop.create_datagram_endpoint(
+            _Socks5UDPProtocol,
+            local_addr=("0.0.0.0", 0),
+            family=socket.AF_INET,
+        )
+        protocol.relay_addr = (relay_host, relay_port)
+
+        adapter = _Socks5UDPTransport(
+            udp_transport,
+            control_writer,
+            (relay_host, relay_port),
+            address,
+            port,
+        )
+        logger.info(
+            "proxy_udp_connect[socks5] via %s:%s -> %s:%s",
+            proxy["hostname"],
+            proxy["port"],
+            address,
+            port,
+        )
+        return adapter, protocol
+    except BaseException:
+        await _close_writer_safely(control_writer)
+        raise
+
+
+async def _direct_udp_connect(address: str, port: int):
+    loop = asyncio.get_running_loop()
+    transport, protocol = await loop.create_datagram_endpoint(
+        _RelayUDPProtocol,
+        remote_addr=(address, port),
+        family=socket.AF_UNSPEC,
+    )
+    return transport, protocol
+
+
+async def proxy_udp_connect(uuid: str, address: str, port: int, proxy_override: str = None):
+    """Open UDP using a user's SOCKS5 proxy when available, else direct UDP.
+
+    HTTP/HTTPS proxies do not provide a portable UDP tunnel here, so those
+    entries are skipped for UDP rather than pretending TCP CONNECT is UDP.
+    """
+    entry = proxy_override.strip() if proxy_override else None
+    if not entry:
+        user_id = await _resolve_user_id_for_link(uuid)
+        if user_id:
+            async with USERS_LOCK:
+                user = USERS.get(user_id) or {}
+                plist = list(user.get("proxy_ips") or [])
+            if plist:
+                entry = random.choice(plist)
+
+    if entry:
+        base_proxy = _parse_proxy_entry(entry)
+        if base_proxy and base_proxy.get("protocol") in ("socks5", "socks5h"):
+            targets = await _resolve_proxy_targets(entry)
+            for host, pport in targets:
+                proxy = dict(base_proxy)
+                proxy["hostname"] = host
+                proxy["port"] = pport
+                try:
+                    return await _socks5_udp_connect(proxy, address, port)
+                except Exception as exc:
+                    logger.debug(
+                        "SOCKS5 UDP failed via %s:%s: %s",
+                        host,
+                        pport,
+                        exc,
+                    )
+
+    return await _direct_udp_connect(address, port)
 
 
 async def proxy_connect(uuid: str, address: str, port: int, proxy_override: str = None):
