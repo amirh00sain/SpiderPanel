@@ -681,6 +681,10 @@ body {
   flex-direction: column;
   gap: 10px;
 }
+.config-group{margin:0 0 18px;padding:12px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.025)}
+.config-group-title{display:flex;align-items:center;gap:10px;padding:2px 2px 10px;font-size:13px;font-weight:800;color:var(--txt)}
+.config-group-title .line{height:1px;flex:1;background:var(--border)}
+[data-theme="light"] .config-group{background:#fff;border-color:#cfcfcf}
 .config-card {
   display: flex;
   align-items: center;
@@ -1140,9 +1144,9 @@ body {
   <div class="filter-bar">
     <div class="chip-row">
       <span class="chip active" data-filter="all" data-i18n="all">همه</span>
-      <span class="chip" data-filter="proxy">Proxy</span>
-      <span class="chip" data-filter="tls">TLS</span>
-      <span class="chip" data-filter="reality">Reality</span>
+      <span class="chip" data-filter="tls" data-i18n="tlsCategory">TLS</span>
+      <span class="chip" data-filter="reality" data-i18n="realityCategory">Reality</span>
+      <span class="chip" data-filter="telegram" data-i18n="telegramCategory">Telegram Proxy</span>
     </div>
     <div class="search-box">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -1256,7 +1260,7 @@ body {
       usernameLbl: "نام کاربری", connLimit: "اتصال مجاز", connActive: "اتصال فعلی", usage: "مصرف شده",
       remain: "حجم باقی‌مانده", used: "حجم مصرفی", expireLabel: "انقضا", unlimited: "∞ نامحدود",
       noExpire: "بدون تاریخ انقضا", min: "دقیقه", hour: "ساعت", day: "روز", copyAll: "کپی همه کانفیگ‌ها",
-      copySubText: "کپی متن ساب", all: "همه", search: "جستجو در کانفیگ‌ها...", yourConfigs: "کانفیگ‌های شما",
+      copySubText: "کپی متن ساب", all: "همه", tlsCategory: "TLS", realityCategory: "Reality", telegramCategory: "Telegram Proxy", search: "جستجو در کانفیگ‌ها...", yourConfigs: "کانفیگ‌های شما",
       qrHint: "اسکن کنید تا کانفیگ اضافه شود", close: "بستن", toastSub: "لینک ساب کپی شد",
       toastAll: "همه کانفیگ‌ها کپی شدند", toastCfg: "کانفیگ کپی شد", toastErr: "خطا در کپی",
       connectedActive: "متصل و فعال", secureReady: "اتصال امن شما آماده استفاده است", quickConnect: "اتصال سریع"
@@ -1267,7 +1271,7 @@ body {
       usernameLbl: "Username", connLimit: "Allowed Connections", connActive: "Active Connections", usage: "Used",
       remain: "Remaining", used: "Used", expireLabel: "Expiration", unlimited: "∞ Unlimited",
       noExpire: "No expiration date", min: "Min", hour: "Hour", day: "Day", copyAll: "Copy All Configs",
-      copySubText: "Copy Sub Text", all: "All", search: "Search configs...", yourConfigs: "Your Configs",
+      copySubText: "Copy Sub Text", all: "All", tlsCategory: "TLS", realityCategory: "Reality", telegramCategory: "Telegram Proxy", search: "Search configs...", yourConfigs: "Your Configs",
       qrHint: "Scan to add config", close: "Close", toastSub: "Subscription link copied",
       toastAll: "All configs copied", toastCfg: "Config copied", toastErr: "Copy failed",
       connectedActive: "Connected & Active", secureReady: "Your secure connection is ready", quickConnect: "Quick Connect"
@@ -1356,38 +1360,61 @@ body {
     return m ? m[0].replace('://', '').toUpperCase() : 'PROXY';
   }
 
-  function dataProtoKey(link) {
+  function configCategory(link) {
     var l = String(link || '').toLowerCase();
-    var tags = [];
-    if (/^(vless|vmess|trojan|ss|socks):\/\//.test(l)) tags.push('proxy');
-    if (l.indexOf('security=reality') >= 0) tags.push('reality');
-    else if (l.indexOf('security=tls') >= 0) tags.push('tls');
-    return tags.join(' ') || 'other';
+    if (l.indexOf('t.me/proxy?') === 0 || l.indexOf('https://t.me/proxy?') === 0 || l.indexOf('tg://proxy') === 0) return 'telegram';
+    if (l.indexOf('security=reality') >= 0 || l.indexOf('security%3dreality') >= 0) return 'reality';
+    return 'tls';
+  }
+
+  function categoryLabel(cat) {
+    if (cat === 'reality') return tr('realityCategory');
+    if (cat === 'telegram') return tr('telegramCategory');
+    return tr('tlsCategory');
+  }
+
+  function makeConfigCard(link, i, cat) {
+    var card = document.createElement('div');
+    card.className = 'config-card tilt-card';
+    card.setAttribute('data-tags', cat);
+    card.setAttribute('data-category', cat);
+    card.setAttribute('data-index', String(i));
+    card.innerHTML =
+      '<div class="config-left">' +
+        '<div class="proto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 0c0 1.5-2 2-2 3.5M12 17h.01" stroke-linecap="round"/></svg></div>' +
+        '<div class="config-info"><span class="config-name">' + esc(CONFIG_NAMES[i] || ('Config ' + (i + 1))) + '</span><span class="config-proto">' + esc(CONFIG_PROTOS[i] || protoOf(link)) + '</span></div>' +
+      '</div>' +
+      '<div class="config-actions">' +
+        '<button class="icon-btn copy-cfg" type="button" data-index="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>' +
+        '<button class="icon-btn qr-btn" type="button" data-index="' + i + '" title="QR Code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M20 20v.01"/></svg></button>' +
+      '</div>';
+    return card;
   }
 
   function renderConfigs() {
     var list = document.getElementById("configList");
     if (!list) return;
     list.innerHTML = '';
+    var groups = { tls: [], reality: [], telegram: [] };
     CONFIG_LINKS.forEach(function(link, i) {
-      var card = document.createElement('div');
-      card.className = 'config-card tilt-card';
-      card.setAttribute('data-tags', dataProtoKey(link));
-      card.innerHTML =
-        '<div class="config-left">' +
-          '<div class="proto-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 0c0 1.5-2 2-2 3.5M12 17h.01" stroke-linecap="round"/></svg></div>' +
-          '<div class="config-info"><span class="config-name">' + esc(CONFIG_NAMES[i] || ('Config ' + (i + 1))) + '</span><span class="config-proto">' + esc(CONFIG_PROTOS[i] || protoOf(link)) + '</span></div>' +
-        '</div>' +
-        '<div class="config-actions">' +
-          '<button class="icon-btn copy-cfg" type="button" data-index="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>' +
-          '<button class="icon-btn qr-btn" type="button" data-index="' + i + '" title="QR Code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M20 20v.01"/></svg></button>' +
-        '</div>';
-      list.appendChild(card);
+      groups[configCategory(link)].push(i);
+    });
+    ['tls', 'reality', 'telegram'].forEach(function(cat) {
+      if (!groups[cat].length) return;
+      var section = document.createElement('div');
+      section.className = 'config-group';
+      section.setAttribute('data-group', cat);
+      section.innerHTML = '<div class="config-group-title"><span>' + esc(categoryLabel(cat)) + '</span><span class="line"></span><span>' + groups[cat].length + '</span></div>';
+      groups[cat].forEach(function(i) {
+        section.appendChild(makeConfigCard(CONFIG_LINKS[i], i, cat));
+      });
+      list.appendChild(section);
     });
     var cnt = document.getElementById('cfgCount');
     if (cnt) cnt.textContent = String(CONFIG_LINKS.length);
     bindEvents();
     init3DTilt();
+    applyFilterLogic();
   }
 
   function setText(id, val) {
@@ -1686,13 +1713,21 @@ body {
 
   var activeFilter = "all";
   function applyFilterLogic() {
-    var q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
-    document.querySelectorAll(".config-card").forEach(function(c, i) {
-      var tags = (c.getAttribute("data-tags") || "").toLowerCase();
-      var name = (CONFIG_NAMES[i] || "").toLowerCase();
-      var okFilter = activeFilter === "all" || tags.indexOf(activeFilter) >= 0;
-      var okSearch = !q || name.indexOf(q) >= 0;
-      c.style.display = (okFilter && okSearch) ? "flex" : "none";
+    var searchEl = document.getElementById("searchInput");
+    var q = (searchEl ? searchEl.value : "").trim().toLowerCase();
+    document.querySelectorAll(".config-group").forEach(function(group) {
+      var groupCat = (group.getAttribute("data-group") || "").toLowerCase();
+      var visible = 0;
+      group.querySelectorAll(".config-card").forEach(function(c) {
+        var idx = parseInt(c.getAttribute("data-index"), 10);
+        var name = (CONFIG_NAMES[idx] || "").toLowerCase();
+        var okFilter = activeFilter === "all" || groupCat === activeFilter;
+        var okSearch = !q || name.indexOf(q) >= 0;
+        var show = okFilter && okSearch;
+        c.style.display = show ? "flex" : "none";
+        if (show) visible++;
+      });
+      group.style.display = visible ? "block" : "none";
     });
   }
 

@@ -1176,7 +1176,7 @@ async def startup():
         except Exception as e:
             logger.warning(f"Xray apply on boot failed: {e}")
     log_activity("system", "سرور راه‌اندازی شد", "ok")
-    logger.info(f"Spider Panel v10 (commit 24d7594) started on port {CONFIG['port']}")
+    logger.info(f"Spider Panel v8 (commit 24d7594) started on port {CONFIG['port']}")
     # Include XHTTP router for xhttp-siz10 endpoints (already merged into main.py)
     global xhttp_router
     # router is already defined in this module
@@ -9017,6 +9017,41 @@ async def _ensure_worker_inbound() -> bool:
     return True
 
 
+def _worker_transient_network_error(detail: str) -> bool:
+    """Return True for deployment-time DNS/connection errors that may clear after Pages propagates."""
+    msg = str(detail or '').lower()
+    transient_tokens = (
+        'name or service not known',
+        'temporary failure in name resolution',
+        'temporary failure',
+        'nodename nor servname provided',
+        'getaddrinfo failed',
+        'network is unreachable',
+        'connection refused',
+        'connect timeout',
+        'timed out',
+        '502', '503', '504',
+    )
+    return any(tok in msg for tok in transient_tokens)
+
+
+async def _worker_retry_after_deploy() -> None:
+    """Retry remote control after a fresh Pages deploy while DNS/route propagation settles."""
+    delays = (5, 10, 20, 30, 45)
+    for delay in delays:
+        await asyncio.sleep(delay)
+        try:
+            if not WORKER.get('connected'):
+                return
+            res = await _worker_push_config()
+            if res.get('ok'):
+                await _worker_pull_all_users()
+                await _worker_pull_status()
+                return
+        except Exception:
+            pass
+
+
 async def _worker_push_config() -> dict:
     """Remote control: push the full panel config to the worker in one call.
 
@@ -9058,12 +9093,28 @@ async def _worker_push_config() -> dict:
                 "disabled": (u.get("status") or "active") != "active",
             })
     try:
-        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
-            r = await client.post(
-                f"https://{domain}/panel/config",
-                headers={"Authorization": f"Bearer {ctrl}"},
-                json={"users": users, "routes": {}, "settings": {}},
-            )
+        last_detail = ''
+        # A new Pages project can be deployed before its *.pages.dev hostname
+        # becomes resolvable. Retry briefly instead of failing worker creation.
+        for attempt, delay in enumerate((0, 2, 4, 8), 1):
+            if delay:
+                await asyncio.sleep(delay)
+            try:
+                async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+                    r = await client.post(
+                        f"https://{domain}/panel/config",
+                        headers={"Authorization": f"Bearer {ctrl}"},
+                        json={"users": users, "routes": {}, "settings": {}},
+                    )
+                if r.status_code == 200:
+                    break
+                last_detail = f"worker returned HTTP {r.status_code}: {r.text[:120]}"
+                if r.status_code not in (502, 503, 504):
+                    return {"ok": False, "detail": last_detail}
+            except Exception as exc:
+                last_detail = str(exc)
+                if not _worker_transient_network_error(last_detail) or attempt == 4:
+                    return {"ok": False, "detail": last_detail}
         if r.status_code == 200:
             data = {}
             try:
@@ -9078,7 +9129,7 @@ async def _worker_push_config() -> dict:
                 WORKER["worker_users_online"] = int(data.get("online") or 0)
             asyncio.create_task(save_state())
             return {"ok": True, "detail": "config pushed", "users": data.get("users", len(users))}
-        return {"ok": False, "detail": f"worker returned HTTP {r.status_code}: {r.text[:120]}"}
+        return {"ok": False, "detail": last_detail or f"worker returned HTTP {r.status_code}: {r.text[:120]}"}
     except Exception as e:
         return {"ok": False, "detail": str(e)}
 
@@ -9377,18 +9428,32 @@ async def worker_setup(request: Request, _=Depends(require_auth)):
 
     await _ensure_worker_inbound()
     ctrl_res = await _worker_push_config()
+    deferred_sync = False
+    deferred_reason = ""
     if not ctrl_res.get("ok"):
-        async with WORKER_LOCK:
-            WORKER["last_error"] = ctrl_res.get("detail", "worker config push failed")
-        asyncio.create_task(save_state())
-        raise HTTPException(status_code=502, detail=f"Worker control sync failed: {ctrl_res.get('detail', 'unknown error')}")
+        detail = ctrl_res.get("detail", "worker config push failed")
+        if _worker_transient_network_error(detail):
+            # Pages deployments can need a short DNS propagation window. The
+            # worker is already deployed, so do not report creation as failed.
+            deferred_sync = True
+            deferred_reason = detail
+            async with WORKER_LOCK:
+                WORKER["last_error"] = ""
+                WORKER["remote_status"] = "pending"
+            asyncio.create_task(_worker_retry_after_deploy())
+        else:
+            async with WORKER_LOCK:
+                WORKER["last_error"] = detail
+            asyncio.create_task(save_state())
+            raise HTTPException(status_code=502, detail=f"Worker control sync failed: {detail}")
 
-    await _worker_pull_all_users()
+    if not deferred_sync:
+        await _worker_pull_all_users()
 
     async with WORKER_LOCK:
         WORKER["last_sync"] = now_ir().isoformat(timespec="seconds")
-        WORKER["last_error"] = "" if ctrl_res.get("ok") else ctrl_res.get("detail", "")
-        WORKER["remote_status"] = "deployed"
+        WORKER["last_error"] = ""
+        WORKER["remote_status"] = "pending" if deferred_sync else "deployed"
 
     asyncio.create_task(save_state())
     log_activity(
@@ -9397,7 +9462,11 @@ async def worker_setup(request: Request, _=Depends(require_auth)):
         "ok",
     )
     async with WORKER_LOCK:
-        return {"ok": True, **_worker_public()}
+        out = {"ok": True, **_worker_public()}
+    if deferred_sync:
+        out["deferred_sync"] = True
+        out["deferred_reason"] = deferred_reason
+    return out
 
 
 @app.post("/api/worker/sync")

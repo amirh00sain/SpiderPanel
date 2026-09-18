@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Spider Panel v5</title>
+<title>Spider Panel v8</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -957,6 +957,15 @@ tr{animation:fadeIn .3s ease}
 [data-theme="light"] .ib-pick{background:#fff!important;color:#000!important;border-color:#ccc!important}
 [data-theme="light"] .ib-pick-name{color:#000!important}
 [data-theme="light"] .ib-pick-meta{color:#666!important}
+
+[data-theme="dark"] .country-tick{background:#0a0a0a!important;color:#fff!important;border-color:#2a2a2a!important}
+[data-theme="dark"] .country-tick .country-name{color:#fff!important}
+[data-theme="light"] .country-tick{background:#fff!important;color:#000!important;border-color:#cfcfcf!important;box-shadow:none}
+[data-theme="light"] .country-tick .country-name{color:#000!important;font-weight:600}
+[data-theme="light"] .country-tick .ck{border-color:#8d8d8d!important;color:transparent}
+[data-theme="light"] .country-tick.selected{background:#f5f5f5!important;border-color:#000!important;color:#000!important;box-shadow:0 0 0 1px #000}
+[data-theme="light"] .country-tick.selected .ck{background:#000!important;color:#fff!important;border-color:#000!important}
+.country-tick .country-name{display:inline-block;line-height:1.2;white-space:nowrap}
 .panel-h .glow,.panel-h .glow *{color:var(--neon)!important;text-shadow:none!important}
 .stat-v,.stat-icon,.topbar-greet strong,.contact-bubble svg{color:var(--neon)!important}
 .settings-inner-block{padding-top:14px;margin-top:14px;border-top:1px solid var(--border)}
@@ -1136,7 +1145,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
       <img src="/static/spider-logo.svg" alt="Spider" onerror="this.style.display='none'" style="width:56px;height:56px;flex-shrink:0">
       <div>
         <div class="sb-brand-t"><span>S</span>PIDER</div>
-        <div class="sb-brand-s">PANEL v5</div>
+        <div class="sb-brand-s">PANEL v8</div>
       </div>
     </div>
     <nav class="sb-nav">
@@ -1195,7 +1204,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
         <span data-i18n="logout">خروج</span>
       </div>
     </nav>
-    <div class="sb-foot"><span class="dot"></span> Spider Panel v5.0</div>
+    <div class="sb-foot"><span class="dot"></span> Spider Panel v8.0</div>
   </aside>
 
   <!-- MAIN -->
@@ -2244,13 +2253,15 @@ function spdToggleAcc(id, btn) {
 
 /* Node accordions use the clicked card itself instead of a generated id.
    This prevents an open node from getting stuck and keeps each node independent. */
-function toggleNodeAccordion(btn, evt) {
-  if (evt) { evt.preventDefault(); evt.stopPropagation(); }
-  var acc = btn && btn.closest ? btn.closest('.spd-acc') : null;
-  if (!acc) return;
+function toggleNodeAccordion(btn) {
+  if (!btn) return;
+  var acc = btn.parentElement;
+  if (!acc || !acc.classList.contains('node-item-accordion')) return;
   var open = !acc.classList.contains('open');
   acc.classList.toggle('open', open);
   btn.setAttribute('aria-expanded', String(open));
+  var body = acc.querySelector('.spd-acc-body');
+  if (body) body.setAttribute('aria-hidden', String(!open));
 }
 
 function switchTab(tab, el) {
@@ -2580,7 +2591,7 @@ function renderEditInboundPicker(u) {
         var flag = window.cuCodeToFlag ? cuCodeToFlag(p.code) : '';
         var checked = (sel.worker || []).indexOf(p.code) !== -1 ? ' selected' : '';
         chipHtml += '<span class="country-tick' + checked + '" data-code="' + esc(p.code) + '" onclick="euPickWorkerCountry(\'' + esc(id) + '\',this)">' +
-          '<span class="ck material-symbols-outlined">check</span>' + flag + ' ' + esc(p.country || p.code) + '</span>';
+          '<span class="ck material-symbols-outlined">check</span><span class="country-name">' + flag + ' ' + esc(p.country || p.code) + '</span></span>';
       });
       html += '<div style="flex-basis:100%;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-top:4px">';
       html += '<div style="font-size:11px;color:var(--txt2);margin-bottom:6px">' + (t('workerCountries') || 'Worker Countries') + '</div>';
@@ -3305,9 +3316,9 @@ var iconCfg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" strok
 var iconLink = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>';
 var iconQr = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="18" y1="14" x2="18" y2="14.01"/><line x1="21" y1="14" x2="21" y2="14.01"/><line x1="14" y1="17" x2="14" y2="17.01"/><line x1="16" y1="17" x2="16" y2="21"/><line x1="14" y1="21" x2="21" y2="21"/></svg>';
 var iconEdit = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-var iconToggle = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>';
+var iconToggle = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v9"/><path d="M6.6 5.7a9 9 0 106.8 0"/></svg>';
 var iconTrash = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
-var iconReset = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>';
+var iconReset = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 109-9c-2.5 0-4.76 1.02-6.4 2.67L3 8"/><path d="M3 3v5h5"/></svg>';
 var iconCheck = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
 var iconRefresh = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>';
 
@@ -4203,7 +4214,11 @@ async function workerSetup() {
   try {
     var w = await api('/api/worker/setup', {method: 'POST', body: {token: token}});
     $id('wk-token').value = '';
-    toast(t('workerConnected'), 'ok');
+    if (w && w.deferred_sync) {
+      toast(t('workerConnected') + ' — ' + (w.deferred_reason || 'sync will retry automatically'), 'warn');
+    } else {
+      toast(t('workerConnected'), 'ok');
+    }
     await loadWorker();
   } catch(e) { toast(e.message || t('toast.err'), 'err'); }
   if (btn) { btn.disabled = false; btn.textContent = t('createNewWorker'); }
@@ -4415,7 +4430,7 @@ function cuRenderInboundOpts() {
           var flag = window.cuCodeToFlag ? cuCodeToFlag(p.code) : '';
           var checked = (sel.worker || []).indexOf(p.code) !== -1 ? ' selected' : '';
           chipHtml += '<span class="country-tick' + checked + '" data-code="' + esc(p.code) + '" onclick="cuPickWorkerCountries(\'' + esc(id) + '\',this)">' +
-            '<span class="ck material-symbols-outlined">check</span>' + flag + ' ' + esc(p.country || p.code) + '</span>';
+            '<span class="ck material-symbols-outlined">check</span><span class="country-name">' + flag + ' ' + esc(p.country || p.code) + '</span></span>';
         });
         html += '<div class="set-row" style="padding:0;border:none;flex-wrap:wrap">' +
           '<span class="set-lbl" style="width:100%">' + t('workerCountries') + '</span>' +
@@ -4496,7 +4511,7 @@ function renderNodes() {
     return;
   }
   var html = '';
-  ALL_NODES.forEach(function(node) {
+  ALL_NODES.forEach(function(node, nodeIndex) {
     var flag = _nodeFlag(node);
     var ip = _nodeIp(node);
     var country = node.country || node.country_code || '';
@@ -4506,13 +4521,14 @@ function renderNodes() {
     var lastSeen = node.last_seen || node.last_checked || '—';
     var lastSync = node.last_sync || '—';
     var lastErr = node.last_error || node.error || '—';
+    var nodeAccId = 'node-item-' + nodeIndex;
     html += '<div class="spd-acc node-item-accordion" style="margin-bottom:8px">' +
-      '<button type="button" class="spd-acc-head" onclick="toggleNodeAccordion(this,event)" aria-expanded="false">' +
+      '<button type="button" class="spd-acc-head" onclick="spdToggleAcc(\'' + nodeAccId + '\',this)" aria-expanded="false" aria-controls="acc-' + nodeAccId + '\">' +
         '<span class="spd-acc-title"><strong>' + esc(flag + ' ' + (node.name || node.domain || node.node_id)) + '</strong><span style="font-size:10px;color:var(--txt2);display:block;margin-top:3px" dir="ltr">' + esc(country + (country && ip ? ' · ' : '') + ip) + '</span></span>' +
         '<span class="node-status-pill ' + statusCls + '">' + esc(status) + '</span>' +
         '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span>' +
       '</button>' +
-      '<div class="spd-acc-body">' +
+      '<div class="spd-acc-body" id="acc-' + nodeAccId + '" aria-hidden="true">' +
         '<div class="set-row"><span class="set-lbl">Domain</span><span dir="ltr" style="font-size:12px">' + esc(node.domain || '—') + '</span></div>' +
         '<div class="set-row"><span class="set-lbl">IP / Country</span><span dir="ltr" style="font-size:12px">' + esc(ip) + ' · ' + esc(flag + ' ' + country) + '</span></div>' +
         '<div class="set-row"><span class="set-lbl">Status</span><span class="node-status-pill ' + statusCls + '">' + esc(status) + '</span></div>' +
