@@ -461,6 +461,56 @@ input,select,button,textarea{font-family:inherit}
 .scn-result .scn-ip { font-family: monospace; direction: ltr; }
 .scn-result .scn-dom-name { color: var(--txt2); font-size: 10px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ═══ SPOOF SCANNER ═══ */
+.scn-adv-dropdown { position: relative; }
+.scn-adv-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  max-height: 250px;
+  overflow-y: auto;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.scn-adv-dd-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .2s;
+}
+.scn-adv-dd-item:last-child { border-bottom: none; }
+.scn-adv-dd-item:hover { background: rgba(43,127,255,.1); }
+.scn-adv-dd-domain { flex: 1; font-family: monospace; font-size: 12px; direction: ltr; }
+.scn-adv-dd-edit, .scn-adv-dd-del {
+  background: none;
+  border: none;
+  color: var(--txt2);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all .2s;
+}
+.scn-adv-dd-edit:hover { color: var(--neon); background: rgba(43,127,255,.1); }
+.scn-adv-dd-del:hover { color: var(--red); background: rgba(255,107,107,.1); }
+.scn-adv-dd-empty { padding: 12px; text-align: center; color: var(--txt2); font-size: 11px; }
+
+/* Spoof tab styles */
+#scn-pane-spoof .scn-tabs { margin-top: 14px; }
+#scn-pane-spoof .scn-tab { font-size: 11px; padding: 8px 4px; }
+#scn-pane-spoof .scn-cfg { margin-top: 10px; }
+#scn-pane-spoof .scn-hint { margin-top: 8px; margin-bottom: 8px; }
+
 /* ═══ CUSTOM-IP PICKER (create-user modal) ═══ */
 .cu-custom-wrap { position: relative; }
 .cu-custom-btn { width: 100%; justify-content: space-between; }
@@ -1184,6 +1234,109 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
           </div>
             </div>
           </div>
+
+          <!-- SPOOF & SNI -->
+          <div class="spd-acc" style="margin-top:10px">
+            <button type="button" class="spd-acc-head" onclick="spdToggleAcc('scn-spoof',this)" aria-expanded="false"><span class="spd-acc-title"><strong data-i18n="spoofTitle">Spoof</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
+            <div class="spd-acc-body" id="acc-scn-spoof">
+          <div class="scn-pane active" id="scn-pane-spoof">
+            <!-- Advanced Section: Domain input that populates all inbound domains -->
+            <div class="panel" style="margin-bottom:14px">
+              <div class="panel-h"><span class="glow" data-i18n="advancedTitle">پیشرفته</span></div>
+              <div class="scn-hint px-hint" style="margin-bottom:10px">دامنه پنل را اینجا وارد کنید تا به صورت خودکار در تمام اینباندها (دامنه/سنی/دامنه خارجی) اعمال شود. دامنه‌های قبلی در منوی شیشه‌ای قابل انتخاب/حذف هستند.</div>
+              <div class="scn-dom-add" style="position:relative">
+                <input type="text" id="scn-adv-domain" placeholder="مثال: mypanel.example.com" dir="ltr" autocomplete="off">
+                <button class="btn btn-p" onclick="scnSaveAdvDomain()"><span>ذخیره و اعمال</span></button>
+                <svg class="scn-adv-dropdown" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);cursor:pointer;opacity:.6" onclick="scnToggleAdvDropdown()"><path d="M6 9l6 6 6-6"/></svg>
+                <div class="scn-adv-dropdown-menu hidden" id="scn-adv-dropdown-menu"></div>
+              </div>
+            </div>
+
+            <!-- Spoof Sub-tabs: IP Scan / SNI Scan -->
+            <div class="scn-tabs" role="tablist" style="margin-top:14px">
+              <button class="scn-tab active" id="spf-tab-ip" onclick="spfSwitchTab('ip',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M12 22V12"/></svg> IP Scan</button>
+              <button class="scn-tab" id="spf-tab-sni" onclick="spfSwitchTab('sni',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> SNI Scan</button>
+            </div>
+
+            <!-- IP Scan Pane -->
+            <div class="scn-pane active" id="spf-pane-ip">
+              <div class="scn-cfg">
+                <div class="f-g"><label>تعداد IP برای اسکن</label><input type="number" id="spf-ip-count" value="30" min="1" max="200"></div>
+                <div class="f-g"><label>پورت هدف</label><select id="spf-ip-port"><option value="443">443</option><option value="8443">8443</option><option value="2053">2053</option><option value="2083">2083</option><option value="2087">2087</option></select></div>
+                <button class="btn btn-p" onclick="spfRunIpScan()"><span>شروع اسکن IP</span></button>
+                <button class="btn btn-g" onclick="spfStopScan()"><span>توقف</span></button>
+              </div>
+              <div class="scn-hint px-hint">اسکن از رنج‌های Cloudflare (cf_subnets.txt). تا ۱۰ IP موفق یافت می‌شود. نتایج موفق و ناموفق به صورت زنده نمایش داده می‌شوند.</div>
+              <div class="scn-stats">
+                <div class="scn-chip"><b id="spf-ip-found">۰</b><span>IP موفق</span></div>
+                <div class="scn-chip"><b id="spf-ip-tried">۰</b><span>تست شده</span></div>
+                <div class="scn-chip"><b id="spf-ip-best">--</b><span>بهترین پینگ</span></div>
+                <div class="scn-chip"><b id="spf-ip-saved">۰/۱۰</b><span>ذخیره شده</span></div>
+              </div>
+              <div class="scn-progress"><div class="scn-bar" id="spf-ip-bar"></div></div>
+              <div class="scn-list" id="spf-ip-list"><div class="scn-empty">برای شروع اسکن، دکمه «شروع اسکن IP» را بزنید</div></div>
+              <div class="scn-saved">
+                <div class="scn-saved-t"><span>ذخیره شده (اولین ۱۰ آی‌پی موفق)</span> — <button class="btn btn-sm btn-g" onclick="spfClearSaved('ip')"><span>پاک کردن</span></button></div>
+                <div class="scn-saved-tags" id="spf-ip-saved-tags"><span class="scn-empty">هنوز ذخیره‌ای نیست</span></div>
+              </div>
+            </div>
+
+            <!-- SNI Scan Pane -->
+            <div class="scn-pane" id="spf-pane-sni">
+              <div class="scn-cfg">
+                <div class="f-g"><label>تعداد SNI برای اسکن</label><input type="number" id="spf-sni-count" value="30" min="1" max="200"></div>
+                <div class="f-g"><label>پورت هدف</label><select id="spf-sni-port"><option value="443">443</option><option value="8443">8443</option></select></div>
+                <button class="btn btn-p" onclick="spfRunSniScan()"><span>شروع اسکن SNI</span></button>
+                <button class="btn btn-g" onclick="spfStopScan()"><span>توقف</span></button>
+              </div>
+              <div class="scn-hint px-hint">اسکن از لیست SNI (sni-list.txt). تا ۱۰ SNI موفق یافت می‌شود. هر SNI در IPهای Cloudflare تست می‌شود.</div>
+              <div class="scn-stats">
+                <div class="scn-chip"><b id="spf-sni-found">۰</b><span>SNI موفق</span></div>
+                <div class="scn-chip"><b id="spf-sni-tried">۰</b><span>تست شده</span></div>
+                <div class="scn-chip"><b id="spf-sni-best">--</b><span>بهترین پینگ</span></div>
+                <div class="scn-chip"><b id="spf-sni-saved">۰/۱۰</b><span>ذخیره شده</span></div>
+              </div>
+              <div class="scn-progress"><div class="scn-bar" id="spf-sni-bar"></div></div>
+              <div class="scn-list" id="spf-sni-list"><div class="scn-empty">برای شروع اسکن، دکمه «شروع اسکن SNI» را بزنید</div></div>
+              <div class="scn-saved">
+                <div class="scn-saved-t"><span>ذخیره شده (اولین ۱۰ SNI موفق)</span> — <button class="btn btn-sm btn-g" onclick="spfClearSaved('sni')"><span>پاک کردن</span></button></div>
+                <div class="scn-saved-tags" id="spf-sni-saved-tags"><span class="scn-empty">هنوز ذخیره‌ای نیست</span></div>
+              </div>
+            </div>
+
+            <!-- Fake SNI & Spoof IP Fields with Lightning Bolt -->
+            <div class="divider"></div>
+            <div class="panel" style="margin-top:14px">
+              <div class="panel-h"><span class="glow" data-i18n="spoofSettingsTitle">Spoof Settings</span></div>
+              <div class="f-r" style="gap:10px;flex-wrap:wrap">
+                <div class="f-g" style="flex:1;min-width:280px">
+                  <label>Fake SNI</label>
+                  <div style="display:flex;gap:6px;align-items:flex-end">
+                    <input type="text" id="spf-fake-sni" placeholder="مثال: www.cloudflare.com" dir="ltr" style="flex:1">
+                    <button class="btn btn-b" style="border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center" onclick="spfPickBestFakeSni()" title="انتخاب بهترین SNI از نتایج اسکن">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="f-g" style="flex:1;min-width:280px">
+                  <label>Spoof IP</label>
+                  <div style="display:flex;gap:6px;align-items:flex-end">
+                    <input type="text" id="spf-spoof-ip" placeholder="مثال: 104.16.0.1" dir="ltr" style="flex:1">
+                    <button class="btn btn-b" style="border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center" onclick="spfPickBestSpoofIp()" title="انتخاب بهترین IP از نتایج اسکن">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="f-r" style="margin-top:8px;gap:10px">
+                <button class="btn btn-p" onclick="spfSaveSpoofSettings()"><span>ذخیره تنظیمات Spoof</span></button>
+                <button class="btn btn-g" onclick="spfLoadSpoofSettings()"><span>بارگذاری ذخیره‌شده</span></button>
+              </div>
+            </div>
+          </div>
+            </div>
+          </div>
+
           <!-- SNI -->
           <div class="spd-acc" style="margin-top:10px">
             <button type="button" class="spd-acc-head" onclick="spdToggleAcc('scn-sni',this)" aria-expanded="false"><span class="spd-acc-title"><strong data-i18n="sniTitle">SNI</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
@@ -1238,19 +1391,37 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
           <div class="spd-acc" style="margin-top:10px">
             <button type="button" class="spd-acc-head" onclick="spdToggleAcc('worker-main',this)" aria-expanded="false"><span class="spd-acc-title"><strong data-i18n="workerMainTitle">Worker</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
             <div class="spd-acc-body" id="acc-worker-main">
+
+          <!-- DAILY PROXY SOURCE (always available) -->
+          <div class="panel-h" style="margin-top:2px;border-top:1px solid var(--border);padding-top:14px">
+            <span class="glow" data-i18n="proxySource">منبع پروکسی روزانه</span>
+            <span id="wk-source-count" class="badge badge-g" style="margin-right:auto"></span>
+          </div>
+          <div class="set-row">
+            <span class="set-lbl" data-i18n="autoSyncHourly">بروزرسانی خودکار (ساعتی)</span>
+            <button type="button" class="ios-switch" id="wk-auto" onclick="workerToggleAuto()" data-i18n-title="autoSyncHourly" title="بروزرسانی خودکار ساعتی"></button>
+          </div>
+          <div class="set-row" style="border-bottom:none;flex-wrap:wrap;gap:6px">
+            <button class="btn btn-p btn-sm" onclick="workerSyncSource()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
+              <span data-i18n="updateNow">بروزرسانی از منبع</span>
+            </button>
+            <span id="wk-source-status" style="font-size:11px;color:var(--txt2);width:100%"></span>
+          </div>
+
           <!-- SETUP (not connected) -->
           <div id="worker-setup">
-            <div class="scn-hint px-hint" data-i18n="workerSetupTip">پنل را به Cloudflare متصل کنید تا یک پروژه Pages اختصاصی ساخته شود، worker.js داخل آن Deploy شود و یک KV اختصاصی به آن متصل شود.</div>
+            <div class="scn-hint px-hint" data-i18n="workerSetupTip">پنل را به Cloudflare متصل کنید تا یک Worker جدید با ساب‌دامین اختصاصی و KV اختصاصی ساخته شود. پنل مثل یک ریموت، کانفیگ‌ها را به Worker می‌فرستد.</div>
             <div class="f-g" style="margin-top:10px"><label data-i18n="cfToken">Cloudflare API Token</label>
               <div style="display:flex;gap:8px">
                 <input type="password" id="wk-token" dir="ltr" style="flex:1" autocomplete="off">
-                <a class="btn btn-sm btn-g" href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">
+                <a class="btn btn-sm btn-g" href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22zone%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22dns%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=spider-Token" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">
                   <span data-i18n="getToken">گرفتن توکن</span>
                 </a>
               </div>
             </div>
-            <div class="px-hint" style="font-size:10px;color:var(--txt2);margin-bottom:6px">توکن باید دست‌کم Pages:Write و Workers KV Storage:Edit و دسترسی خواندن Account داشته باشد. نیازی به ورود Account ID نیست — Account ID خودکار شناسایی می‌شود.</div>
-            <div class="px-hint" data-i18n="workerAutoName">یک پروژه Pages جدید با نام تصادفی (spider-xxxxxx) و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.</div>
+            <div class="px-hint" style="font-size:10px;color:var(--txt2);margin-bottom:6px">توکن فقط باید دسترسی‌های لازم Worker را داشته باشد: Workers Scripts:Edit، Workers KV Storage:Edit، Workers Routes:Edit، Account Settings:Read، Zone:Read و DNS:Edit. نیازی به Email یا Account ID نیست — Account ID خودکار شناسایی می‌شود.</div>
+            <div class="px-hint" data-i18n="workerAutoName">Worker جدید با نام تصادفی (spider-xxxxxx)، ساب‌دامین اختصاصی و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.</div>
             <button class="btn btn-p" style="width:100%;margin-top:10px" onclick="workerSetup()"><span data-i18n="createNewWorker">ساخت Worker جدید</span></button>
           </div>
 
@@ -1273,7 +1444,7 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
               <a id="worker-url" href="#" target="_blank" rel="noopener" dir="ltr" style="color:var(--neon);font-size:12px"></a>
             </div>
             <div class="set-row">
-              <span class="set-lbl" data-i18n="workerId">Pages Project</span>
+              <span class="set-lbl" data-i18n="workerId">Worker ID</span>
               <span id="worker-name-id" dir="ltr" style="font-size:12px;font-family:monospace;color:var(--txt)"></span>
             </div>
             <div class="set-row">
@@ -1687,12 +1858,12 @@ var LANG = localStorage.getItem('spider-lang') || 'fa';
 var I18N = {
   fa: {
     'dash': 'داشبورد', 'navGroup': 'مدیریت', 'advanced': 'پیشرفته', 'networkTotal': 'مجموع ارسال + دریافت', 'users': 'کاربران', 'inbounds': 'اینباندها', 'scanner': 'اسکنر IP', 'worker': 'Worker', 'settings': 'تنظیمات', 'contact': 'Contact Me', 'logout': 'خروج',
-    'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک پروژه Pages اختصاصی ساخته شود، worker.js داخل آن Deploy شود و یک KV اختصاصی به آن متصل شود.', 'cfToken': 'Cloudflare API Token', 'getToken': 'گرفتن توکن', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت ریموت', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'Pages Project', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف Worker', 'workerUrl': 'Worker URL', 'lastSync': 'آخرین Sync', 'lastError': 'آخرین خطا', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال Sync...', 'synced': 'Sync شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Pages با مسیر /ws/{uuid} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'یک پروژه Pages جدید با نام تصادفی (spider-xxxxxx) و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
+    'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک Worker جدید با ساب‌دامین اختصاصی و KV اختصاصی ساخته شود. پنل مثل یک ریموت، کانفیگ‌ها را به Worker می‌فرستد.', 'cfToken': 'Cloudflare API Token', 'getToken': 'گرفتن توکن', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت ریموت', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف Worker', 'workerUrl': 'Worker URL', 'lastSync': 'آخرین Sync', 'lastError': 'آخرین خطا', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'افزودن کشور', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'noProxyYet': 'هنوز کشوری اضافه نکرده‌اید', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال Sync...', 'synced': 'Sync شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'proxyCodePrompt': 'کد کشور (مثلا de):', 'proxyCountryPrompt': 'نام کشور:', 'proxyHostPrompt': 'آدرس Proxy IP (مثلا de.example.com):', 'proxyPortPrompt': 'پورت Proxy IP:', 'proxySaved': 'کشور ذخیره و Worker بروزرسانی شد', 'confirmDelProxy': 'این کشور حذف شود؟', 'proxyDeleted': 'کشور حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Worker با مسیر /route/{کد کشور} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'Worker جدید با نام تصادفی (spider-xxxxxx)، ساب‌دامین اختصاصی و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
     'tab.dash': 'داشبورد', 'tab.users': 'مدیریت کاربران', 'tab.inbounds': 'مدیریت اینباندها', 'tab.scanner': 'اسکنر آی‌پی', 'tab.settings': 'تنظیمات',
     'inboundFixedHint': 'فقط اینباندهای پیش‌فرض پنل استفاده می‌شوند. WS/TLS به‌صورت خودکار با دامنه اصلی پنل آماده است؛ Reality را با دامنه و پورت خودتان تکمیل کنید (کلید pbk به‌صورت خودکار ساخته می‌شود).', 'inboundFixed': 'افزودن اینباند غیرفعال است — فقط اینباندهای پیش‌فرض.', 'inboundAuto': 'این اینباند خودکار است و نیازی به تنظیم ندارد.',
     'newUser': 'کاربر جدید', 'newInbound': 'اینباند جدید', 'domain': 'دامنه',
     'loading': 'در حال بارگذاری...', 'noUsers': 'هیچ کاربری وجود ندارد', 'noInbounds': 'هیچ اینباندی وجود ندارد', 'errLoadUsers': 'خطا در بارگذاری کاربران', 'errLoadInbounds': 'خطا در بارگذاری اینباندها', 'errLoadStats': 'خطا در بارگذاری آمار',
-    'live': '● LIVE', 'liveBadge': 'LIVE', 'cloudflareTitle': 'Cloudflare', 'railwayTitle': 'Railway', 'tcpTitle': 'TCP', 'advancedTitle': 'پیشرفته', 'sniTitle': 'SNI', 'workerMainTitle': 'Worker',
+    'live': '● LIVE', 'liveBadge': 'LIVE', 'cloudflareTitle': 'Cloudflare', 'railwayTitle': 'Railway', 'tcpTitle': 'TCP', 'spoofTitle': 'Spoof', 'advancedTitle': 'پیشرفته', 'spoofSettingsTitle': 'تنظیمات Spoof', 'sniTitle': 'SNI', 'workerMainTitle': 'Worker',
     'scnTip': 'اسکن زنده از رنج‌های Cloudflare. IPهای پاسخ‌دهنده مرتب و ۱۰ تای اول به صورت خودکار ذخیره می‌شوند.',
     'ipCount': 'تعداد IP', 'targetPort': 'پورت هدف', 'startScan': 'شروع اسکن', 'stop': 'توقف', 'scanning': 'در حال اسکن...', 'scanStopped': 'اسکن متوقف شد',
     'found': 'IP یافت شده', 'tried': 'تست شده', 'bestPing': 'بهترین پینگ', 'saved': 'ذخیره شده', 'savedFirst10': 'ذخیره شده (اولین ۱۰ آی‌پی)', 'clear': 'پاک کردن', 'notSaved': 'هنوز ذخیره‌ای نیست', 'startPrompt': 'برای شروع اسکن، دکمه «شروع اسکن» را بزنید', 'noHit': 'هیچ آی‌پی پاسخ‌دهنده‌ای یافت نشد', 'saveCleared': 'لیست ذخیره‌شده پاک شد',
@@ -1706,7 +1877,7 @@ var I18N = {
     'createUser': 'ایجاد کاربر جدید', 'editUser': 'ویرایش کاربر', 'username': 'نام کاربری', 'conn': 'اتصال همزمان', 'volume': 'حجم', 'unit': 'واحد', 'expire': 'اعتبار', 'day': 'روز', 'month': 'ماه',
     'inboundsMulti': 'اینباندها (چندتایی)', 'noInboundOpt': 'اینباندی وجود ندارد',
     'inboundPickHint': 'برای هر اینباند، گزینه‌های مخصوصش نمایش داده می‌شود: Worker → انتخاب کشور؛ VLESS غیرپیش‌فرض → Cloudflare و Railway؛ Reality → بدون گزینه.',
-    
+    'workerCountries': 'کشورهای چندمنطقه‌ای (برای هر کشور یک تیک فعال کنید):',
     'addCfIps': 'افزودن ۱۰ کانفیگ با IPهای Cloudflare اسکن‌شده',
     'addRailwayIps': 'افزودن ۱۰ کانفیگ با IPهای Railway اسکن‌شده',
     'realityNoExtra': 'Reality گزینه اضافه‌ای ندارد — فقط کانفیگ اصلی Reality.',
@@ -1748,12 +1919,12 @@ var I18N = {
   },
   en: {
     'dash': 'Dashboard', 'navGroup': 'Management', 'advanced': 'Advanced', 'networkTotal': 'Total sent + received', 'users': 'Users', 'inbounds': 'Inbounds', 'scanner': 'IP Scanner', 'worker': 'Worker', 'settings': 'Settings', 'contact': 'Contact Me', 'logout': 'Logout',
-    'workerSetupTip': 'Connect the panel to Cloudflare to create a dedicated Pages project, deploy worker.js, and attach a private KV namespace automatically.', 'cfToken': 'Cloudflare API Token', 'getToken': 'Get Token', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Pages Project', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'Worker URL', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Pages Worker domain with the /ws/{uuid} path.', 'workerAutoName': 'A dedicated Pages project is created with a random name (spider-xxxxxx) and its own dedicated KV — no project name is needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
+    'workerSetupTip': 'Connect the panel to Cloudflare to create a brand-new Worker with its own dedicated subdomain and KV. The panel acts as a remote control, pushing configs to the Worker.', 'cfToken': 'Cloudflare API Token', 'getToken': 'Get Token', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Worker ID', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'Worker URL', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'Add Country', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'noProxyYet': 'No country added yet', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'proxyCodePrompt': 'Country code (e.g. de):', 'proxyCountryPrompt': 'Country name:', 'proxyHostPrompt': 'Proxy IP host (e.g. de.example.com):', 'proxyPortPrompt': 'Proxy IP port:', 'proxySaved': 'Country saved, worker updated', 'confirmDelProxy': 'Delete this country?', 'proxyDeleted': 'Country deleted', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Worker domain with a /route/{code} path — traffic never crosses Railway.', 'workerAutoName': 'A new worker is created with a random name (spider-xxxxxx), its own subdomain and its own dedicated KV — no name entry needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
     'tab.dash': 'Dashboard', 'tab.users': 'Manage Users', 'tab.inbounds': 'Manage Inbounds', 'tab.scanner': 'IP Scanner', 'tab.settings': 'Settings',
     'inboundFixedHint': 'Only the panel’s default inbounds are used. WS/TLS is ready automatically with the panel’s main domain; fill Reality’s domain & ports yourself (pbk is auto-generated).', 'inboundFixed': 'Adding inbounds is disabled — only the default inbounds.', 'inboundAuto': 'This inbound is automatic — nothing to configure.',
     'newUser': 'New User', 'newInbound': 'New Inbound', 'domain': 'Domain',
     'loading': 'Loading...', 'noUsers': 'No users found', 'noInbounds': 'No inbounds found', 'errLoadUsers': 'Error loading users', 'errLoadInbounds': 'Error loading inbounds', 'errLoadStats': 'Error loading stats',
-    'live': '● LIVE', 'liveBadge': 'LIVE', 'cloudflareTitle': 'Cloudflare', 'railwayTitle': 'Railway', 'tcpTitle': 'TCP', 'advancedTitle': 'Advanced', 'sniTitle': 'SNI', 'workerMainTitle': 'Worker',
+    'live': '● LIVE', 'liveBadge': 'LIVE', 'cloudflareTitle': 'Cloudflare', 'railwayTitle': 'Railway', 'tcpTitle': 'TCP', 'spoofTitle': 'Spoof', 'advancedTitle': 'Advanced', 'spoofSettingsTitle': 'Spoof Settings', 'sniTitle': 'SNI', 'workerMainTitle': 'Worker',
     'scnTip': 'Live scan of Cloudflare ranges. Working IPs are sorted and the first 10 are auto-saved.',
     'ipCount': 'IP Count', 'targetPort': 'Target Port', 'startScan': 'Start Scan', 'stop': 'Stop', 'scanning': 'Scanning...', 'scanStopped': 'Scan stopped',
     'found': 'IP Found', 'tried': 'Tested', 'bestPing': 'Best Ping', 'saved': 'Saved', 'savedFirst10': 'Saved (first 10 IPs)', 'clear': 'Clear', 'notSaved': 'Nothing saved yet', 'startPrompt': 'Press "Start Scan" to begin scanning', 'noHit': 'No responding IP found', 'saveCleared': 'Saved list cleared',
@@ -1766,8 +1937,8 @@ var I18N = {
     'contactSub': 'Get in touch with me for support and collaboration',
     'createUser': 'Create New User', 'editUser': 'Edit User', 'username': 'Username', 'conn': 'Concurrent Connections', 'volume': 'Traffic', 'unit': 'Unit', 'expire': 'Expiry', 'day': 'Day', 'month': 'Month',
     'inboundsMulti': 'Inbounds (multi-select)', 'noInboundOpt': 'No inbounds available',
-    'inboundPickHint': 'Each inbound shows its own options: Worker → single location, TLS → scanned-IP switch, Reality → no extra options.',
-    
+    'inboundPickHint': 'Each inbound shows its own options: Worker → choose countries, TLS → scanned-IP switch, Reality → no extra options.',
+    'workerCountries': 'Multi-location countries (tick each country you want):',
     'addCfIps': 'Add 10 configs with scanned Cloudflare IPs',
     'addRailwayIps': 'Add 10 configs with scanned Railway IPs',
     'realityNoExtra': 'Reality needs no extras — only the main Reality config.',
@@ -2131,6 +2302,7 @@ async function loadAll() {
   loadDashboard();
   loadUsers();
   loadInbounds();
+  loadProxyCountries();
   // Keep the worker proxy pool warm so the create-user country dropdowns work
   // even before the Worker tab is opened.
   if (typeof loadWorker === 'function') loadWorker();
@@ -2254,7 +2426,7 @@ function _userAccHead(u, idx) {
   var inboundName = u.inbound_name || (u.inbound_id ? u.inbound_id.substring(0,8) : t('default'));
   return '<button type="button" class="spd-acc-head" onclick="spdToggleAcc(\'ua-' + u.user_id + '\',this)" aria-expanded="false">' +
     '<span class="spd-acc-title"><strong>' + esc(u.username) + '</strong></span>' +
-    '<span class="spd-acc-badges">' + _userStatus(u) + ' <span class="badge badge-b">' + esc(inboundName) + '</span>' + '</span>' +
+    '<span class="spd-acc-badges">' + _userStatus(u) + ' <span class="badge badge-b">' + esc(inboundName) + '</span>' + (u.proxy_country ? ' <span class="badge badge-p">' + esc(u.proxy_country) + '</span>' : '') + '</span>' +
     '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span>' +
   '</button>';
 }
@@ -2300,6 +2472,10 @@ if (window.matchMedia) {
 // ─── User CRUD (SIMPLIFIED) ───
 async function openCreateUser() {
   cuInboundState = { picks: {}, countries: {} };
+  // Refresh worker proxy pool so the country dropdowns are current, then render.
+  if (typeof loadWorker === 'function') {
+    try { await loadWorker(); } catch(e) {}
+  }
   populateInboundSelects();
   $id('cu-name').value = '';
   $id('cu-vol').value = '';
@@ -2316,10 +2492,26 @@ async function submitCreateUser(e) {
   var v = parseFloat($id('cu-vol').value) || 0, vu = $id('cu-vol-u').value;
   var ex = parseInt($id('cu-exp').value) || 0, eu = $id('cu-exp-u').value;
   var inbound_ids = selectedInboundIds();
-  // Per-inbound custom-IP switches only.
-  var cuSw = cuCustomStates();
+  // Per-inbound custom-IP switches + worker countries.
+  var cuSw = cuCustomStates();   // { inboundId: {cf:bool, railway:bool} }
+  var cuCountries = cuWorkerCountries();  // { inboundId: [codes] }
   var cfIds = inbound_ids.filter(function(i){ return cuSw[i] && cuSw[i].cf; });
   var rwIds = inbound_ids.filter(function(i){ return cuSw[i] && cuSw[i].railway; });
+  // Aggregate selected countries across ALL worker inbounds so every country
+  // picked in any worker inbound's dropdown produces its own /route/{code} config.
+  var allCountries = [];
+  Object.keys(cuCountries).forEach(function(ibId) {
+    (cuCountries[ibId] || []).forEach(function(c) {
+      if (allCountries.indexOf(c) === -1) allCountries.push(c);
+    });
+  });
+  // The first picked worker inbound becomes the primary (for worker routing).
+  var workerInboundIds = inbound_ids.filter(function(i) {
+    var ib = ALL_IB.find(function(x) { return x.inbound_id === i; });
+    return ib && (ib.protocol || '').toLowerCase() === 'worker';
+  });
+  var primaryWorkerIb = workerInboundIds[0] || Object.keys(cuCountries)[0] || null;
+  var firstCountry = allCountries[0] || '';
   try {
     var r = await api('/api/users', {method: 'POST', body: {
       username: $id('cu-name').value,
@@ -2327,6 +2519,9 @@ async function submitCreateUser(e) {
       expire_days: eu === 'months' ? ex * 30 : ex,
       concurrent_connections: parseInt($id('cu-conn').value) || 0,
       inbound_ids: inbound_ids,
+      proxy_countries: allCountries,
+      proxy_country: firstCountry,
+      proxy_ip_enabled: !!allCountries.length,
       // Mark which inbounds want scanned custom-IP configs (worker→cf, tls→railway).
       custom_ip_inbounds: { cf: cfIds, railway: rwIds }
     }});
@@ -2338,12 +2533,22 @@ async function submitCreateUser(e) {
 }
 
 var EU_INBOUND_PICKS = {};
+var EU_COUNTRIES = {};  // inboundId -> { worker: [codes] }
 function renderEditInboundPicker(u) {
   var wrap = $id('eu-inbound');
   if (!wrap) return;
   var cur = u.inbound_ids || (u.inbound_id ? [u.inbound_id] : []);
   EU_INBOUND_PICKS = {};
   cur.forEach(function(i) { EU_INBOUND_PICKS[i] = true; });
+  // Initialize country state from user's existing proxy_countries
+  if (!Object.keys(EU_COUNTRIES).length) {
+    var existingCountries = u.proxy_countries || [];
+    ALL_IB.forEach(function(ib) {
+      if ((ib.protocol || '').toLowerCase() === 'worker') {
+        EU_COUNTRIES[ib.inbound_id] = { worker: existingCountries.slice() };
+      }
+    });
+  }
   var html = '';
   ALL_IB.forEach(function(ib) {
     var id = ib.inbound_id;
@@ -2359,12 +2564,35 @@ function renderEditInboundPicker(u) {
       '<div class="ib-pick-check"><span class="material-symbols-outlined">check</span></div>' +
     '</div>';
     if (selected && type === 'worker') {
-      // Worker is single-location; no country selector.
+      var sel = EU_COUNTRIES[id] || {};
+      var chipHtml = '';
+      (window.cuWorkerProxies ? cuWorkerProxies() : []).forEach(function(p) {
+        var flag = window.cuCodeToFlag ? cuCodeToFlag(p.code) : '';
+        var checked = (sel.worker || []).indexOf(p.code) !== -1 ? ' selected' : '';
+        chipHtml += '<span class="country-tick' + checked + '" data-code="' + esc(p.code) + '" onclick="euPickWorkerCountry(\'' + esc(id) + '\',this)">' +
+          '<span class="ck material-symbols-outlined">check</span>' + flag + ' ' + esc(p.country || p.code) + '</span>';
+      });
+      html += '<div style="flex-basis:100%;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-top:4px">';
+      html += '<div style="font-size:11px;color:var(--txt2);margin-bottom:6px">' + (t('workerCountries') || 'Worker Countries') + '</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;direction:ltr;text-align:left">' + chipHtml + '</div>';
+      html += '</div>';
     }
   });
   wrap.innerHTML = html || '<span style="font-size:11px;color:var(--txt2)">' + t('noInboundOpt') + '</span>';
 }
 
+function euPickWorkerCountry(ibId, el) {
+  el.classList.toggle('selected');
+  var arr = EU_COUNTRIES[ibId] = EU_COUNTRIES[ibId] || {};
+  arr.worker = arr.worker || [];
+  var code = el.getAttribute('data-code');
+  var idx = arr.worker.indexOf(code);
+  if (el.classList.contains('selected')) {
+    if (idx === -1) arr.worker.push(code);
+  } else {
+    if (idx !== -1) arr.worker.splice(idx, 1);
+  }
+}
 function euToggleIbPick(el) {
   var id = el.getAttribute('data-id');
   if (EU_INBOUND_PICKS[id]) delete EU_INBOUND_PICKS[id]; else EU_INBOUND_PICKS[id] = true;
@@ -2377,6 +2605,7 @@ function selectedEditInboundIds() {
 function editUser(uid) {
   var u = ALL_USERS.find(function(x) { return x.user_id === uid; });
   if (!u) return;
+  EU_COUNTRIES = {};
   $id('eu-id').value = uid;
   $id('eu-name').value = u.username || '';
   $id('eu-vol').value = (u.traffic_limit_bytes ? (u.traffic_limit_bytes / 1073741824).toFixed(0) : '0');
@@ -2397,6 +2626,14 @@ async function submitEditUser(e) {
     var saved = localStorage.getItem('spider-spoof-settings');
     if (saved) { var s = JSON.parse(saved); fakeSni = s.fakeSni || ''; spoofIp = s.spoofIp || ''; }
   } catch(e) {}
+  // Collect all selected worker countries from EU_COUNTRIES
+  var allEuCountries = [];
+  Object.keys(EU_COUNTRIES).forEach(function(ibId) {
+    var c = EU_COUNTRIES[ibId] || {};
+    (c.worker || []).forEach(function(code) {
+      if (allEuCountries.indexOf(code) === -1) allEuCountries.push(code);
+    });
+  });
   try {
     await api('/api/users/' + uid, {method: 'PATCH', body: {
       username: $id('eu-name').value,
@@ -2408,7 +2645,8 @@ async function submitEditUser(e) {
       fake_sni: fakeSni,
       spoof_ip: spoofIp,
       inbound_ids: selectedEditInboundIds(),
-
+      proxy_countries: allEuCountries,
+      proxy_country: allEuCountries[0] || ''
     }});
     toast(t('toast.userUpdated'), 'ok');
     closeModal('mod-edit-user');
@@ -3042,6 +3280,9 @@ function togglePanelAudio() {
   }).catch(function(){});
 })();
 
+// The old Leaflet map + proxy-IP selector was removed — per-inbound options
+// (worker countries, scanned-IP switches) live inside the create-user modal.
+function loadProxyCountries(){}  // kept as no-op for loadAll()
 
 // ═══ IP SCANNER ═══
 var SCN_CF_RANGES = [];
@@ -3075,6 +3316,29 @@ async function scnLoadRanges() {
   SCN_RW_RANGES = [[66, 33, 22, 0, 23], [66, 33, 23, 0, 24], [152, 55, 176, 0, 22]];
 }
 scnLoadRanges();
+
+// ═══ SPOOF SCANNER ═══
+// Cloudflare IP ranges from cf_subnets.txt
+var SPF_IP_RANGES = [
+  [104, 16, 0, 0, 12], [104, 17, 0, 0, 12], [104, 18, 0, 0, 12], [104, 19, 0, 0, 12],
+  [104, 20, 0, 0, 12], [104, 21, 0, 0, 12], [104, 22, 0, 0, 12], [104, 23, 0, 0, 12],
+  [104, 24, 0, 0, 12], [104, 25, 0, 0, 12], [104, 26, 0, 0, 12], [104, 27, 0, 0, 12],
+  [104, 28, 0, 0, 12], [104, 29, 0, 0, 12], [104, 30, 0, 0, 12], [104, 31, 0, 0, 12],
+  [172, 64, 0, 0, 13], [172, 65, 0, 0, 13], [172, 66, 0, 0, 13], [172, 67, 0, 0, 13],
+  [162, 159, 0, 0, 16], [108, 162, 192, 0, 18], [141, 101, 64, 0, 18],
+  [188, 114, 96, 0, 19], [190, 93, 240, 0, 20], [197, 234, 240, 0, 20],
+  [198, 41, 128, 0, 18], [199, 27, 128, 0, 17], [162, 158, 0, 0, 15]
+];
+// SNI list from sni-list.txt (truncated for performance - full list loaded on demand)
+var SPF_SNI_LIST = [];
+var SPF_STOP = false;
+var spfCtx = {
+  ip: {found: [], tried: 0, gen: 0, seq: 0},
+  sni: {found: [], tried: 0, gen: 0, seq: 0}
+};
+
+// Advanced domain storage
+var scnAdvDomains = [];
 
 function scnRandIp(range) {
   var seg = [range[0], range[1], range[2], range[3]];
@@ -3309,6 +3573,12 @@ function scnSwitch(which, btn) {
   if (which === 'cf') scnLoadSaved('cf');
   if (which === 'railway') scnLoadSaved('railway');
   if (which === 'tcp') scnRenderDomains();
+  if (which === 'spoof') {
+    spfLoadSaved('ip');
+    spfLoadSaved('sni');
+    spfRenderAdvDropdown();
+    spfLoadSpoofSettings();
+  }
   if (which === 'sni') {
     scnLoadSniResults();
   }
@@ -3524,6 +3794,7 @@ function scnInit() {
   scnRenderDomains();
   scnLoadSaved('cf');
   scnLoadSaved('railway');
+  spfInit(); // Initialize spoof scanner
 }
 
 // ═══ AUTO CONFIG ═══
@@ -3769,8 +4040,403 @@ async function tunnelCreate() {
   loadTunnel();
 }
 
+// ═══ SPOOF SCANNER FUNCTIONS ═══
+
+function spfInit() {
+  spfLoadSaved('ip');
+  spfLoadSaved('sni');
+  spfLoadAdvDomains();
+  spfRenderAdvDropdown();
+  spfLoadSpoofSettings();
+}
+
+function spfSwitchTab(which, btn) {
+  document.querySelectorAll('#scn-pane-spoof .scn-tab').forEach(function(t) { t.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('#scn-pane-spoof .scn-pane').forEach(function(p) { p.classList.remove('active'); });
+  var pane = $id('spf-pane-' + which);
+  if (pane) pane.classList.add('active');
+  if (which === 'ip') spfLoadSaved('ip');
+  if (which === 'sni') spfLoadSaved('sni');
+}
+
+function spfRandIp(range) {
+  var seg = [range[0], range[1], range[2], range[3]];
+  if (range[4] === 12) { seg[1] += Math.floor(Math.random() * 16); seg[2] = Math.floor(Math.random() * 256); }
+  else if (range[4] === 13) { seg[1] += Math.floor(Math.random() * 8); seg[2] = Math.floor(Math.random() * 256); }
+  else if (range[4] === 14) { seg[2] += Math.floor(Math.random() * 4); }
+  else if (range[4] === 15) { seg[2] += Math.floor(Math.random() * 2); }
+  else if (range[4] === 16) { seg[2] = Math.floor(Math.random() * 256); }
+  else if (range[4] === 17) { seg[2] = Math.floor(Math.random() * 128); }
+  else if (range[4] === 18) { seg[2] = Math.floor(Math.random() * 256); }
+  else if (range[4] === 19) { seg[2] = Math.floor(Math.random() * 256); }
+  else if (range[4] === 20) { seg[2] = Math.floor(Math.random() * 256); }
+  seg[3] = Math.floor(Math.random() * 253) + 2;
+  return seg.join('.');
+}
+
+function spfStopScan() { SPF_STOP = true; toast('اسکن متوقف شد', 'warn'); }
+
+async function spfRunIpScan() {
+  if (spfCtx.ip.running) return;
+  spfCtx.ip.running = true;
+  spfCtx.ip.found = [];
+  spfCtx.ip.tried = 0;
+  var runGen = ++spfCtx.ip.gen;
+  SPF_STOP = false;
+  var count = parseInt($id('spf-ip-count').value) || 30;
+  var port = $id('spf-ip-port').value || '443';
+  var list = $id('spf-ip-list');
+  var bar = $id('spf-ip-bar');
+  var startBtn = list.parentElement.querySelector('.btn-p');
+  list.innerHTML = '<div class="scn-empty">در حال اسکن IP...</div>';
+  $id('spf-ip-found').textContent = '0';
+  $id('spf-ip-tried').textContent = '0';
+  $id('spf-ip-best').textContent = '--';
+  $id('spf-ip-bar').style.width = '0%';
+  if (startBtn) { startBtn.disabled = true; startBtn.textContent = 'در حال اسکن...'; }
+
+  var found = [];
+  var tried = 0;
+  var live = {};
+  var loops = 0;
+  var BATCH = 32;
+  while (found.length < 10 && loops < count * 20) {
+    if (SPF_STOP) break;
+    loops++;
+    var batch = [];
+    for (var b = 0; b < BATCH && found.length + batch.length < count * 3; b++) {
+      batch.push(spfRandIp(SPF_IP_RANGES[Math.floor(Math.random() * SPF_IP_RANGES.length)]) + ':' + port);
+    }
+    var resMap = await scnPingBatch(batch, 0.9);
+    Object.keys(resMap).forEach(function(t) {
+      tried++;
+      var r = resMap[t];
+      var ip = t.split(':')[0];
+      live[ip] = { ms: r.latency_ms, ok: r.ok };
+      if (r && r.ok) {
+        found.push({ip: ip, port: r.port, ms: r.latency_ms});
+      }
+    });
+    found.sort(function(a, b) { return a.ms - b.ms; });
+    found = found.slice(0, 10);
+    spfCtx.ip.found = found.slice();
+    spfCtx.ip.tried = tried;
+    if (found.length && spfCtx.ip.gen === runGen) {
+      spfSaveLive('ip', found.map(function(f) { return f.ip + ':' + f.port; }), true);
+    }
+
+    var rows = '';
+    Object.keys(live).forEach(function(ip) {
+      var r = live[ip];
+      rows += '<div class="scn-item"><span class="scn-ip">' + ip + '</span><span class="scn-port">:' + port + '</span>' +
+        (r.ok ? scnMsHtml(r.ms, false) : '<span class="scn-ms bad">✗</span>') + '</div>';
+    });
+    found.forEach(function(f) {
+      if (!live[f.ip] || !live[f.ip].ok) {
+        rows += '<div class="scn-item"><span class="scn-ip">' + f.ip + '</span><span class="scn-port">:' + f.port + '</span>' + scnMsHtml(f.ms, false) + '</div>';
+      }
+    });
+    list.innerHTML = rows || '<div class="scn-empty">هیچ آی‌پی پاسخ‌دهنده‌ای یافت نشد</div>';
+    $id('spf-ip-found').textContent = found.length;
+    $id('spf-ip-tried').textContent = tried;
+    if (found.length) {
+      $id('spf-ip-best').textContent = found[0].ms + ' ms';
+      $id('spf-ip-best').className = 'scn-ms ' + scnChipClass(found[0].ms);
+    }
+    $id('spf-ip-bar').style.width = Math.min(100, (found.length / 10) * 100) + '%';
+    $id('spf-ip-saved').textContent = found.length + '/10';
+  }
+  spfCtx.ip.running = false;
+  if (startBtn) { startBtn.disabled = false; startBtn.textContent = 'شروع اسکن IP'; }
+  spfLoadSaved('ip');
+  if (SPF_STOP) toast('اسکن متوقف شد', 'warn');
+}
+
+async function spfRunSniScan() {
+  if (spfCtx.sni.running) return;
+  if (!SPF_SNI_LIST.length) {
+    try { var sr = await api('/api/scanner/sni-list'); SPF_SNI_LIST = sr.sni_list || []; } catch(e) {}
+  }
+  if (!SPF_SNI_LIST.length) { toast('لیست SNI خالی است', 'err'); return; }
+  spfCtx.sni.running = true;
+  spfCtx.sni.found = [];
+  spfCtx.sni.tried = 0;
+  var runGen = ++spfCtx.sni.gen;
+  SPF_STOP = false;
+  var count = parseInt($id('spf-sni-count').value) || 30;
+  var port = $id('spf-sni-port').value || '443';
+  var list = $id('spf-sni-list');
+  var bar = $id('spf-sni-bar');
+  var startBtn = list.parentElement.querySelector('.btn-p');
+  list.innerHTML = '<div class="scn-empty">در حال اسکن SNI...</div>';
+  $id('spf-sni-found').textContent = '0';
+  $id('spf-sni-tried').textContent = '0';
+  $id('spf-sni-best').textContent = '--';
+  $id('spf-sni-bar').style.width = '0%';
+  if (startBtn) { startBtn.disabled = true; startBtn.textContent = 'در حال اسکن...'; }
+
+  var found = [];
+  var tried = 0;
+  var live = {};
+  var loops = 0;
+  var BATCH = 20;
+  while (found.length < 10 && loops < count * 20) {
+    if (SPF_STOP) break;
+    loops++;
+    var batch = [];
+    for (var b = 0; b < BATCH && found.length + batch.length < count * 3; b++) {
+      var sni = SPF_SNI_LIST[Math.floor(Math.random() * SPF_SNI_LIST.length)];
+      var ip = spfRandIp(SPF_IP_RANGES[Math.floor(Math.random() * SPF_IP_RANGES.length)]);
+      batch.push({sni: sni, target: ip + ':' + port});
+    }
+    var resMap = await scnPingBatch(batch.map(function(x){ return x.target; }), 1.5);
+    Object.keys(resMap).forEach(function(t, idx) {
+      tried++;
+      var r = resMap[t];
+      var sni = batch[idx].sni;
+      live[sni + '@' + t.split(':')[0]] = { sni: sni, ip: t.split(':')[0], ms: r.latency_ms, ok: r.ok };
+      if (r && r.ok) {
+        found.push({sni: sni, ip: t.split(':')[0], port: r.port, ms: r.latency_ms});
+      }
+    });
+    found.sort(function(a, b) { return a.ms - b.ms; });
+    found = found.slice(0, 10);
+    spfCtx.sni.found = found.slice();
+    spfCtx.sni.tried = tried;
+    if (found.length && spfCtx.sni.gen === runGen) {
+      spfSaveLive('sni', found.map(function(f) { return f.sni + '|' + f.ip + ':' + f.port; }), true);
+    }
+
+    var rows = '';
+    Object.keys(live).forEach(function(key) {
+      var r = live[key];
+      rows += '<div class="scn-item"><span class="scn-ip">' + r.sni + '</span><span class="scn-port"> → ' + r.ip + ':' + port + '</span>' +
+        (r.ok ? scnMsHtml(r.ms, false) : '<span class="scn-ms bad">✗</span>') + '</div>';
+    });
+    found.forEach(function(f) {
+      var key = f.sni + '@' + f.ip;
+      if (!live[key] || !live[key].ok) {
+        rows += '<div class="scn-item"><span class="scn-ip">' + f.sni + '</span><span class="scn-port"> → ' + f.ip + ':' + f.port + '</span>' + scnMsHtml(f.ms, false) + '</div>';
+      }
+    });
+    list.innerHTML = rows || '<div class="scn-empty">هیچ SNI پاسخ‌دهنده‌ای یافت نشد</div>';
+    $id('spf-sni-found').textContent = found.length;
+    $id('spf-sni-tried').textContent = tried;
+    if (found.length) {
+      $id('spf-sni-best').textContent = found[0].ms + ' ms';
+      $id('spf-sni-best').className = 'scn-ms ' + scnChipClass(found[0].ms);
+    }
+    $id('spf-sni-bar').style.width = Math.min(100, (found.length / 10) * 100) + '%';
+    $id('spf-sni-saved').textContent = found.length + '/10';
+  }
+  spfCtx.sni.running = false;
+  if (startBtn) { startBtn.disabled = false; startBtn.textContent = 'شروع اسکن SNI'; }
+  spfLoadSaved('sni');
+  if (SPF_STOP) toast('اسکن متوقف شد', 'warn');
+}
+
+function spfSaveLive(which, entries, replace) {
+  api('/api/scanner/save', {method: 'POST', body: {type: 'spf-' + which, ips: entries, replace: !!replace, seq: spfCtx[which].seq}}).then(function(d) {
+    if (d && typeof d.seq === 'number') spfCtx[which].seq = d.seq;
+    if (d && d.stale) return;
+    spfRenderSavedTags(which, d.ips || []);
+  }).catch(function() {});
+}
+
+async function spfLoadSaved(which) {
+  try {
+    var d = await api('/api/scanner/ips/spf-' + which);
+    if (typeof d.seq === 'number') spfCtx[which].seq = d.seq;
+    spfRenderSavedTags(which, d.ips || []);
+  } catch (e) {}
+}
+
+function spfRenderSavedTags(which, ips) {
+  var el = $id(which === 'ip' ? 'spf-ip-saved-tags' : 'spf-sni-saved-tags');
+  if (!el) return;
+  el.innerHTML = ips.length ? ips.map(function(x) { return '<span class="scn-tag">' + esc(x) + '</span>'; }).join('') : '<span class="scn-empty">هنوز ذخیره‌ای نیست</span>';
+}
+
+function spfClearSaved(which) {
+  SPF_STOP = true;
+  spfCtx[which].running = false;
+  spfCtx[which].found = [];
+  spfCtx[which].tried = 0;
+  spfCtx[which].gen++;
+  var pfx = which === 'ip' ? 'spf-ip' : 'spf-sni';
+  var list = $id(pfx + '-list');
+  if (list) list.innerHTML = '<div class="scn-empty">برای شروع اسکن، دکمه «شروع اسکن» را بزنید</div>';
+  $id(pfx + '-found').textContent = '0';
+  $id(pfx + '-tried').textContent = '0';
+  $id(pfx + '-best').textContent = '--';
+  $id(pfx + '-bar').style.width = '0%';
+  var sb = list ? list.parentElement.querySelector('.btn-p') : null;
+  if (sb) { sb.disabled = false; sb.textContent = which === 'ip' ? 'شروع اسکن IP' : 'شروع اسکن SNI'; }
+  api('/api/scanner/save', {method: 'POST', body: {type: 'spf-' + which, ips: [], replace: true, seq: spfCtx[which].seq}}).then(function(d) {
+    if (d && typeof d.seq === 'number') spfCtx[which].seq = d.seq;
+    spfRenderSavedTags(which, []);
+    toast('لیست ذخیره‌شده پاک شد (' + which + ')', 'ok');
+  }).catch(function() {});
+}
+
+// --- Advanced Domain Functions ---
+function scnSaveAdvDomain() {
+  var inp = $id('scn-adv-domain');
+  var v = (inp.value || '').trim().toLowerCase();
+  if (!v) return;
+  if (scnAdvDomains.indexOf(v) === -1) {
+    scnAdvDomains.unshift(v);
+    if (scnAdvDomains.length > 20) scnAdvDomains.pop();
+  }
+  inp.value = '';
+  spfRenderAdvDropdown();
+  spfSaveAdvDomains();
+  // Apply to all inbound domain fields
+  spfApplyDomainToAllInbounds(v);
+  // Persist to backend SETTINGS["domain"] so TLS WS/XHTTP configs use it
+  apiPost('/api/tools/settings', { domain: v })
+    .then(function() { toast('دامنه ذخیره و به همه اینباندها اعمال شد', 'ok'); })
+    .catch(function() { toast('خطا در ذخیره دامنه در سرور', 'err'); });
+}
+
+function spfApplyDomainToAllInbounds(domain) {
+  // Update all inbound domain fields in the panel
+  var fields = ['ib-extdomain', 'ib-sni'];
+  fields.forEach(function(fid) {
+    var el = $id(fid);
+    if (el) el.value = domain;
+  });
+  // Also update any inbound in the list
+  document.querySelectorAll('.ib-extdomain-input').forEach(function(el) { el.value = domain; });
+  document.querySelectorAll('.ib-sni-input').forEach(function(el) { el.value = domain; });
+}
+
+function spfRenderAdvDropdown() {
+  var menu = $id('scn-adv-dropdown-menu');
+  if (!menu) return;
+  menu.innerHTML = scnAdvDomains.map(function(d, i) {
+    return '<div class="scn-adv-dd-item" data-idx="' + i + '">' +
+      '<span class="scn-adv-dd-domain" style="flex:1">' + esc(d) + '</span>' +
+      '<button class="scn-adv-dd-edit" onclick="event.stopPropagation(); spfEditAdvDomain(' + i + ')" title="ویرایش">✎</button>' +
+      '<button class="scn-adv-dd-del" onclick="event.stopPropagation(); spfRemoveAdvDomain(' + i + ')" title="حذف">✕</button>' +
+    '</div>';
+  }).join('') || '<div class="scn-adv-dd-empty">دامنه‌ای ثبت نشده</div>';
+}
+
+function scnToggleAdvDropdown() {
+  var menu = $id('scn-adv-dropdown-menu');
+  if (!menu) return;
+  menu.classList.toggle('hidden');
+  var rect = $id('scn-adv-domain').getBoundingClientRect();
+  menu.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  menu.style.left = (rect.left + window.scrollX) + 'px';
+  menu.style.minWidth = rect.width + 'px';
+}
+
+function spfRemoveAdvDomain(i) {
+  scnAdvDomains.splice(i, 1);
+  spfRenderAdvDropdown();
+  spfSaveAdvDomains();
+}
+
+function spfEditAdvDomain(i) {
+  var old = scnAdvDomains[i];
+  var newDomain = prompt('دامنه جدید:', old);
+  if (newDomain !== null && newDomain.trim()) {
+    scnAdvDomains[i] = newDomain.trim().toLowerCase();
+    spfRenderAdvDropdown();
+    spfSaveAdvDomains();
+    spfApplyDomainToAllInbounds(scnAdvDomains[i]);
+    // Persist to backend SETTINGS["domain"]
+    apiPost('/api/tools/settings', { domain: scnAdvDomains[i] })
+      .then(function() { toast('دامنه ویرایش و اعمال شد', 'ok'); })
+      .catch(function() { toast('خطا در ذخیره دامنه در سرور', 'err'); });
+  }
+}
+
+function spfSaveAdvDomains() {
+  localStorage.setItem('spider-adv-domains', JSON.stringify(scnAdvDomains));
+}
+
+function spfLoadAdvDomains() {
+  try {
+    var saved = localStorage.getItem('spider-adv-domains');
+    if (saved) scnAdvDomains = JSON.parse(saved);
+  } catch (e) {}
+}
+
+function spfPickBestFakeSni() {
+  // Get the best SNI from SNI scan results
+  var best = null;
+  var bestMs = Infinity;
+  spfCtx.sni.found.forEach(function(f) {
+    if (f.ms < bestMs) {
+      bestMs = f.ms;
+      best = f.sni;
+    }
+  });
+  if (best) {
+    $id('spf-fake-sni').value = best;
+    toast('بهترین SNI انتخاب شد: ' + best + ' (' + bestMs + 'ms)', 'ok');
+  } else {
+    toast('هیچ نتیجه اسکن SNI وجود ندارد', 'warn');
+  }
+}
+
+function spfPickBestSpoofIp() {
+  // Get the best IP from IP scan results
+  var best = null;
+  var bestMs = Infinity;
+  spfCtx.ip.found.forEach(function(f) {
+    if (f.ms < bestMs) {
+      bestMs = f.ms;
+      best = f.ip;
+    }
+  });
+  if (best) {
+    $id('spf-spoof-ip').value = best;
+    toast('بهترین IP انتخاب شد: ' + best + ' (' + bestMs + 'ms)', 'ok');
+  } else {
+    toast('هیچ نتیجه اسکن IP وجود ندارد', 'warn');
+  }
+}
+
+function spfSaveSpoofSettings() {
+  var fakeSni = ($id('spf-fake-sni').value || '').trim();
+  var spoofIp = ($id('spf-spoof-ip').value || '').trim();
+  if (!fakeSni || !spoofIp) {
+    toast('هر دو فیلد باید پر شوند', 'err');
+    return;
+  }
+  var settings = {fakeSni: fakeSni, spoofIp: spoofIp};
+  localStorage.setItem('spider-spoof-settings', JSON.stringify(settings));
+  toast('تنظیمات Spoof ذخیره شد', 'ok');
+}
+
+function spfLoadSpoofSettings() {
+  try {
+    var saved = localStorage.getItem('spider-spoof-settings');
+    if (saved) {
+      var s = JSON.parse(saved);
+      $id('spf-fake-sni').value = s.fakeSni || '';
+      $id('spf-spoof-ip').value = s.spoofIp || '';
+    }
+  } catch (e) {}
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var menu = $id('scn-adv-dropdown-menu');
+  var inp = $id('scn-adv-domain');
+  var dropdown = document.querySelector('.scn-adv-dropdown');
+  if (menu && inp && dropdown && !inp.contains(e.target) && !dropdown.contains(e.target) && !menu.contains(e.target)) {
+    menu.classList.add('hidden');
+  }
+});
+
 // ═══ CLOUDFLARE WORKER (proxy manager) ═══
-var WK_STATE = {connected: false};
+var WK_STATE = {connected: false, proxies: []};
 
 async function loadWorker() {
   var setup = $id('worker-setup');
@@ -3810,14 +4476,61 @@ async function loadWorker() {
       var sEl = $id('worker-sync');
       if (sEl) sEl.textContent = w.last_sync || '—';
       var eEl = $id('worker-error');
-      if (eEl) eEl.textContent = w.last_error || '';
+      if (eEl) eEl.textContent = (w.sync_error || w.last_error) || '';
+      renderWorkerProxies();
       workerHeartbeat();
     }
     var autoEl = $id('wk-auto');
     if (autoEl) autoEl.classList.toggle('on', !!w.auto_sync);
+    var cntEl = $id('wk-source-count');
+    if (cntEl) cntEl.textContent = (w.proxies ? w.proxies.length : 0) + ' ' + t('countries');
+    var stEl = $id('wk-source-status');
+    if (stEl) stEl.textContent = (w.sync_count ? t('syncsDone') + ': ' + w.sync_count : '');
   } catch(e) {
     if (badge) { badge.textContent = t('disconnected'); badge.className = 'badge badge-r'; }
   }
+}
+
+// Compact proxy pool: a single country dropdown (with flags) that lists the
+// current worker locations without making the page huge.
+function renderWorkerProxies() {
+  var el = $id('worker-proxies');
+  if (!el) return;
+  var list = WK_STATE.proxies || [];
+  if (!list.length) { el.innerHTML = '<div class="scn-empty" data-i18n="noProxyYet">هنوز کشوری اضافه نکرده‌اید</div>'; return; }
+  var opts = '';
+  list.forEach(function(p) {
+    var flag = cuCodeToFlag(p.code);
+    var ips = (p.proxies && p.proxies.length) ? p.proxies : [p.proxy];
+    opts += '<option value="' + esc(p.code) + '">' + flag + ' ' + esc(p.country || p.code) + ' — ' + esc(ips[0]) + (ips.length > 1 ? ' +' + (ips.length - 1) : '') + '</option>';
+  });
+  el.innerHTML =
+    '<select id="wk-proxy-select" class="f-g" onchange="wkEditSelectedProxy(this)" style="direction:ltr;text-align:left">' +
+      '<option value="">— ' + esc(t('pickCountry')) + ' —</option>' + opts +
+    '</select>' +
+    '<div style="display:flex;gap:6px;margin-top:8px">' +
+      '<button class="btn btn-sm btn-b" onclick="wkEditSelected()">' + esc(t('edit')) + '</button>' +
+      '<button class="btn btn-sm btn-r" onclick="wkDeleteSelected()">' + esc(t('delete')) + '</button>' +
+    '</div>';
+}
+
+function wkSelectedCode() {
+  var s = $id('wk-proxy-select');
+  return s ? s.value : '';
+}
+
+function wkEditSelectedProxy() { /* keep select state; actions read the value */ }
+
+function wkEditSelected() {
+  var code = wkSelectedCode();
+  if (!code) { toast(t('pickCountry'), 'warn'); return; }
+  workerEditProxy(code);
+}
+
+function wkDeleteSelected() {
+  var code = wkSelectedCode();
+  if (!code) { toast(t('pickCountry'), 'warn'); return; }
+  workerDelProxy(code);
 }
 
 async function workerSetup() {
@@ -3876,6 +4589,26 @@ function workerToggleAuto() {
     .catch(function(e){ toast(e.message, 'err'); sw.classList.toggle('on'); });
 }
 
+async function workerSyncSource() {
+  var st = $id('wk-source-status');
+  if (st) st.textContent = t('updatingFromSource') + '...';
+  try {
+    var r = await api('/api/worker/sync-source', {method: 'POST'});
+    if (st) {
+      st.textContent = (r.sync && r.sync.ok)
+        ? t('sourceUpdated') + ': ' + r.sync.countries + ' ' + t('countries') + ' — ' + r.sync.count + ' IP'
+        : t('sourceError');
+      st.style.color = (r.sync && r.sync.ok) ? 'var(--green)' : 'var(--red)';
+    }
+    if (r.sync && r.sync.ok) toast(t('sourceUpdated') + ' ✓', 'ok');
+    else toast(t('sourceError'), 'err');
+    loadWorker();
+  } catch(e) {
+    if (st) { st.textContent = e.message || t('sourceError'); st.style.color = 'var(--red)'; }
+    toast(e.message || t('sourceError'), 'err');
+  }
+}
+
 async function workerDisconnect() {
   if (!confirm(t('confirmRemoveWorker'))) return;
   try {
@@ -3885,6 +4618,47 @@ async function workerDisconnect() {
   } catch(e) { toast(e.message, 'err'); }
 }
 
+function workerAddProxy() {
+  var code = prompt(t('proxyCodePrompt'));
+  if (code === null || !code.trim()) return;
+  code = code.trim().toLowerCase();
+  var country = prompt(t('proxyCountryPrompt'));
+  if (country === null || !country.trim()) return;
+  var proxy = prompt(t('proxyHostPrompt'));
+  if (proxy === null || !proxy.trim()) return;
+  var port = prompt(t('proxyPortPrompt'), '443');
+  workerSaveProxy(code, country, proxy, port, null);
+}
+
+function workerEditProxy(code) {
+  var p = (WK_STATE.proxies || []).find(function(x){ return x.code === code; });
+  if (!p) return;
+  var country = prompt(t('proxyCountryPrompt'), p.country || p.code);
+  if (country === null) return;
+  var proxy = prompt(t('proxyHostPrompt'), p.proxy);
+  if (proxy === null) return;
+  var port = prompt(t('proxyPortPrompt'), String(p.port || 443));
+  workerSaveProxy(code, country, proxy, port, p);
+}
+
+async function workerSaveProxy(code, country, proxy, port, existing) {
+  try {
+    var w = await api('/api/worker/proxies', {method: 'POST', body: {code: code, country: country, proxy: proxy, port: parseInt(port) || 443}});
+    WK_STATE = w;
+    toast(t('proxySaved'), 'ok');
+    loadWorker();
+  } catch(e) { toast(e.message || t('toast.err'), 'err'); }
+}
+
+async function workerDelProxy(code) {
+  if (!confirm(t('confirmDelProxy'))) return;
+  try {
+    var w = await api('/api/worker/proxies/' + encodeURIComponent(code), {method: 'DELETE'});
+    WK_STATE = w;
+    toast(t('proxyDeleted'), 'ok');
+    loadWorker();
+  } catch(e) { toast(e.message, 'err'); }
+}
 
 // ═══ PER-INBOUND CONFIG OPTIONS (create-user modal) ═══
 // For each selected inbound:
@@ -3893,6 +4667,16 @@ async function workerDisconnect() {
 //   - reality → nothing (Reality can't use scanned IPs / proxy)
 //   - worker → the same iOS switch additionally adds 10 Cloudflare scanned-IP configs
 var cuInboundState = { picks: {}, countries: {} };
+var cuWorkerProxyList = (WK_STATE && WK_STATE.proxies) || [];
+function cuWorkerProxies() { return (WK_STATE && WK_STATE.proxies) || cuWorkerProxyList; }
+
+function cuInboundType(ib) {
+  var p = (ib && ib.protocol || '').toLowerCase();
+  if (p === 'worker') return 'worker';
+  if (p === 'telegram') return 'telegram';
+  if (p === 'reality' || (ib && ib.security || '').toLowerCase() === 'reality') return 'reality';
+  return 'tls';
+}
 
 function cuToggleIbPick(el) {
   el.classList.toggle('selected');
@@ -3910,6 +4694,18 @@ function cuToggleIpSwitch(ibId, el) {
   else if (type === 'railway') cuInboundState.countries[ibId].railway = on;
 }
 
+function cuPickWorkerCountries(ibId, el) {
+  el.classList.toggle('selected');
+  var arr = cuInboundState.countries[ibId] = cuInboundState.countries[ibId] || {};
+  arr.worker = arr.worker || [];
+  var code = el.getAttribute('data-code');
+  var idx = arr.worker.indexOf(code);
+  if (el.classList.contains('selected')) {
+    if (idx === -1) arr.worker.push(code);
+  } else {
+    if (idx !== -1) arr.worker.splice(idx, 1);
+  }
+}
 
 function cuCustomStates() {
   var out = {};
@@ -3922,6 +4718,14 @@ function cuCustomStates() {
   return out;
 }
 
+function cuWorkerCountries() {
+  var out = {};
+  Object.keys(cuInboundState.countries || {}).forEach(function(id) {
+    var c = cuInboundState.countries[id] || {};
+    if (c.worker && c.worker.length) out[id] = c.worker;
+  });
+  return out;
+}
 
 function cuRenderInboundOpts() {
   var wrap = $id('cu-inbound');
@@ -3935,16 +4739,31 @@ function cuRenderInboundOpts() {
     var meta = proto + ' · ' + (ib.network || 'ws').toUpperCase() + ' · ' + (ib.security || 'tls').toUpperCase();
     html += '<div class="ib-pick' + (selected ? ' selected' : '') + '" data-id="' + esc(id) + '" onclick="cuToggleIbPick(this)">' +
       '<div class="ib-pick-ic"><span class="material-symbols-outlined">' + (type === 'worker' ? 'bolt' : type === 'reality' ? 'shield' : 'cloud') + '</span></div>' +
-      '<div class="ib-pick-info"><div class="ib-pick-name">' + esc(ib.name) + '</div>' +
-      '<div class="ib-pick-meta">' + esc(meta) + '</div></div>' +
-      '<div class="ib-pick-check"><span class="material-symbols-outlined">check</span></div></div>';
+      '<div class="ib-pick-info">' +
+        '<div class="ib-pick-name">' + esc(ib.name) + '</div>' +
+        '<div class="ib-pick-meta">' + esc(meta) + '</div>' +
+      '</div>' +
+      '<div class="ib-pick-check"><span class="material-symbols-outlined">check</span></div>' +
+    '</div>';
     if (selected) {
       html += '<div class="ib-opts" data-for="' + esc(id) + '" style="flex-basis:100%">';
       if (type === 'worker') {
-        var selw = cuInboundState.countries[id] || {};
-        html += '<div class="px-hint" style="margin:0">Worker — single location · /ws/{uuid}</div>' +
-          '<div class="set-row" style="padding:0;border:none"><span class="set-lbl" style="font-size:11px">' + t('addCfIps') + '</span>' +
-          '<button type="button" class="ios-switch' + (selw.cf ? ' on' : '') + '" data-type="cf" onclick="cuToggleIpSwitch(\'' + esc(id) + '\',this)"></button></div>';
+        var sel = cuInboundState.countries[id] || {};
+        var chipHtml = '';
+        cuWorkerProxies().forEach(function(p) {
+          var flag = window.cuCodeToFlag ? cuCodeToFlag(p.code) : '';
+          var checked = (sel.worker || []).indexOf(p.code) !== -1 ? ' selected' : '';
+          chipHtml += '<span class="country-tick' + checked + '" data-code="' + esc(p.code) + '" onclick="cuPickWorkerCountries(\'' + esc(id) + '\',this)">' +
+            '<span class="ck material-symbols-outlined">check</span>' + flag + ' ' + esc(p.country || p.code) + '</span>';
+        });
+        html += '<div class="set-row" style="padding:0;border:none;flex-wrap:wrap">' +
+          '<span class="set-lbl" style="width:100%">' + t('workerCountries') + '</span>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;direction:ltr;text-align:left">' + chipHtml + '</div>' +
+        '</div>' +
+        '<div class="set-row" style="padding:0;border:none">' +
+          '<span class="set-lbl" style="font-size:11px">' + t('addCfIps') + '</span>' +
+          '<button type="button" class="ios-switch' + (sel.cf ? ' on' : '') + '" data-type="cf" onclick="cuToggleIpSwitch(\'' + esc(id) + '\',this)"></button>' +
+        '</div>';
       } else if (type === 'tls' && (ib.protocol || '').toLowerCase() === 'vless' && !String(id).toLowerCase().startsWith('default')) {
         var selt = cuInboundState.countries[id] || {};
         html += '<div class="set-row" style="padding:0;border:none"><span class="set-lbl" style="font-size:11px">Cloudflare IP</span>' +
