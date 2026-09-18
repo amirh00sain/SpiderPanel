@@ -10,3 +10,5 @@ psutil
 cryptography
 pysocks>=1.7.1
 python-multipart>=0.0.9
+
+pycountry>=24.6.1

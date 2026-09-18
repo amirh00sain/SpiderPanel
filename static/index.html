@@ -963,6 +963,36 @@ body,.panel,.stat,.tbl,.u-card,.sidebar,.topbar,.nav-item,.nav-accordion-head,.b
 input,textarea,select{user-select:text!important;-webkit-user-select:text!important}
 *{accent-color:#000000}
 
+
+/* User accordion action buttons are intentionally neutral, like regular controls. */
+.user-action-btns .btn,
+.user-action-btns .btn-b,
+.user-action-btns .btn-p,
+.user-action-btns .btn-r,
+.user-action-btns .btn-g{
+  background:var(--input-bg)!important;
+  color:var(--txt)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  filter:none!important;
+  transform:none!important;
+}
+.user-action-btns .btn:hover,
+.user-action-btns .btn-b:hover,
+.user-action-btns .btn-p:hover,
+.user-action-btns .btn-r:hover,
+.user-action-btns .btn-g:hover{
+  background:var(--nav-bg)!important;
+  color:var(--txt)!important;
+  border-color:var(--border-glow)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+
+.node-status-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 7px;border:1px solid var(--border);border-radius:999px;white-space:nowrap}
+.node-online{color:var(--green)!important;border-color:rgba(80,200,120,.35)!important}
+.node-checking{color:var(--orange)!important}
+.node-unauth,.node-offline{color:var(--red)!important}
 </style>
 </head>
 <body>
@@ -1387,21 +1417,6 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
             <div id="server-info-wrap" style="padding:4px 0"></div>
           </div>
           <div class="settings-inner-block">
-            <div class="panel-h"><span class="glow" data-i18n="panelApiKey">SpiderPanel API Key</span></div>
-            <div class="set-row">
-              <span class="set-lbl">API Key</span>
-              <div style="display:flex;gap:8px;align-items:center">
-                <code id="panel-api-key" dir="ltr" style="flex:1;font-size:12px;word-break:break-all">--</code>
-                <button class="btn btn-sm btn-g" onclick="copyPanelApiKey()" style="font-size:11px">کپی</button>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:10px">
-              <button class="btn btn-p" style="flex:1" onclick="regeneratePanelApiKey()"><span data-i18n="regenerateApiKey">ساخت کلید جدید</span></button>
-              <button class="btn btn-g" style="flex:1" onclick="verifyPanelApiKey()"><span data-i18n="verifyApiKey">بررسی کلید</span></button>
-            </div>
-            <div class="px-hint" style="margin-top:8px">این API Key برای اتصال نودهای Remote استفاده می‌شود. با تغییر کلید، تمام نودهای موجود نیاز به reconnect دارند.</div>
-          </div>
-          <div class="settings-inner-block">
             <div class="panel-h"><span class="glow" data-i18n="changePassword">Change Password</span></div>
             <form onsubmit="changePassword(event)">
               <div class="f-g"><label data-i18n="curPass">رمز فعلی</label><input type="password" id="cp-old" required></div>
@@ -1524,13 +1539,18 @@ input,textarea,select{user-select:text!important;-webkit-user-select:text!import
 
       <!-- NODES TAB -->
       <div class="tab-content hidden" id="tab-nodes">
-        <div class="panel">
-          <div class="panel-h"><span class="glow" data-i18n="nodes">نودها</span></div>
-          <div style="display:flex;gap:10px;margin-bottom:16px">
-            <button class="btn btn-p" onclick="openNodeModal()"><span data-i18n="addNode">افزودن نود</span></button>
-            <button class="btn btn-g" onclick="syncAllNodes()"><span data-i18n="syncAllNodes">همگام‌سازی همه</span></button>
+        <div class="spd-acc" style="margin-bottom:10px">
+          <button type="button" class="spd-acc-head" onclick="spdToggleAcc('nodes-main',this)" aria-expanded="false">
+            <span class="spd-acc-title"><strong data-i18n="nodes">نود</strong></span>
+            <span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+          </button>
+          <div class="spd-acc-body" id="acc-nodes-main">
+            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+              <button class="btn btn-p" onclick="openNodeModal()"><span data-i18n="addNode">افزودن نود</span></button>
+              <button class="btn btn-g" onclick="syncAllNodes()"><span data-i18n="syncAllNodes">همگام‌سازی همه</span></button>
+            </div>
+            <div id="nodes-list"></div>
           </div>
-          <div id="nodes-list"></div>
         </div>
       </div>
 
@@ -2157,7 +2177,6 @@ function switchTab(tab, el) {
   target.style.setProperty('top', '0px', 'important');
   target.style.setProperty('transform', 'none', 'important');
   if (tab === 'worker' || tab === 'contact' || tab === 'settings' || tab === 'nodes') {
-    if (tab === 'settings') loadPanelApiKey();
     target.style.setProperty('position', 'static', 'important');
     target.style.setProperty('flex', 'none', 'important');
   }
@@ -2305,10 +2324,10 @@ function _userActions(u) {
   return '<div class="act-row">' +
     '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.config_uuid || '') + '\')" title="Config">'+iconCfg+'</button>' +
     '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + (u.config_uuid || '') + '\')" title="Sub Link">'+iconLink+'</button>' +
-    '<button class="btn btn-sm btn-b" onclick="viewQR(\'' + u.user_id + '\')" title="QR Code">'+iconQr+'</button>' +
-    '<button class="btn btn-sm btn-b" onclick="editUser(\'' + u.user_id + '\')" title="Edit">'+iconEdit+'</button>' +
-    '<button class="btn btn-sm btn-r" onclick="toggleUser(\'' + u.user_id + '\')" title="Toggle">'+iconToggle+'</button>' +
-    '<button class="btn btn-sm btn-r" onclick="deleteUser(\'' + u.user_id + '\')" title="Delete">'+iconTrash+'</button>' +
+    '<button class="btn btn-sm btn-g" onclick="viewQR(\'' + u.user_id + '\')" title="QR Code">'+iconQr+'</button>' +
+    '<button class="btn btn-sm btn-g" onclick="editUser(\'' + u.user_id + '\')" title="Edit">'+iconEdit+'</button>' +
+    '<button class="btn btn-sm btn-g" onclick="toggleUser(\'' + u.user_id + '\')" title="Toggle">'+iconToggle+'</button>' +
+    '<button class="btn btn-sm btn-g" onclick="deleteUser(\'' + u.user_id + '\')" title="Delete">'+iconTrash+'</button>' +
   '</div>';
 }
 
@@ -2321,20 +2340,48 @@ function _userAccHead(u, idx) {
   '</button>';
 }
 
+function _copyNodeConfigEncoded(encoded) {
+  try { var cfg=decodeURIComponent(encoded); navigator.clipboard.writeText(cfg).then(function(){toast(t('copied'),'ok');}); } catch(e) { toast('خطا در کپی','err'); }
+}
+
+function _userNodeConfigs(u) {
+  var rows = Array.isArray(u.node_assignments) ? u.node_assignments : [];
+  if (!rows.length) return '';
+  var html = '<div class="spd-acc-sec"><div class="spd-acc-sec-t">Node Configs</div>';
+  rows.forEach(function(n){
+    var label = (n.country_flag || '🌐') + ' ' + (n.name || n.node_id || 'Node');
+    var meta = [n.country || n.country_code || '', n.public_ip || '--', n.status || 'offline'].filter(Boolean).join(' · ');
+    var encoded = encodeURIComponent(n.config || '');
+    html += '<div class="node-user-config" style="padding:8px 0;border-bottom:1px solid var(--border)">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
+        '<span style="font-size:11px;font-weight:600">' + esc(label) + '</span>' +
+        '<span class="node-status-pill ' + (String(n.status || '').toLowerCase()==='online' ? 'node-online' : 'node-offline') + '">' + esc(n.status || 'offline') + '</span>' +
+      '</div>' +
+      '<div dir="ltr" style="font-size:10px;color:var(--txt2);margin:3px 0 6px">' + esc(meta) + '</div>' +
+      '<div style="display:flex;gap:6px;align-items:center">' +
+        '<code dir="ltr" style="display:block;flex:1;max-height:38px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:9px;color:var(--txt2)">' + esc(n.config || '—') + '</code>' +
+        (n.config ? '<button class="btn btn-sm btn-g" onclick="_copyNodeConfigEncoded(\'' + encoded + '\')">Copy</button>' : '') +
+      '</div>' +
+    '</div>';
+  });
+  return html + '</div>';
+}
+
 function _userAccBody(u) {
   var connTxt = u.concurrent_connections ? u.concurrent_connections : t('unlimited');
   return '<div class="spd-acc-body" id="acc-ua-' + u.user_id + '">' +
     '<div class="spd-acc-sec"><div class="spd-acc-sec-t">' + t('volume') + '</div>' + _userTraffic(u) + '</div>' +
     '<div class="spd-acc-kv"><span>' + t('expiry') + '</span><b>' + _userExp(u) + '</b></div>' +
     '<div class="spd-acc-kv"><span>' + t('connTh') + '</span><b>' + connTxt + '</b></div>' +
+    _userNodeConfigs(u) +
     '<div class="spd-acc-btns user-action-btns">' +
       '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.config_uuid || '') + '\')" title="Config">'+iconCfg+'</button>' +
       '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + (u.config_uuid || '') + '\')" title="Sub Link">'+iconLink+'</button>' +
-      '<button class="btn btn-sm btn-b" onclick="viewQR(\'' + u.user_id + '\')" title="QR Code">'+iconQr+'</button>' +
-      '<button class="btn btn-sm btn-b" onclick="editUser(\'' + u.user_id + '\')" title="Edit">'+iconEdit+'</button>' +
-      '<button class="btn btn-sm btn-b" onclick="resetUserTraffic(\'' + u.user_id + '\')" title="Reset Traffic">'+iconReset+'</button>' +
-      '<button class="btn btn-sm btn-r" onclick="toggleUser(\'' + u.user_id + '\')" title="Toggle">'+iconToggle+'</button>' +
-      '<button class="btn btn-sm btn-r" onclick="deleteUser(\'' + u.user_id + '\')" title="Delete">'+iconTrash+'</button>' +
+      '<button class="btn btn-sm btn-g" onclick="viewQR(\'' + u.user_id + '\')" title="QR Code">'+iconQr+'</button>' +
+      '<button class="btn btn-sm btn-g" onclick="editUser(\'' + u.user_id + '\')" title="Edit">'+iconEdit+'</button>' +
+      '<button class="btn btn-sm btn-g" onclick="resetUserTraffic(\'' + u.user_id + '\')" title="Reset Traffic">'+iconReset+'</button>' +
+      '<button class="btn btn-sm btn-g" onclick="toggleUser(\'' + u.user_id + '\')" title="Toggle">'+iconToggle+'</button>' +
+      '<button class="btn btn-sm btn-g" onclick="deleteUser(\'' + u.user_id + '\')" title="Delete">'+iconTrash+'</button>' +
     '</div>' +
   '</div>';
 }
@@ -2562,6 +2609,17 @@ async function viewCfg(configUuid) {
     list = list.filter(function(c){ return c && c.indexOf('%F0%9F%93%8A') === -1; });
     curCfg = list.join('\n');
     $id('cfg-code').textContent = curCfg || t('noCfg');
+    var nodeBox = $id('node-configs-view');
+    if (!nodeBox) {
+      nodeBox = document.createElement('div'); nodeBox.id='node-configs-view'; nodeBox.style.marginTop='12px';
+      var pre = $id('cfg-code'); if (pre && pre.parentNode) pre.parentNode.insertBefore(nodeBox, pre);
+    }
+    try {
+      var us = await api('/api/users/config/'+encodeURIComponent(configUuid));
+      var ncs = us.node_configs || {};
+      var rows = Object.keys(ncs).map(function(nid){ var n=ALL_NODES.find(function(x){return x.node_id===nid;}) || {}; return '<div class="set-row"><span class="set-lbl">'+esc((n.country_flag||n.remote_flag||'🌐')+' '+(n.country||n.name||nid))+'</span><span dir="ltr" style="font-size:10px;word-break:break-all">'+esc(ncs[nid])+'</span></div>'; }).join('');
+      nodeBox.innerHTML = rows ? '<div class="panel-h"><span class="glow">Node Configs</span></div>'+rows : '';
+    } catch(e) { if(nodeBox) nodeBox.innerHTML=''; }
     openModal('mod-cfg');
   } catch(e) { toast(e.message, 'err'); }
 }
@@ -2787,7 +2845,7 @@ async function editInbound(iid) {
   if (!ib) return;
   var isReality = (ib.protocol === 'reality' || ib.security === 'reality');
   var isTg = (ib.protocol || '').toLowerCase() === 'telegram';
-  var isNode = (ib.system && ib.inbound_id === 'Node');
+  var isNode = ((ib.protocol || '').toLowerCase() === 'node' || ib.inbound_id === 'Node' || ib.system === true);
   var modal = $id('mod-inbound');
   $id('ib-title').textContent = t('editInbound');
   $id('ib-id').value = iid;
@@ -2831,7 +2889,7 @@ async function editInbound(iid) {
       try { await loadNodes(); } catch (e) {}
     }
 
-    var nodeIds = (ib.node_ids || []).map(String);
+    var nodeIds = (ib.enabled_node_ids || ib.node_ids || []).map(String);
     var nodeContainer = $id('ib-node-list');
     if (nodeContainer) {
       nodeContainer.innerHTML = '';
@@ -2841,9 +2899,9 @@ async function editInbound(iid) {
         ALL_NODES.forEach(function(node) {
           var nid = String(node.node_id || '');
           var name = node.name || node.domain || nid;
-          var flag = node.remote_flag || '';
-          var ip = node.remote_ip || '--';
-          var online = node.last_status === 'online';
+          var flag = node.country_flag || node.remote_flag || '🌐';
+          var ip = node.public_ip || node.remote_ip || '--';
+          var online = (node.status || node.last_status) === 'online';
           var label = document.createElement('label');
           label.className = 'node-select-row' + (nodeIds.indexOf(nid) >= 0 ? ' selected' : '');
           label.title = name + ' ' + flag + ' ' + ip;
@@ -2945,7 +3003,7 @@ async function submitInbound(e) {
   };
 
   if (iid === 'Node') {
-    body.node_ids = nodeIds;
+    body.enabled_node_ids = nodeIds; body.node_ids = nodeIds;
   }
 
   if (type === 'telegram') {
@@ -4311,43 +4369,35 @@ function cuCodeToFlag(code) {
 var ALL_NODES = [];
 var EDITING_NODE_ID = null;
 
+function _nodeStatusText(node) {
+  var st = String(node.status || node.last_status || 'offline').toLowerCase();
+  if (st === 'online') return '● Online';
+  if (st === 'checking') return '● Checking...';
+  if (st === 'unauthorized') return '! Unauthorized';
+  if (st === 'orphan_cleanup_pending') return '! Cleanup pending';
+  if (st === 'error' || st === 'remote_error') return '! Error';
+  return '○ Offline';
+}
+
+function _nodeStatusClass(node) {
+  var st = String(node.status || node.last_status || 'offline').toLowerCase();
+  if (st === 'online') return 'node-online';
+  if (st === 'checking') return 'node-checking';
+  if (st === 'unauthorized') return 'node-unauth';
+  return 'node-offline';
+}
+
+function _nodeFlag(node) { return node.country_flag || node.remote_flag || '🌐'; }
+function _nodeIp(node) { return node.public_ip || node.remote_ip || '--'; }
+
 async function loadNodes() {
   try {
     var response = await api('/api/nodes');
     ALL_NODES = response.nodes || response || [];
     renderNodes();
   } catch(e) {
-    $id('nodes-list').innerHTML = '<div style="color:var(--red);padding:20px">' + (e.message || t('toast.err')) + '</div>';
-  }
-}
-
-function getNodeStatusColor(status) {
-  switch (status) {
-    case 'online': return 'var(--green)';
-    case 'checking': return 'var(--neon)';
-    case 'offline': case 'unauthorized': case 'remote_error': return 'var(--red)';
-    default: return 'var(--txt2)';
-  }
-}
-
-function getNodeStatusText(status) {
-  var statusMap = {
-    'online': 'Online',
-    'checking': 'Checking...',
-    'offline': 'Offline',
-    'unauthorized': 'Unauthorized',
-    'remote_error': 'Error',
-  };
-  return statusMap[status] || status || '--';
-}
-
-function getNodeStatusIcon(status) {
-  switch (status) {
-    case 'online': return '● ';
-    case 'checking': return '◉ ';
-    case 'offline': return '○ ';
-    case 'unauthorized': case 'remote_error': return '⚠ ';
-    default: return '○ ';
+    var el = $id('nodes-list');
+    if (el) el.innerHTML = '<div style="color:var(--red);padding:20px">' + esc(e.message || t('toast.err')) + '</div>';
   }
 }
 
@@ -4355,39 +4405,42 @@ function renderNodes() {
   var wrap = $id('nodes-list');
   if (!wrap) return;
   if (!ALL_NODES.length) {
-    wrap.innerHTML = '<div style="color:var(--txt2);text-align:center;padding:40px 0;font-size:14px">' + t('noNodes') + '</div>';
+    wrap.innerHTML = '<div style="color:var(--txt2);text-align:center;padding:40px 0;font-size:14px">' + esc(t('noNodes')) + '</div>';
     return;
   }
   var html = '';
   ALL_NODES.forEach(function(node) {
-    var status = node.status || 'unknown';
-    var statusColor = getNodeStatusColor(status);
-    var statusText = getNodeStatusText(status);
-    var flag = node.country_flag || '';
-    var country = node.country || '';
-    var ip = node.public_ip || '--';
-    var latency = node.latency_ms != null ? node.latency_ms + 'ms' : '--';
-    var lastSeen = node.last_seen ? formatTime(node.last_seen) : '--';
-    var lastSync = node.last_sync ? formatTime(node.last_sync) : lastSeen;
-    var displayName = flag ? flag + ' ' + node.name : (node.name || node.domain);
+    var flag = _nodeFlag(node);
+    var ip = _nodeIp(node);
+    var country = node.country || node.country_code || '';
+    var status = _nodeStatusText(node);
+    var statusCls = _nodeStatusClass(node);
+    var lat = node.latency_ms != null ? node.latency_ms + ' ms' : (node.latency != null ? node.latency + ' ms' : '—');
+    var lastSeen = node.last_seen || node.last_checked || '—';
+    var lastSync = node.last_sync || '—';
+    var lastErr = node.last_error || node.error || '—';
     html += '<div class="spd-acc" style="margin-bottom:8px">' +
       '<button type="button" class="spd-acc-head" onclick="spdToggleAcc(\'node-' + esc(node.node_id) + '\',this)" aria-expanded="false">' +
-      '<span class="spd-acc-title"><strong>' + esc(displayName.trim()) + '</strong></span>' +
-      '<span style="font-size:11px;color:' + statusColor + '">' + statusText + '</span>' +
-      '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>' +
+        '<span class="spd-acc-title"><strong>' + esc(flag + ' ' + (node.name || node.domain || node.node_id)) + '</strong><span style="font-size:10px;color:var(--txt2);display:block;margin-top:3px" dir="ltr">' + esc(country + (country && ip ? ' · ' : '') + ip) + '</span></span>' +
+        '<span class="node-status-pill ' + statusCls + '">' + esc(status) + '</span>' +
+        '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span>' +
+      '</button>' +
       '<div class="spd-acc-body" id="acc-node-' + esc(node.node_id) + '">' +
-      '<div class="set-row"><span class="set-lbl">Domain</span><span dir="ltr" style="font-size:12px">' + esc(node.domain) + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">Public IP</span><span dir="ltr" style="font-size:12px">' + ip + ' ' + flag + ' ' + country + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">Status</span><span style="font-size:11px;color:' + statusColor + '">' + statusText + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">Ping</span><span dir="ltr" style="font-size:12px;color:var(--neon)">' + latency + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">Last Seen</span><span dir="ltr" style="font-size:12px;color:var(--txt2)">' + lastSeen + '</span></div>' +
-      '<div class="set-row"><span class="set-lbl">Last Sync</span><span dir="ltr" style="font-size:12px;color:var(--txt2)">' + lastSync + '</span></div>' +
-      (node.last_error ? '<div class="set-row"><span class="set-lbl">Error</span><span dir="ltr" style="font-size:11px;color:var(--red)">' + esc(node.last_error) + '</span></div>' : '') +
-      '<div style="display:flex;gap:8px;margin-top:14px">' +
-      '<button class="btn btn-p" onclick="refreshNode(\'' + esc(node.node_id) + '\')">Refresh</button>' +
-      '<button class="btn btn-g" onclick="editNode(\'' + esc(node.node_id) + '\')">Edit</button>' +
-      '<button class="btn" style="background:var(--red);color:#fff" onclick="deleteNode(\'' + esc(node.node_id) + '\')">Delete</button>' +
-      '</div></div></div>';
+        '<div class="set-row"><span class="set-lbl">Domain</span><span dir="ltr" style="font-size:12px">' + esc(node.domain || '—') + '</span></div>' +
+        '<div class="set-row"><span class="set-lbl">IP / Country</span><span dir="ltr" style="font-size:12px">' + esc(ip) + ' · ' + esc(flag + ' ' + country) + '</span></div>' +
+        '<div class="set-row"><span class="set-lbl">Status</span><span class="node-status-pill ' + statusCls + '">' + esc(status) + '</span></div>' +
+        '<div class="set-row"><span class="set-lbl">Latency</span><span dir="ltr" style="font-size:12px">' + esc(lat) + '</span></div>' +
+        '<div class="set-row"><span class="set-lbl">Last Seen</span><span dir="ltr" style="font-size:11px">' + esc(lastSeen) + '</span></div>' +
+        '<div class="set-row"><span class="set-lbl">Last Sync</span><span dir="ltr" style="font-size:11px">' + esc(lastSync) + '</span></div>' +
+        '<div class="set-row"><span class="set-lbl">Inbound Count</span><b>' + esc(String(node.enabled_inbound_count != null ? node.enabled_inbound_count : 0)) + '</b></div>' +
+        '<div class="set-row"><span class="set-lbl">Synced Users</span><b>' + esc(String(node.synced_user_count != null ? node.synced_user_count : node.remote_users || 0)) + '</b></div>' +
+        '<div class="set-row"><span class="set-lbl">Last Error</span><span style="font-size:11px;color:' + (lastErr === '—' ? 'var(--txt2)' : 'var(--red)') + ';word-break:break-word">' + esc(lastErr) + '</span></div>' +
+        '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">' +
+          '<button class="btn btn-g btn-sm" onclick="syncNode(\'' + esc(node.node_id) + '\')">Refresh / Test</button>' +
+          '<button class="btn btn-g btn-sm" onclick="editNode(\'' + esc(node.node_id) + '\')">' + esc(t('edit')) + '</button>' +
+          '<button class="btn btn-g btn-sm" onclick="deleteNode(\'' + esc(node.node_id) + '\')">' + esc(t('delete')) + '</button>' +
+        '</div>' +
+      '</div></div>';
   });
   wrap.innerHTML = html;
 }
@@ -4396,7 +4449,6 @@ function openNodeModal(nodeId) {
   EDITING_NODE_ID = nodeId || null;
   var node = nodeId ? ALL_NODES.find(function(n) { return n.node_id === nodeId; }) : null;
   var title = node ? t('editNode') : t('addNode');
-
   var modal = $id('mod-node');
   if (!modal) {
     modal = document.createElement('div');
@@ -4408,200 +4460,102 @@ function openNodeModal(nodeId) {
     modal.appendChild(inner);
     document.body.appendChild(modal);
   }
-
   var form = modal.querySelector('form');
   if (!form) {
     form = document.createElement('form');
     form.onsubmit = submitNode;
     modal.querySelector('.modal-c').appendChild(form);
-
     var header = document.createElement('div');
     header.className = 'modal-t';
-    header.innerHTML = '<span class="glow"></span>';
+    header.innerHTML = '<span class="glow"></span><span id="node-modal-title"></span>';
     form.appendChild(header);
-
-    var f1 = document.createElement('div');
-    f1.className = 'f-g';
-    f1.innerHTML = '<label>Name</label>';
-    var inp1 = document.createElement('input');
-    inp1.type = 'text';
-    inp1.id = 'node-name';
-    inp1.dir = 'ltr';
-    inp1.placeholder = 'Node name';
-    f1.appendChild(inp1);
-    form.appendChild(f1);
-
-    var f2 = document.createElement('div');
-    f2.className = 'f-g';
-    f2.innerHTML = '<label>Domain</label>';
-    var inp2 = document.createElement('input');
-    inp2.type = 'text';
-    inp2.id = 'node-domain';
-    inp2.dir = 'ltr';
-    inp2.placeholder = 'example.com or https://example.com';
-    inp2.required = true;
-    f2.appendChild(inp2);
-    form.appendChild(f2);
-
-    var f3 = document.createElement('div');
-    f3.className = 'f-g';
-    f3.innerHTML = '<label>SpiderPanel API Key</label>';
-    var inp3 = document.createElement('input');
-    inp3.type = 'password';
-    inp3.id = 'node-apikey';
-    inp3.dir = 'ltr';
-    inp3.placeholder = 'spdr_xxxxx';
-    inp3.required = true;
-    f3.appendChild(inp3);
-    form.appendChild(f3);
-
-    var btns = document.createElement('div');
-    btns.className = 'modal-btns';
-    var btnCancel = document.createElement('button');
-    btnCancel.type = 'button';
-    btnCancel.className = 'btn btn-g';
-    btnCancel.textContent = t('cancel');
-    btnCancel.onclick = function() { closeModal('mod-node'); };
-    var btnSubmit = document.createElement('button');
-    btnSubmit.type = 'submit';
-    btnSubmit.className = 'btn btn-p';
-    btnSubmit.textContent = t('saveChanges');
-    btns.appendChild(btnCancel);
-    btns.appendChild(btnSubmit);
-    form.appendChild(btns);
+    var fields = [
+      {id:'node-name', label:'Name', type:'text', placeholder:'Germany'},
+      {id:'node-domain', label:'Domain', type:'text', placeholder:'example.com'},
+      {id:'node-apikey', label:'SPI Key', type:'password', placeholder:'spdr_xxxxxxxxx'}
+    ];
+    fields.forEach(function(f){
+      var g = document.createElement('div'); g.className='f-g';
+      var lab = document.createElement('label'); lab.textContent=f.label; g.appendChild(lab);
+      var inp = document.createElement('input'); inp.type=f.type; inp.id=f.id; inp.dir='ltr'; inp.placeholder=f.placeholder; inp.autocomplete='off';
+      if (f.id !== 'node-name') inp.required = (f.id === 'node-domain' || !EDITING_NODE_ID);
+      g.appendChild(inp); form.appendChild(g);
+    });
+    var hint = document.createElement('div');
+    hint.className='px-hint';
+    hint.textContent='در حالت ویرایش، SPI Key را خالی بگذارید تا همان کلید قبلی حفظ شود.';
+    form.appendChild(hint);
+    var btns=document.createElement('div'); btns.className='modal-btns';
+    var bc=document.createElement('button'); bc.type='button'; bc.className='btn btn-g'; bc.textContent=t('cancel'); bc.onclick=function(){ closeModal('mod-node'); };
+    var bs=document.createElement('button'); bs.type='submit'; bs.className='btn btn-g'; bs.textContent=t('saveChanges'); bs.id='node-submit';
+    btns.appendChild(bc); btns.appendChild(bs); form.appendChild(btns);
   }
-
-  modal.querySelector('.modal-t span').textContent = title;
-  $id('node-name').value = node ? (node.name || '') : '';
-  $id('node-domain').value = node ? (node.domain ? node.domain.replace('https://', '') : '') : '';
-  $id('node-apikey').value = node ? '' : '';
-
+  var titleEl=$id('node-modal-title'); if(titleEl) titleEl.textContent=title;
+  $id('node-name').value=node ? (node.name || '') : '';
+  $id('node-domain').value=node ? (node.domain || '').replace(/^https?:\/\//i,'') : '';
+  $id('node-apikey').value='';
+  $id('node-apikey').required=!EDITING_NODE_ID;
+  $id('node-domain').required=true;
+  $id('node-apikey').placeholder=node && node.api_key_masked ? node.api_key_masked : 'spdr_xxxxxxxxx';
   modal.classList.add('show');
 }
 
 async function submitNode(e) {
   e.preventDefault();
-  var name = $id('node-name').value.trim();
-  var domain = $id('node-domain').value.trim();
-  var apiKey = $id('node-apikey').value.trim();
-  if (!domain || !apiKey) {
-    toast('Domain و API Key الزامی است', 'err');
-    return;
-  }
-  if (!apiKey.startsWith('spdr_')) {
-    toast('API Key باید با spdr_ شروع شود', 'err');
-    return;
-  }
-  var btn = e.target.querySelector('button[type="submit"]');
-  btn.disabled = true; btn.textContent = '...';
-  try {
-    var method = EDITING_NODE_ID ? 'PATCH' : 'POST';
-    var url = EDITING_NODE_ID ? '/api/nodes/' + EDITING_NODE_ID : '/api/nodes';
-    var result = await api(url, {method: method, body: {name: name, domain: domain, api_key: apiKey}});
-    if (!result || !result.ok) throw new Error('پاسخ نامعتبر از سرور');
-    toast(EDITING_NODE_ID ? 'نود بروزرسانی شد' : 'نود اضافه شد', 'ok');
-    closeModal('mod-node');
-    loadNodes();
-  } catch(e) {
-    toast(e.message || 'خطا در اتصال', 'err');
-  }
-  btn.disabled = false; btn.textContent = t('saveChanges');
+  var name=$id('node-name').value.trim();
+  var domain=$id('node-domain').value.trim();
+  var apiKey=$id('node-apikey').value.trim();
+  if(!domain || (!EDITING_NODE_ID && !apiKey)){ toast('Domain و SPI Key الزامی است','err'); return; }
+  var btn=e.target.querySelector('button[type="submit"]'); if(btn){btn.disabled=true;btn.textContent='...';}
+  try{
+    var method=EDITING_NODE_ID?'PATCH':'POST';
+    var url=EDITING_NODE_ID?'/api/nodes/'+encodeURIComponent(EDITING_NODE_ID):'/api/nodes';
+    var body={name:name,domain:domain}; if(apiKey) body.api_key=apiKey;
+    var result=await api(url,{method:method,body:body});
+    if(!result || !result.ok) throw new Error('پاسخ نامعتبر از سرور');
+    toast(EDITING_NODE_ID?t('nodeUpdated'):t('nodeAdded'),'ok'); closeModal('mod-node'); await loadNodes();
+    loadInbounds();
+  }catch(e){toast(e.message || t('nodeSyncFailed'),'err');}
+  if(btn){btn.disabled=false;btn.textContent=t('saveChanges');}
 }
 
-function editNode(nodeId) {
-  openNodeModal(nodeId);
+function editNode(nodeId){ openNodeModal(nodeId); }
+
+async function deleteNode(nodeId){
+  if(!confirm(t('confirmDeleteNode'))) return;
+  try{
+    var r=await api('/api/nodes/'+encodeURIComponent(nodeId),{method:'DELETE'});
+    if(r && r.pending_cleanup){ toast('حذف نود به cleanup روی Node مقصد وابسته است؛ وضعیت pending ذخیره شد.','warn'); }
+    else { toast(t('nodeDeleted'),'ok'); }
+    await loadNodes(); await loadInbounds();
+  }catch(e){toast(e.message || t('toast.err'),'err');}
 }
 
-async function deleteNode(nodeId) {
-  if (!confirm('آیا از حذف این نود اطمینان دارید؟')) return;
-  try {
-    await api('/api/nodes/' + nodeId, {method: 'DELETE'});
-    toast('نود حذف شد', 'ok');
-    loadNodes();
-  } catch(e) { toast(e.message || t('toast.err'), 'err'); }
+async function syncNode(nodeId){
+  try{
+    var r=await api('/api/nodes/'+encodeURIComponent(nodeId)+'/refresh',{method:'POST'});
+    if(r && r.node && r.node.status==='online') toast(t('nodeSynced'),'ok');
+    else toast((r && r.node && r.node.last_error) || t('nodeSyncFailed'),'warn');
+    await loadNodes();
+  }catch(e){toast(e.message || t('nodeSyncFailed'),'err');}
 }
 
-async function refreshNode(nodeId) {
-  try {
-    await api('/api/nodes/' + nodeId + '/refresh', {method: 'POST'});
-    toast('نود بروزرسانی شد', 'ok');
-    loadNodes();
-  } catch(e) { toast(e.message || 'خطا', 'err'); }
-}
-
-async function syncAllNodes() {
-  try {
-    var result = await api('/api/nodes/sync-all', {method: 'POST'});
-    if (result.synced > 0) {
-      toast('همگام‌سازی انجام شد (' + result.synced + ')', 'ok');
-    } else {
-      toast('همگام‌سازی انجام شد', 'ok');
-    }
-    loadNodes();
-  } catch(e) { toast(e.message || 'خطا در همگام‌سازی', 'err'); }
-}
-
-// ─── PANEL API KEY ───────────────────────────────────────────────────────────
-async function loadPanelApiKey() {
-  try {
-    var result = await api('/api/panel-api-key');
-    if (result.api_key) {
-      $id('panel-api-key').textContent = result.api_key.substring(0, 12) + '••••' + result.api_key.substring(result.api_key.length - 4);
-    }
-  } catch(e) { /* ignore */ }
-}
-
-function copyPanelApiKey() {
-  var code = $id('panel-api-key');
-  if (!code) return;
-  var fullKey = code.getAttribute('data-full-key');
-  if (fullKey) {
-    navigator.clipboard.writeText(fullKey).then(function() { toast('کپی شد', 'ok'); });
-  } else {
-    api('/api/panel-api-key').then(function(r) {
-      if (r.api_key) {
-        navigator.clipboard.writeText(r.api_key).then(function() { toast('کپی شد', 'ok'); });
-      }
-    });
-  }
-}
-
-async function regeneratePanelApiKey() {
-  if (!confirm('آیا از ساخت کلید جدید اطمینان دارید؟ تمام نودها نیاز به reconnect دارند.')) return;
-  try {
-    await api('/api/panel-api-key/regenerate', {method: 'POST'});
-    toast('کلید جدید ساخته شد - تمام نودها نیاز به reconnect دارند', 'warn');
-    loadPanelApiKey();
-    loadNodes();
-  } catch(e) { toast(e.message || 'خطa', 'err'); }
-}
-
-async function verifyPanelApiKey() {
-  try {
-    var result = await api('/api/panel-api-key/verify', {method: 'POST', body: {}});
-    toast(result.valid ? 'کلید معتبر است' : 'کلید نامعتبر است', result.valid ? 'ok' : 'err');
-  } catch(e) { toast(e.message || 'خطa', 'err'); }
-}
-
-function formatTime(iso) {
-  if (!iso) return '--';
-  var d = new Date(iso);
-  var h = d.getHours();
-  var m = d.getMinutes().toString().padStart(2, '0');
-  return h + ':' + m;
+async function syncAllNodes(){
+  try{var result=await api('/api/nodes/sync-all',{method:'POST'});toast(t('nodeSynced')+' ('+(result.synced || 0)+')','ok');await loadNodes();}
+  catch(e){toast(e.message || t('nodeSyncFailed'),'err');}
 }
 
 // ─── SERVER INFO IN SETTINGS ───────────────────────────────────────────────
 async function loadServerInfo() {
   try {
-    var info = await api('/api/me');
+    var info = await api('/api/server-info');
     var wrap = $id('server-info-wrap');
     if (!wrap) return;
-    var apiKey = info.api_key || '';
+    var apiKey = ''; try { var kr = await api('/api/panel-api-key'); apiKey = kr.api_key || ''; } catch(e) { apiKey = ''; }
     var maskedKey = apiKey.length > 8 ? apiKey.substring(0, 8) + '••••••••' : (apiKey || '--');
     window._fullApiKey = apiKey;
-    var flagHtml = (info.flag || '') + ' ' + (info.country_name || '');
-    var html = '<div class="set-row"><span class="set-lbl">' + t('serverIp') + '</span><span dir="ltr" style="font-size:12px">' + (info.ip || '--') + ' ' + flagHtml + '</span></div>' +
+    var flagHtml = (info.country_flag || '🌐') + ' ' + (info.country || info.country_code || '');
+    var html = '<div class="set-row"><span class="set-lbl">' + t('serverIp') + '</span><span dir="ltr" style="font-size:12px">' + (info.public_ip || '--') + ' ' + flagHtml + '</span></div>' +
       '<div class="set-row"><span class="set-lbl">' + t('apiKey') + '</span><span dir="ltr" style="font-size:11px;font-family:monospace" id="api-key-display">' + maskedKey + '</span>' +
       (apiKey ? '<button type="button" class="btn-glass" onclick="copyApiKey()">' + t('copyApiKey') + '</button>' : '') +
       '<button type="button" class="btn-glass" onclick="generateApiKey()">تولید خودکار</button>' +
