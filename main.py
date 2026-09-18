@@ -4068,8 +4068,6 @@ async def api_user_sub(username: str):
         "custom_configs": all_custom,
         "custom_railway_configs": custom_railway,
         "custom_cf_configs": custom_cf,
-        "sni_spoof_configs": sni_spoof_cfgs,
-        "sni_spoof_count": len(sni_spoof_cfgs),
         "traffic_used_bytes": used,
         "traffic_used_fmt": fmt_bytes(used),
         "traffic_limit_bytes": limit,
