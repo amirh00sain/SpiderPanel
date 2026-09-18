@@ -2413,8 +2413,8 @@ function _userStatus(u) {
 
 function _userActions(u) {
   return '<div class="act-row">' +
-    '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.username) + '\')" title="Config">'+iconCfg+'</button>' +
-    '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + u.username + '\')" title="Sub Link">'+iconLink+'</button>' +
+    '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.config_uuid || '') + '\')" title="Config">'+iconCfg+'</button>' +
+    '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + (u.config_uuid || '') + '\')" title="Sub Link">'+iconLink+'</button>' +
     '<button class="btn btn-sm btn-b" onclick="viewQR(\'' + u.user_id + '\')" title="QR Code">'+iconQr+'</button>' +
     '<button class="btn btn-sm btn-b" onclick="editUser(\'' + u.user_id + '\')" title="Edit">'+iconEdit+'</button>' +
     '<button class="btn btn-sm btn-r" onclick="toggleUser(\'' + u.user_id + '\')" title="Toggle">'+iconToggle+'</button>' +
@@ -2438,8 +2438,8 @@ function _userAccBody(u) {
     '<div class="spd-acc-kv"><span>' + t('expiry') + '</span><b>' + _userExp(u) + '</b></div>' +
     '<div class="spd-acc-kv"><span>' + t('connTh') + '</span><b>' + connTxt + '</b></div>' +
     '<div class="spd-acc-btns">' +
-      '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.username) + '\')">Config</button>' +
-      '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + u.username + '\')">Sub</button>' +
+      '<button class="btn btn-sm btn-g" onclick="viewCfg(\'' + esc(u.config_uuid || '') + '\')">Config</button>' +
+      '<button class="btn btn-sm btn-g" onclick="viewSub(\'' + (u.config_uuid || '') + '\')">Sub</button>' +
       '<button class="btn btn-sm btn-b" onclick="viewQR(\'' + u.user_id + '\')">QR</button>' +
       '<button class="btn btn-sm btn-b" onclick="editUser(\'' + u.user_id + '\')">' + t('edit') + '</button>' +
       '<button class="btn btn-sm btn-b" onclick="resetUserTraffic(\'' + u.user_id + '\')">Reset</button>' +
@@ -2664,9 +2664,9 @@ async function deleteUser(uid) {
 }
 
 // ─── Config & Sub ───
-async function viewCfg(username) {
+async function viewCfg(configUuid) {
   try {
-    var d = await api('/api/sub/' + encodeURIComponent(username));
+    var d = await api('/api/sub/' + encodeURIComponent(configUuid));
     var list = Array.isArray(d.configs) ? d.configs : [];
     // Drop the fake "status" config (📊 = %F0%9F%93%8A) so the user copies real configs only.
     list = list.filter(function(c){ return c && c.indexOf('%F0%9F%93%8A') === -1; });
@@ -2680,10 +2680,10 @@ function copyCfg() {
   navigator.clipboard.writeText(curCfg).then(function() { toast(t('copied'), 'ok'); }).catch(function() { toast(t('errCopy'), 'err'); });
 }
 
-async function viewSub(username) {
+async function viewSub(configUuid) {
   try {
-    var d = await api('/api/sub/' + encodeURIComponent(username));
-    var uuid = d.config_uuid || username;
+    var d = await api('/api/sub/' + encodeURIComponent(configUuid));
+    var uuid = d.config_uuid || configUuid;
     var subUrl = window.location.origin + '/link/' + uuid;
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(subUrl);
