@@ -252,9 +252,7 @@ FastAPI application
 │   ├── deploy.svg
 │   └── architecture.svg
 ├── worker/
-│   ├── worker.js
-│   ├── _worker.js
-│   └── _worker.js.bak
+│   └── worker.js            # source of truth (deployed to CF as _worker.js)
 ├── Dockerfile
 ├── railway.toml
 ├── requirements.txt

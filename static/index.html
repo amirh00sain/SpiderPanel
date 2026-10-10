@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Spider Panel v9</title>
+<title>Spider Panel v10</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -95,31 +95,6 @@ html, body {
 [data-theme="light"] .f-g input::placeholder,[data-theme="light"] .f-g textarea::placeholder,
 [data-theme="light"] .input-glass::placeholder{color:#3a3a3e;opacity:.6}
 [data-theme="light"] .btn-g{background:rgba(0,0,0,.05)}
-/* Light: no colored/white glow on the background */
-[data-theme="light"] .bg-fx{background:none}
-[data-theme="light"] .bg-grid{background:none}
-
-/* ── Live background (matches /sub) ── */
-.bg-fx{
-  position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;
-  background:
-    radial-gradient(ellipse 900px 600px at 25% 20%, rgba(0,225,193,0.16) 0%, transparent 70%),
-    radial-gradient(ellipse 700px 500px at 75% 15%, rgba(64,120,255,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 600px 400px at 60% 75%, rgba(139,92,246,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 500px 400px at 10% 80%, rgba(0,180,255,0.07) 0%, transparent 55%);
-}
-.bg-grid{
-  position:fixed;inset:-2px;z-index:-2;pointer-events:none;
-  background-image:
-    linear-gradient(rgba(0,225,193,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,225,193,0.04) 1px, transparent 1px);
-  background-size:48px 48px;
-  mask-image:radial-gradient(ellipse 90% 80% at 50% 45%, black 20%, transparent 70%);
-  -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 45%, black 20%, transparent 70%);
-  animation:grid-drift 36s linear infinite;
-}
-@keyframes grid-drift{from{background-position:0 0}to{background-position:48px 48px}}
-
 *{margin:0;padding:0;box-sizing:border-box}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -168,17 +143,12 @@ html[lang="fa"] body{
   --logo-shadow:none;
   --spider-red:#ff6b6b;--red:#ff6b6b;--danger:#ff6b6b;
 }
-/* White grid for the live background in dark mode */
-[data-theme="dark"] .bg-grid{
-  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
-}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(43,127,255,.25);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(43,127,255,.45)}
 input,select,button,textarea{font-family:inherit}
 
 /* ═══ LOGIN — Modern Glassmorphism ═══ */
-        #particles{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4}
         .login-wrap {
             display: flex;
             align-items: center;
@@ -188,23 +158,10 @@ input,select,button,textarea{font-family:inherit}
             position: relative;
             z-index: 1;
         }
-        .login-bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            overflow: hidden;
-        }
-        #shader-canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
         .login-card {
             position: relative;
             z-index: 1;
-            background: #0e0e12;
+            background: #000000;
             border: 1px solid var(--border);
             border-radius: var(--radius-xl);
             padding: 32px 28px;
@@ -674,6 +631,41 @@ tr{animation:fadeIn .3s ease}
 .srv-bar-h strong{font-size:11px}.srv-bar-bg{height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
 .srv-bar-f{height:100%;border-radius:4px;transition:width .5s ease}
 
+/* Compact live server status, styled after the reference card. */
+.dash-system-card{width:100%;max-width:none;align-self:stretch;padding:18px;margin-top:14px}
+.ds-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.7px;color:var(--txt2)}
+.ds-live{display:inline-flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.4px;color:#62c8b2}
+.ds-live::before{content:'';width:6px;height:6px;border-radius:50%;background:#62c8b2}
+.ds-row{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:12px;padding:9px 0 7px;border-bottom:1px solid var(--border)}
+.ds-gauge{--gauge-color:#62c8b2;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(var(--gauge-color) 0 calc(var(--pct,0)*1%),rgba(128,128,128,.2) calc(var(--pct,0)*1%) 100%)}
+.ds-gauge::before{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--bg)}
+.ds-gauge .material-symbols-outlined{z-index:1;font-size:16px;color:var(--txt2)}
+.ds-main{min-width:0}
+.ds-line{display:flex;align-items:center;justify-content:space-between;gap:8px;line-height:1.25}
+.ds-line strong{font-size:12px;font-weight:700}
+.ds-line b{font-size:13px;font-weight:800;white-space:nowrap}
+.ds-sub{font-size:10px;color:var(--txt2);margin-top:3px;line-height:1.3}
+.ds-spark{display:block;width:100%;height:22px;margin-top:5px;overflow:visible}
+.ds-spark polyline{fill:none;stroke:#62c8b2;stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
+.ds-section{padding-top:12px;border-bottom:1px solid var(--border)}
+.ds-section-title{font-size:11px;font-weight:800;letter-spacing:.6px;color:var(--txt2);margin-bottom:9px}
+.ds-conn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center}
+.ds-conn-label{display:flex;justify-content:center;align-items:center;gap:6px;font-size:11px;color:var(--txt2)}
+.ds-conn-label .material-symbols-outlined{font-size:14px;color:#62c8b2}
+.ds-conn-label.udp .material-symbols-outlined{color:#4489e4}
+.ds-conn-count{display:block;font-size:18px;font-weight:800;margin-top:1px}
+.ds-conn-bar{height:6px;display:flex;overflow:hidden;border-radius:8px;background:rgba(128,128,128,.2);margin:10px 0 12px}
+.ds-conn-tcp{background:#62c8b2;width:0;transition:width .35s}.ds-conn-udp{background:#4489e4;flex:none;width:50%;transition:width .35s}
+.ds-ips{padding-top:11px}
+.ds-ips-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.ds-ip-toggle{padding:2px 5px;background:transparent;border:0;color:var(--txt2);cursor:pointer;display:inline-flex}
+.ds-ip-toggle .material-symbols-outlined{font-size:17px}
+.ds-ip-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:36px;border-bottom:1px solid var(--border);font-size:11px;color:var(--txt2)}
+.ds-ip-row:last-child{border:0}
+.ds-ip-value{max-width:75%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;color:var(--txt)}
+.speed-limit-field .px-hint{margin-top:0}
+@media(max-width:640px){.dash-system-card{max-width:none;padding:15px}.ds-row{gap:10px}.ds-spark{height:20px}}
+
 /* Modal - Glass */
 .modal{
   position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);
@@ -1018,28 +1010,29 @@ tr{animation:fadeIn .3s ease}
 /* ═══ SpiderPanel monochrome flat-card theme ═══ */
 :root{
   --neon:#ffffff;--neon2:#ffffff;--teal:#ffffff;--green:#ffffff;--success:#ffffff;--blue:#ffffff;--purple:#ffffff;--red:#ffffff;--danger:#ffffff;--gold:#ffffff;--warning:#ffffff;
-  --bg:#000000;--bg2:#000000;--bg3:#000000;--txt:#ffffff;--txt2:#cfcfcf;--input-bg:#111111;--border:#2a2a2a;--line:#2a2a2a;
-  --tab-bg:#ffffff;--tab-color:#000000;--nav-bg:#1b1b1b;--nav-color:#ffffff;--border-glow:#ffffff;--input-glow:#ffffff;
+  --bg:#000000;--bg2:#000000;--bg3:#000000;--txt:#ffffff;--txt2:#cfcfcf;--input-bg:#000000;--border:#2a2a2a;--line:#2a2a2a;
+  --tab-bg:#ffffff;--tab-color:#000000;--nav-bg:#000000;--nav-color:#ffffff;--border-glow:#ffffff;--input-glow:#ffffff;
   --grad1:#ffffff;--grad2:#ffffff;--grad:#ffffff;--gradient:#ffffff;
   --glass:#000000;--surface-glass:#000000;--orb1:#000000;--orb2:#000000;--glow:none;--glow-strong:none;
 }
-[data-theme="dark"]{--bg:#000000;--bg2:#000000;--bg3:#000000;--txt:#ffffff;--txt2:#cfcfcf;--input-bg:#111111;--border:#2a2a2a;--neon:#ffffff;--green:#ffffff;--blue:#ffffff;--purple:#ffffff;--red:#ffffff;--danger:#ffffff;--gold:#ffffff;--success:#ffffff;--tab-bg:#ffffff;--tab-color:#000000;--nav-bg:#1a1a1a;--nav-color:#ffffff;--border-glow:#ffffff;--grad1:#ffffff;--grad2:#ffffff;--grad:#ffffff;--gradient:#ffffff}
-[data-theme="light"]{--bg:#ffffff;--bg2:#ffffff;--bg3:#ffffff;--txt:#000000;--txt2:#3a3a3a;--input-bg:#ffffff;--border:#cfcfcf;--neon:#000000;--green:#000000;--blue:#000000;--purple:#000000;--red:#000000;--danger:#000000;--gold:#000000;--success:#000000;--tab-bg:#000000;--tab-color:#ffffff;--nav-bg:#f1f1f1;--nav-color:#000000;--border-glow:#000000;--grad1:#000000;--grad2:#000000;--grad:#000000;--gradient:#000000}
+[data-theme="dark"]{--bg:#000000;--bg2:#000000;--bg3:#000000;--txt:#ffffff;--txt2:#cfcfcf;--input-bg:#000000;--border:#2a2a2a;--neon:#ffffff;--green:#ffffff;--blue:#ffffff;--purple:#ffffff;--red:#ffffff;--danger:#ffffff;--gold:#ffffff;--success:#ffffff;--tab-bg:#ffffff;--tab-color:#000000;--nav-bg:#000000;--nav-color:#ffffff;--border-glow:#ffffff;--grad1:#ffffff;--grad2:#ffffff;--grad:#ffffff;--gradient:#ffffff}
+[data-theme="light"]{--bg:#ffffff;--bg2:#ffffff;--bg3:#ffffff;--txt:#000000;--txt2:#3a3a3a;--input-bg:#ffffff;--border:#cfcfcf;--neon:#000000;--green:#000000;--blue:#000000;--purple:#000000;--red:#000000;--danger:#000000;--gold:#000000;--success:#000000;--tab-bg:#000000;--tab-color:#ffffff;--nav-bg:#ffffff;--nav-color:#000000;--border-glow:#000000;--grad1:#000000;--grad2:#000000;--grad:#000000;--gradient:#000000}
 
-.bg-fx,.bg-grid,#particles,#shader-canvas,.login-bg{display:none!important}
-.sidebar,.topbar,.panel,.stat,.tbl,.u-card,.modal-c,.login-card,.settings-box{background:#000000!important;border-color:#2a2a2a!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:0 10px 28px rgba(0,0,0,.55)!important}
-[data-theme="light"] .sidebar,[data-theme="light"] .topbar,[data-theme="light"] .panel,[data-theme="light"] .stat,[data-theme="light"] .tbl,[data-theme="light"] .u-card,[data-theme="light"] .modal-c,[data-theme="light"] .login-card,[data-theme="light"] .settings-box{background:#ffffff!important;border-color:#cfcfcf!important;box-shadow:0 10px 28px rgba(0,0,0,.14)!important}
-.btn-p{background:#ffffff!important;color:#000000!important;box-shadow:0 6px 18px rgba(0,0,0,.45)!important}
-[data-theme="light"] .btn-p{background:#000000!important;color:#ffffff!important;box-shadow:0 6px 18px rgba(0,0,0,.18)!important}
-.btn-g,.lang-btn{background:#111111!important;color:#ffffff!important;border:1px solid #2a2a2a!important}
+.sidebar.open,.modal.show .modal-c{will-change:transform;backface-visibility:hidden}
+.modal{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.sidebar,.topbar,.panel,.stat,.tbl,.u-card,.modal-c,.login-card,.settings-box{background:#000000!important;border-color:#2a2a2a!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important}
+[data-theme="light"] .sidebar,[data-theme="light"] .topbar,[data-theme="light"] .panel,[data-theme="light"] .stat,[data-theme="light"] .tbl,[data-theme="light"] .u-card,[data-theme="light"] .modal-c,[data-theme="light"] .login-card,[data-theme="light"] .settings-box{background:#ffffff!important;border-color:#cfcfcf!important;box-shadow:none!important}
+.btn-p{background:#ffffff!important;color:#000000!important;box-shadow:none!important}
+[data-theme="light"] .btn-p{background:#000000!important;color:#ffffff!important;box-shadow:none!important}
+.btn-g,.lang-btn{background:#000000!important;color:#ffffff!important;border:1px solid #2a2a2a!important}
 [data-theme="light"] .btn-g,[data-theme="light"] .lang-btn{background:#ffffff!important;color:#000000!important;border-color:#cfcfcf!important}
 .btn-r{background:rgba(255,35,82,.25)!important;color:#ffffff!important}
 [data-theme="light"] .btn-r{background:rgba(255,35,82,.85)!important}
 .btn-b{background:rgba(68,138,255,.25)!important;color:#ffffff!important}
 [data-theme="light"] .btn-b{background:rgba(68,138,255,.85)!important}
-.nav-item:hover{background:#111111!important;color:#ffffff!important}.nav-item.active{background:#1a1a1a!important;color:#ffffff!important;border-color:#ffffff!important}
-[data-theme="light"] .nav-item:hover{background:#f1f1f1!important;color:#000000!important}.nav-item.active{border-color:#ffffff!important}
-[data-theme="light"] .nav-item.active{background:#eeeeee!important;color:#000000!important;border-color:#000000!important}
+.nav-item:hover{background:#000000!important;color:#ffffff!important}.nav-item.active{background:#000000!important;color:#ffffff!important;border-color:#ffffff!important}
+[data-theme="light"] .nav-item:hover{background:#ffffff!important;color:#000000!important}.nav-item.active{border-color:#ffffff!important}
+[data-theme="light"] .nav-item.active{background:#ffffff!important;color:#000000!important;border-color:#000000!important}
 [data-theme="light"] .ib-pick{background:#fff!important;color:#000!important;border-color:#ccc!important}
 [data-theme="light"] .ib-pick-name{color:#000!important}
 [data-theme="light"] .ib-pick-meta{color:#666!important}
@@ -1058,10 +1051,10 @@ tr{animation:fadeIn .3s ease}
 .settings-inner-block:first-of-type{padding-top:0;margin-top:0;border-top:0}
 
 /* Main requested accordion */
-.nav-accordion{border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 8px 22px rgba(0,0,0,.45);margin:2px 0 4px}
-.nav-accordion-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 14px;background:#111;color:#fff;border:0;border-bottom:1px solid #2a2a2a;font:600 13px inherit;cursor:pointer}
-.nav-accordion-title{display:inline-flex;align-items:center;gap:8px}.nav-accordion-ic{font-size:18px}.nav-accordion-arrow{font-size:19px;transition:transform .2s}.nav-accordion-body{max-height:0;overflow:hidden;transition:max-height .25s ease;background:#000}.nav-accordion.open .nav-accordion-body{max-height:520px}.nav-accordion.open .nav-accordion-arrow{transform:rotate(180deg)}.nav-accordion-body .nav-item{border-radius:0!important;border:0!important;border-bottom:1px solid #1d1d1d!important;background:#000!important;margin:0!important}.nav-accordion-body .nav-item:last-child{border-bottom:0!important}.nav-accordion-body .nav-item.active{background:#171717!important;color:#fff!important;box-shadow:inset 3px 0 0 #fff}.nav-accordion-body .nav-item:hover{background:#101010!important}
-[data-theme="light"] .nav-accordion{background:#fff;border-color:#cfcfcf;box-shadow:0 8px 22px rgba(0,0,0,.12)}[data-theme="light"] .nav-accordion-head{background:#f3f3f3;color:#000;border-color:#d8d8d8}[data-theme="light"] .nav-accordion-body{background:#fff}[data-theme="light"] .nav-accordion-body .nav-item{background:#fff!important;border-bottom-color:#e6e6e6!important;color:#333}[data-theme="light"] .nav-accordion-body .nav-item.active{background:#f0f0f0!important;color:#000!important;box-shadow:inset 3px 0 0 #000}
+.nav-accordion{border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;background:#000;box-shadow:none;margin:2px 0 4px}
+.nav-accordion-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 14px;background:#000;color:#fff;border:0;border-bottom:1px solid #2a2a2a;font:600 13px inherit;cursor:pointer}
+.nav-accordion-title{display:inline-flex;align-items:center;gap:8px}.nav-accordion-ic{font-size:18px}.nav-accordion-arrow{font-size:19px;transition:transform .2s}.nav-accordion-body{max-height:0;overflow:hidden;transition:max-height .25s ease;background:#000}.nav-accordion.open .nav-accordion-body{max-height:520px}.nav-accordion.open .nav-accordion-arrow{transform:rotate(180deg)}.nav-accordion-body .nav-item{border-radius:0!important;border:0!important;border-bottom:1px solid #1d1d1d!important;background:#000!important;margin:0!important}.nav-accordion-body .nav-item:last-child{border-bottom:0!important}.nav-accordion-body .nav-item.active{background:#000!important;color:#fff!important;box-shadow:inset 3px 0 0 #fff}.nav-accordion-body .nav-item:hover{background:#000!important}
+[data-theme="light"] .nav-accordion{background:#fff;border-color:#cfcfcf;box-shadow:none}[data-theme="light"] .nav-accordion-head{background:#fff;color:#000;border-color:#d8d8d8}[data-theme="light"] .nav-accordion-body{background:#fff}[data-theme="light"] .nav-accordion-body .nav-item{background:#fff!important;border-bottom-color:#e6e6e6!important;color:#333}[data-theme="light"] .nav-accordion-body .nav-item.active{background:#fff!important;color:#000!important;box-shadow:inset 3px 0 0 #000}
 
 /* Node selector inside Node inbound editor */
 .node-select-wrap{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
@@ -1079,6 +1072,8 @@ tr{animation:fadeIn .3s ease}
 
 /* Shared content accordion (users, inbounds, scanner, worker, settings) */
 .spd-acc-list{display:flex;flex-direction:column;gap:8px}
+#users-list .spd-acc-list,#inbounds-list .spd-acc-list{width:100%;max-width:900px;margin-left:auto;margin-right:0;align-self:flex-end}
+@media(max-width:640px){#users-list .spd-acc-list,#inbounds-list .spd-acc-list{width:calc(100% - 14px);margin-left:auto;margin-right:0}}
 .spd-acc{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg2,transparent)}
 .spd-acc-head{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;background:transparent;color:var(--txt);border:0;cursor:pointer;font:600 13px inherit;text-align:right}
 .spd-acc-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1225,21 +1220,95 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   outline-offset: 2px;
 }
 
+/* Compact layout controls and typography across desktop and mobile. */
+.sidebar{width:224px}
+.main-area{margin-right:224px}
+.sb-brand{padding:15px 14px;gap:9px}
+.sb-brand img{width:44px;height:44px;border-radius:11px}
+.sb-brand-t{font-size:14px;letter-spacing:2px}
+.sb-brand-s{font-size:9px;letter-spacing:3px}
+.sb-nav{padding:8px;gap:1px}
+.nav-item{padding:8px 10px;gap:8px;font-size:11.5px;border-radius:9px}
+.nav-item .nav-ic{width:17px;height:17px}
+.nav-item .nav-ic svg,.nav-item .nav-ic .material-symbols-outlined{width:17px;height:17px;font-size:16px!important}
+.nav-accordion{border-radius:10px}
+.nav-accordion-head{padding:8px 10px;font-size:11.5px}
+.nav-accordion-ic,.nav-accordion-arrow{font-size:16px}
+.sb-foot{padding:11px 14px;font-size:10px}
+.topbar{padding:9px 16px}
+.topbar-greet{font-size:12px}
+.topbar-r{gap:6px}
+.lang-btn{min-height:30px;padding:4px 8px;gap:4px;font-size:10.5px}
+#theme-ic{font-size:15px!important}
+#lang-flag svg{width:14px;height:14px}
+.sidebar-tog{min-width:30px;min-height:30px;padding:4px!important}
+.sidebar-tog svg{width:16px;height:16px}
+.content{padding:16px 18px}
+.panel-h{font-size:13px}
+.stat{padding:13px 12px}
+.stat-v{font-size:22px}
+.stat-l{font-size:10px}
+.btn,.login-btn{min-height:32px;padding:7px 11px;font-size:11px}
+.btn-sm{min-height:28px;padding:5px 8px;font-size:10px}
+.btn-icon{width:32px;height:32px;min-height:32px;padding:0}
+.theme-dot{width:27px;height:27px}
+.spd-acc-head{padding:10px 12px;font-size:11.5px}
+.px-head{padding:9px 10px}
+.px-flag{font-size:17px}
+.px-meta b{font-size:12px}
+.px-meta span{font-size:10px}
+.dash-system-card{padding:15px}
+
+@media(max-width:900px){
+  .sidebar{width:224px}
+  .main-area{margin-right:0}
+  .topbar{padding:8px 11px}
+  .topbar-greet{font-size:11px}
+  .topbar-r{gap:5px}
+  .lang-btn{min-height:29px;padding:4px 7px;font-size:10px!important}
+  .sidebar-tog{min-height:29px;padding:4px!important}
+  .content{padding:11px}
+  .stat{padding:11px 9px}
+  .stat-v{font-size:19px}
+  .btn,.login-btn{min-height:31px;padding:6px 9px;font-size:10.5px!important}
+  .btn-sm{min-height:28px;padding:5px 7px;font-size:10px!important}
+  .sb-brand{padding:13px 12px}
+  .nav-item{padding:8px 9px;font-size:11px}
+  .nav-accordion-head{padding:8px 9px;font-size:11px}
+}
+@media(max-width:640px){
+  .content{padding:9px}
+  .panel-h{font-size:12px}
+  .stat-v{font-size:18px}
+  .stat-l{font-size:9px}
+  .spd-acc-head{padding:9px 10px;font-size:11px}
+  .dash-system-card{padding:12px}
+  .px-actions{gap:6px}
+  .px-actions .btn{min-height:29px;padding:5px 7px;font-size:9.5px!important}
+}
+.adv-inbound-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;align-items:start}
+.adv-inbound-card{min-width:0}
+.adv-inbound-card.open{grid-column:1/-1;border-color:var(--border-glow)}
+.adv-inbound-head{min-height:58px;padding:9px 10px;gap:8px}
+.adv-inbound-title{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:3px}
+.adv-inbound-title strong{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px}
+.adv-inbound-meta{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt2);font-size:9px;font-weight:400}
+.adv-inbound-body{padding:10px!important;border-top:1px solid var(--border)}
+.adv-inbound-json{display:block;width:100%;min-height:320px;resize:vertical;padding:10px;background:var(--input-bg);border:1px solid var(--border);border-radius:9px;color:var(--txt);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;white-space:pre;user-select:text;-webkit-user-select:text}
+.adv-inbound-save{margin-top:8px}
+@media(max-width:640px){.adv-inbound-grid{grid-template-columns:repeat(auto-fit,minmax(155px,1fr))}.adv-inbound-head{min-height:54px}.adv-inbound-json{min-height:260px;font-size:13px}}
+.suggest-acc-list{width:100%;max-width:900px;margin-left:auto;margin-right:0}
+.suggest-link-list{display:flex;flex-direction:column;gap:6px}
+#tab-suggest .suggest-link-list a{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:36px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--txt);direction:ltr;text-align:left;text-decoration:none;font-size:11px}
+#tab-suggest .suggest-link-list a:hover{border-color:var(--border-glow);background:var(--nav-bg)}
+#tab-suggest .suggest-link-list .material-symbols-outlined{flex:0 0 auto;font-size:15px;color:var(--txt2)}
+
 </style>
 </head>
 <body>
 
-<canvas id="particles"></canvas>
-
-<!-- Live animated background (matches /sub) -->
-<div class="bg-fx"></div>
-<div class="bg-grid"></div>
-
 <!-- ═══════ LOGIN ═══════ -->
 <div class="login-wrap" id="login-wrap" style="display:none">
-  <div class="login-bg">
-    <canvas id="shader-canvas"></canvas>
-  </div>
   <div class="login-card">
     <div class="login-header">
       <img src="/static/spider-logo.svg" alt="Spider" onerror="this.style.display='none'" style="width:96px;height:96px;margin-bottom:6px">
@@ -1283,7 +1352,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <img src="/static/spider-logo.svg" alt="Spider" onerror="this.style.display='none'" style="width:56px;height:56px;flex-shrink:0">
       <div>
         <div class="sb-brand-t"><span>S</span>PIDER</div>
-        <div class="sb-brand-s">PANEL v9</div>
+        <div class="sb-brand-s">PANEL v10</div>
       </div>
     </div>
     <nav class="sb-nav">
@@ -1326,6 +1395,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
             <span class="nav-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
             <span data-i18n="settings">تنظیمات</span>
           </div>
+          <div class="nav-item" onclick="switchTab('proxy',this)">
+            <span class="nav-ic"><span class="material-symbols-outlined" style="font-size:18px">travel_explore</span></span>
+            <span data-i18n="proxy.nav">پروکسی</span>
+          </div>
         </div>
       </div>
 
@@ -1337,17 +1410,30 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         <span class="nav-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10a8 8 0 0116 0v10"/><line x1="2" y1="20" x2="22" y2="20"/><line x1="9" y1="20" x2="9" y2="13"/><line x1="15" y1="20" x2="15" y2="13"/></svg></span>
         <span data-i18n="tunnel">Tunnel</span>
       </div>
-      <div class="nav-item" onclick="switchTab('advanced',this)">
-        <span class="nav-ic"><span class="material-symbols-outlined" style="font-size:18px">tune</span></span>
-        <span data-i18n="tab.advanced">پیشرفته</span>
+      <div class="nav-item" onclick="switchTab('suggest',this)">
+        <span class="nav-ic"><span class="material-symbols-outlined" style="font-size:18px">lightbulb</span></span>
+        <span>Suggest</span>
       </div>
-      <div class="nav-item" onclick="switchTab('help',this)">
-        <span class="nav-ic"><span class="material-symbols-outlined" style="font-size:18px">help</span></span>
-        <span data-i18n="tab.help">راهنما</span>
-      </div>
-      <div class="nav-item" id="nav-notif" onclick="switchTab('notif',this)">
-        <span class="nav-ic"><span class="material-symbols-outlined" style="font-size:18px">campaign</span></span>
-        <span data-i18n="notif.nav">اعلان‌ها</span>
+
+      <div class="nav-accordion" id="system-nav-accordion">
+        <button class="nav-accordion-head" type="button" onclick="toggleSystemNavAccordion()" aria-expanded="false">
+          <span class="nav-accordion-title"><span class="material-symbols-outlined nav-accordion-ic">settings</span><span data-i18n="systemGroup">سیستم</span></span>
+          <span class="material-symbols-outlined nav-accordion-arrow">expand_more</span>
+        </button>
+        <div class="nav-accordion-body" id="system-nav-accordion-body">
+          <div class="nav-item" onclick="switchTab('help',this)">
+            <span class="nav-ic"><span class="material-symbols-outlined" style="font-size:18px">help</span></span>
+            <span data-i18n="tab.help">راهنما</span>
+          </div>
+          <div class="nav-item" id="nav-notif" onclick="switchTab('notif',this)">
+            <span class="nav-ic"><span class="material-symbols-outlined" style="font-size:18px">campaign</span></span>
+            <span data-i18n="notif.nav">اعلان‌ها</span>
+          </div>
+          <div class="nav-item" onclick="switchTab('advanced',this)">
+            <span class="nav-ic"><span class="material-symbols-outlined" style="font-size:18px">tune</span></span>
+            <span data-i18n="tab.advanced">پیشرفته</span>
+          </div>
+        </div>
       </div>
       <div class="nav-item" onclick="switchTab('contact',this)">
         <span class="nav-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></span>
@@ -1358,7 +1444,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         <span data-i18n="logout">خروج</span>
       </div>
     </nav>
-    <div class="sb-foot"><span class="dot"></span> Spider Panel v9.0</div>
+    <div class="sb-foot"><span class="dot"></span> Spider Panel v10</div>
   </aside>
 
   <!-- MAIN -->
@@ -1537,99 +1623,139 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         <div class="panel">
           <div class="panel-h" style="justify-content:space-between">
             <span class="glow">⚡ <span data-i18n="worker">Worker</span></span>
-            <span id="worker-badge" class="badge badge-g" style="margin-right:auto"></span>
+            <span id="worker-badge" class="badge" style="margin-right:auto"></span>
           </div>
+          <div class="px-hint" data-i18n="wk.sectionHint">سه بخش مستقل: هرکدام از Tunnel، Reverse و Worker اینباند جداگانه و تنظیمات خودش را دارد.</div>
 
-          <div class="spd-acc" style="margin-top:10px">
-            <button type="button" class="spd-acc-head" onclick="spdToggleAcc('worker-main',this)" aria-expanded="false"><span class="spd-acc-title"><strong data-i18n="workerMainTitle">Worker</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
-            <div class="spd-acc-body" id="acc-worker-main">
-
-          <!-- DAILY PROXY SOURCE (always available) -->
-          <div class="panel-h" style="margin-top:2px;border-top:1px solid var(--border);padding-top:14px">
-            <span class="glow" data-i18n="proxySource">منبع پروکسی روزانه</span>
-            <span id="wk-source-count" class="badge badge-g" style="margin-right:auto"></span>
-          </div>
-          <div class="set-row">
-            <span class="set-lbl" data-i18n="autoSyncHourly">بروزرسانی خودکار (ساعتی)</span>
-            <button type="button" class="ios-switch" id="wk-auto" onclick="workerToggleAuto()" data-i18n-title="autoSyncHourly" title="بروزرسانی خودکار ساعتی"></button>
-          </div>
-          <div class="set-row" style="border-bottom:none;flex-wrap:wrap;gap:6px">
-            <button class="btn btn-p btn-sm" onclick="workerSyncSource()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
-              <span data-i18n="updateNow">بروزرسانی از منبع</span>
+          <!-- ════════ 1. TUNNEL ════════ -->
+          <div class="spd-acc" style="margin-top:12px">
+            <button type="button" class="spd-acc-head" onclick="spdToggleAcc('wk-tunnel',this)" aria-expanded="false">
+              <span class="spd-acc-title">
+                <span class="material-symbols-outlined" style="font-size:17px">transit_enterexit</span>
+                <strong data-i18n="wk.tunnel">Tunnel</strong>
+                <span class="badge" id="wk-tun-badge"></span>
+              </span>
+              <span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
             </button>
-            <span id="wk-source-status" style="font-size:11px;color:var(--txt2);width:100%"></span>
-          </div>
-
-          <!-- SETUP (not connected) -->
-          <div id="worker-setup">
-            <div class="scn-hint px-hint" data-i18n="workerSetupTip">پنل را به Cloudflare متصل کنید تا یک پروژه Pages اختصاصی ساخته شود، worker.js داخل آن Deploy شود و یک KV اختصاصی به آن متصل شود.</div>
-            <div class="f-g" style="margin-top:10px"><label data-i18n="cfToken">Cloudflare API Token</label>
-              <div style="display:flex;gap:8px">
-                <input type="password" id="wk-token" dir="ltr" style="flex:1" autocomplete="off">
-                <a class="btn btn-sm btn-g" href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22page%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=SpiderPanel-Worker-Token" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">
-                  <span data-i18n="getToken">گرفتن توکن</span>
-                </a>
+            <div class="spd-acc-body" id="acc-wk-tunnel">
+              <div class="px-hint" data-i18n="wk.tunnelHint">مسیر اتصال: User → Railway → Cloudflare Worker → Site. اینباند روی دامنه پنل با مسیر /tunnel/{uuid} ساخته می‌شود.</div>
+              <div class="set-row"><span class="set-lbl" data-i18n="workerStatus">وضعیت</span><span id="wk-tun-status" class="badge"></span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="workerPing">پینگ</span><span id="wk-tun-ping" dir="ltr" style="font-size:12px;color:var(--neon)">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="domain">دامنه</span><span id="wk-tun-domain" dir="ltr" style="font-size:12px;color:var(--txt);word-break:break-all">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="pathLabel">مسیر</span><span id="wk-tun-path" dir="ltr" style="font-size:12px;font-family:monospace;color:var(--txt)">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="tunnelKv">KV اختصاصی</span><span id="wk-tun-kv" dir="ltr" style="font-size:11px;font-family:monospace;color:var(--txt2);word-break:break-all">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="lastHeartbeat">آخرین Heartbeat</span><span id="wk-tun-hb" dir="ltr" style="font-size:12px;color:var(--txt2)">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="tunnelInboundPath">اینباند</span><span id="wk-tun-inbound" dir="ltr" style="font-size:11px;font-family:monospace;color:var(--txt);word-break:break-all">—</span></div>
+              <div class="scn-list" id="wk-tun-logs" style="margin-top:10px;max-height:190px;overflow-y:auto"></div>
+              <div class="px-actions" style="margin-top:12px">
+                <button class="btn btn-p" type="button" onclick="workerCreateTunnel()"><span class="material-symbols-outlined" style="font-size:16px">add_task</span><span data-i18n="tunnelCreate">ایجاد اینباند Tunnel</span></button>
+                <button class="btn btn-g btn-sm" type="button" onclick="loadWorkerSections()"><span class="material-symbols-outlined" style="font-size:15px">refresh</span><span data-i18n="wk.refresh">بروزرسانی</span></button>
               </div>
             </div>
-            <div class="px-hint" style="font-size:10px;color:var(--txt2);margin-bottom:6px">توکن باید دست‌کم Pages:Write و Workers KV Storage:Edit و دسترسی خواندن Account داشته باشد. نیازی به ورود Account ID نیست — Account ID خودکار شناسایی می‌شود.</div>
-            <div class="px-hint" data-i18n="workerAutoName">یک پروژه Pages جدید با نام تصادفی (spider-xxxxxx) و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.</div>
-            <button class="btn btn-p" style="width:100%;margin-top:10px" onclick="workerSetup()"><span data-i18n="createNewWorker">ساخت Worker جدید</span></button>
           </div>
 
-          <!-- MANAGED (connected) -->
-          <div id="worker-managed" class="hidden">
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="workerStatus">وضعیت</span>
-              <span id="worker-status" class="badge badge-g"></span>
+          <!-- ════════ 2. REVERSE ════════ -->
+          <div class="spd-acc" style="margin-top:10px">
+            <button type="button" class="spd-acc-head" onclick="spdToggleAcc('wk-reverse',this)" aria-expanded="false">
+              <span class="spd-acc-title">
+                <span class="material-symbols-outlined" style="font-size:17px">swap_horiz</span>
+                <strong data-i18n="wk.reverse">Reverse</strong>
+                <span class="badge" id="wk-rev-badge"></span>
+              </span>
+              <span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+            </button>
+            <div class="spd-acc-body" id="acc-wk-reverse">
+              <div class="px-hint" data-i18n="wk.reverseHint">مسیر اتصال: User → Cloudflare Worker → Railway → Site. اینباند جداگانه روی دامنه Worker با مسیر /reverse/{uuid} ساخته می‌شود.</div>
+              <div class="set-row"><span class="set-lbl" data-i18n="workerStatus">وضعیت</span><span id="wk-rev-status" class="badge"></span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="workerPing">پینگ</span><span id="wk-rev-ping" dir="ltr" style="font-size:12px;color:var(--neon)">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="domain">دامنه</span><span id="wk-rev-domain" dir="ltr" style="font-size:12px;color:var(--txt);word-break:break-all">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="pathLabel">مسیر</span><span id="wk-rev-path" dir="ltr" style="font-size:12px;font-family:monospace;color:var(--txt)">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="tunnelKv">KV اختصاصی</span><span id="wk-rev-kv" dir="ltr" style="font-size:11px;font-family:monospace;color:var(--txt2);word-break:break-all">—</span></div>
+              <div class="set-row"><span class="set-lbl" data-i18n="tunnelInboundPath">اینباند</span><span id="wk-rev-inbound" dir="ltr" style="font-size:11px;font-family:monospace;color:var(--txt);word-break:break-all">—</span></div>
+              <div class="px-actions" style="margin-top:12px">
+                <button class="btn btn-p" type="button" onclick="workerCreateReverse()"><span class="material-symbols-outlined" style="font-size:16px">add_task</span><span data-i18n="wk.createReverse">ایجاد اینباند Reverse</span></button>
+                <button class="btn btn-g btn-sm" type="button" onclick="loadWorkerSections()"><span class="material-symbols-outlined" style="font-size:15px">refresh</span><span data-i18n="wk.refresh">بروزرسانی</span></button>
+              </div>
             </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="remoteStatus">Remote Status</span>
-              <span id="worker-remote-status" class="badge"></span>
-            </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="lastHeartbeat">Last Heartbeat</span>
-              <span id="worker-heartbeat" dir="ltr" style="font-size:12px;color:var(--txt2)"></span>
-            </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="workerUrl">Worker URL</span>
-              <a id="worker-url" href="#" target="_blank" rel="noopener" dir="ltr" style="color:var(--neon);font-size:12px"></a>
-            </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="workerId">Pages Project</span>
-              <span id="worker-name-id" dir="ltr" style="font-size:12px;font-family:monospace;color:var(--txt)"></span>
-            </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="kvId">KV ID</span>
-              <span id="worker-kv-id" dir="ltr" style="font-size:11px;font-family:monospace;color:var(--txt2);word-break:break-all"></span>
-            </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="onlineUsers">کاربران آنلاین</span>
-              <span id="worker-online" dir="ltr" style="font-size:12px;color:var(--green)"></span>
-            </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="workerTraffic">مصرف Worker</span>
-              <span id="worker-traffic" dir="ltr" style="font-size:12px;color:var(--txt2)"></span>
-            </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="lastSync">آخرین Sync</span>
-              <span id="worker-sync" dir="ltr" style="font-size:12px;color:var(--txt2)"></span>
-            </div>
-            <div class="set-row">
-              <span class="set-lbl" data-i18n="lastError">آخرین خطا</span>
-              <span id="worker-error" dir="ltr" style="font-size:12px;color:var(--red)"></span>
-            </div>
+          </div>
 
-            <div class="panel-h" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
-              <span class="glow" data-i18n="workerSettings">تنظیمات Worker</span>
+          <!-- ════════ 3. WORKER (multi-location) ════════ -->
+          <div class="spd-acc" style="margin-top:10px">
+            <button type="button" class="spd-acc-head" onclick="spdToggleAcc('wk-main',this)" aria-expanded="false">
+              <span class="spd-acc-title">
+                <span class="material-symbols-outlined" style="font-size:17px">bolt</span>
+                <strong data-i18n="wk.worker">Worker</strong>
+                <span class="badge" id="wk-badge"></span>
+              </span>
+              <span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+            </button>
+            <div class="spd-acc-body" id="acc-wk-main">
+              <div class="px-hint" data-i18n="wk.workerHint">Worker چند-لوکیشن: اتصال به Cloudflare، ساخت اینباند جدا و مدیریت لوکیشن‌های خروجی. ترافیک هر کاربر بر اساس کشورش به نزدیک‌ترین لوکیشن می‌رود.</div>
+
+              <!-- SETUP (not connected) -->
+              <div id="wk-setup">
+                <div class="f-g" style="margin-top:10px">
+                  <label data-i18n="cfToken">Cloudflare API Token</label>
+                  <div style="display:flex;gap:8px">
+                    <input type="password" id="wk-token" dir="ltr" style="flex:1" autocomplete="off">
+                    <a class="btn btn-sm btn-g" href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22page%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=SpiderPanel-Worker-Token" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap"><span data-i18n="getToken">گرفتن توکن</span></a>
+                  </div>
+                </div>
+                <div class="px-hint" style="font-size:10px;color:var(--txt2);margin-bottom:6px" data-i18n="workerPermissionsHint">توکن باید دست‌کم Pages:Write و Workers KV Storage:Edit و خواندن Account داشته باشد. Account ID خودکار شناسایی می‌شود.</div>
+                <div class="px-hint" data-i18n="workerAutoName">یک پروژه Pages جدید با نام تصادفی و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.</div>
+                <button class="btn btn-p" style="width:100%;margin-top:10px" onclick="workerSetup()"><span data-i18n="createNewWorker">ساخت Worker جدید</span></button>
+              </div>
+
+              <!-- MANAGED (connected) -->
+              <div id="wk-managed" class="hidden">
+                <div class="set-row"><span class="set-lbl" data-i18n="workerStatus">وضعیت</span><span id="wk-status" class="badge"></span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="remoteStatus">Remote Status</span><span id="wk-remote" class="badge"></span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="workerUrl">Worker URL</span><a id="wk-url" href="#" target="_blank" rel="noopener" dir="ltr" style="color:var(--neon);font-size:12px;word-break:break-all"></a></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="workerId">Pages Project</span><span id="wk-name" dir="ltr" style="font-size:12px;font-family:monospace;color:var(--txt)"></span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="kvId">KV ID</span><span id="wk-kv" dir="ltr" style="font-size:11px;font-family:monospace;color:var(--txt2);word-break:break-all"></span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="workerPing">پینگ</span><span id="wk-ping" dir="ltr" style="font-size:12px;color:var(--neon)">—</span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="onlineUsers">کاربران آنلاین</span><span id="wk-online" dir="ltr" style="font-size:12px;color:var(--green)"></span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="workerTraffic">مصرف Worker</span><span id="wk-traffic" dir="ltr" style="font-size:12px;color:var(--txt2)"></span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="lastSync">آخرین Sync</span><span id="wk-sync" dir="ltr" style="font-size:12px;color:var(--txt2)"></span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="lastError">آخرین خطا</span><span id="wk-error" dir="ltr" style="font-size:12px;color:var(--red);word-break:break-all"></span></div>
+                <div class="set-row"><span class="set-lbl" data-i18n="tunnelInboundPath">اینباند</span><span id="wk-inbound" dir="ltr" style="font-size:11px;font-family:monospace;color:var(--txt);word-break:break-all">—</span></div>
+
+                <!-- LOCATIONS -->
+                <div class="panel-h" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
+                  <span class="glow" data-i18n="wk.locations">لوکیشن‌ها (Multi-Location)</span>
+                  <span id="wk-loc-count" class="badge badge-g" style="margin-right:auto"></span>
+                </div>
+                <div class="px-hint" data-i18n="wk.locationsHint">هر لوکیشن یک خروجی در کشور مشخص است. اگر لوکیشنی نسازید، Worker از منبع روزانه بارگذاری می‌کند.</div>
+                <div class="f-r" style="margin-top:10px;flex-wrap:wrap">
+                  <div class="f-g" style="margin:0"><label data-i18n="proxy.country">کشور</label><input id="wk-loc-country" type="text" dir="ltr" placeholder="Germany"></div>
+                  <div class="f-g" style="margin:0"><label data-i18n="wk.code">کد</label><input id="wk-loc-code" type="text" dir="ltr" placeholder="de" maxlength="16"></div>
+                </div>
+                <div class="f-r" style="flex-wrap:wrap">
+                  <div class="f-g" style="margin:0"><label data-i18n="proxy.host">آدرس پروکسی</label><input id="wk-loc-host" type="text" dir="ltr" placeholder="de.example.com"></div>
+                  <div class="f-g" style="margin:0"><label data-i18n="proxy.port">پورت</label><input id="wk-loc-port" type="number" dir="ltr" value="443" min="1" max="65535"></div>
+                </div>
+                <div class="px-actions">
+                  <button class="btn btn-p" type="button" onclick="wkAddLocation()"><span class="material-symbols-outlined" style="font-size:16px">add_location</span><span data-i18n="wk.addLocation">افزودن لوکیشن</span></button>
+                  <button class="btn btn-g" type="button" onclick="workerSyncSource()"><span class="material-symbols-outlined" style="font-size:16px">cloud_sync</span><span data-i18n="updateNow">بروزرسانی از منبع</span></button>
+                </div>
+                <div class="set-row" style="border-bottom:none">
+                  <span class="set-lbl" data-i18n="autoSyncHourly">بروزرسانی خودکار (ساعتی)</span>
+                  <button type="button" class="ios-switch" id="wk-auto" onclick="workerToggleAuto()"></button>
+                </div>
+                <span id="wk-source-status" style="font-size:11px;color:var(--txt2);width:100%"></span>
+                <div id="wk-locations" style="margin-top:10px"></div>
+
+                <div class="px-actions" style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
+                  <button class="btn btn-p" type="button" onclick="workerCreateInbound()"><span class="material-symbols-outlined" style="font-size:16px">add_task</span><span data-i18n="wk.createInbound">ایجاد اینباند Worker</span></button>
+                  <button class="btn btn-g" type="button" onclick="workerSync()"><span class="material-symbols-outlined" style="font-size:16px">sync</span><span data-i18n="wk.deploy">Deploy / Sync</span></button>
+                  <button class="btn btn-r" type="button" onclick="workerDisconnect()"><span data-i18n="removeConn">حذف اتصال Worker</span></button>
+                </div>
+              </div>
             </div>
-            <button class="btn btn-sm btn-r" onclick="workerDisconnect()" style="margin-top:6px"><span data-i18n="removeConn">حذف اتصال Worker</span></button>
           </div>
-            </div>
-          </div>
+
         </div>
       </div>
-
       <!-- BOT TAB -->
       <div class="tab-content hidden" id="tab-bot">
         <div class="panel">
@@ -1796,7 +1922,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
           <div class="settings-inner-block">
             <div class="panel-h"><span class="glow" data-i18n="panelUpdate">بروزرسانی پنل</span></div>
             <div class="px-hint" data-i18n="panelUpdateHint">با زدن این دکمه، آخرین نسخه ریپو از GitHub دریافت و روی سرور نصب می‌شود (amirh00sain/SpiderPanel). بعد از اتمام، پنل را در Railway ری‌استارت/ری‌دپلوی کنید تا نسخه جدید اعمال شود.</div>
-            <button class="btn btn-p" style="width:100%;margin-top:10px" id="upd-btn" onclick="runPanelUpdate()"><span data-i18n="updatePanel">بروزرسانی</span></button>
+            <div id="upd-ver" style="font-size:11px;color:var(--txt2);margin-top:8px;line-height:1.8"></div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn btn-p" style="flex:1" type="button" id="upd-btn" onclick="runPanelUpdate()"><span data-i18n="updatePanel">بروزرسانی</span></button>
+            </div>
             <pre id="upd-log" dir="ltr" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:var(--bg2,#111);color:var(--green);font-size:11px;max-height:220px;overflow-y:auto;white-space:pre-wrap;font-family:monospace"></pre>
           </div>
           <div class="settings-inner-block">
@@ -1906,6 +2035,153 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         </div>
       </div>
 
+            <!-- PROXY TAB -->
+      <style>
+        .px-proto{display:flex;gap:6px;margin:8px 0 0}
+        .px-proto button{flex:1;padding:9px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--txt2);font-weight:700;font-size:12px;cursor:pointer;transition:.15s;font-family:inherit}
+        .px-proto button.on{background:var(--nav-bg);color:var(--nav-color);border-color:var(--border-glow);box-shadow:var(--glow-sm,0 0 10px rgba(43,127,255,.25))}
+        .px-add{border:1px dashed var(--border);border-radius:12px;padding:14px;margin-top:12px;background:var(--bg2)}
+        .px-test{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);font-size:12px;display:none;line-height:1.9}
+        .px-test.show{display:block}
+        .px-test b{color:var(--txt)}
+        .px-card{border:1px solid var(--border);border-radius:12px;margin-top:10px;background:var(--bg2);overflow:hidden}
+        .px-card.off{opacity:.62}
+        .px-head{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;user-select:none;text-align:right}
+        .px-flag{font-size:20px;line-height:1}
+        .px-meta{display:block;flex:1;min-width:0}
+        .px-meta b{display:block;font-size:13px;color:var(--txt)}
+        .px-meta span{display:block;font-size:11px;color:var(--txt2);direction:ltr;text-align:left;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .px-body{padding:0 12px 12px;border-top:1px solid var(--border)}
+        .px-rows{margin-top:4px}
+        .px-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+        .px-empty{padding:22px 10px;text-align:center;color:var(--txt2);font-size:12px;border:1px dashed var(--border);border-radius:12px}
+      </style>
+      <div class="tab-content hidden" id="tab-proxy">
+        <div class="panel">
+          <div class="panel-h" style="justify-content:space-between">
+            <span class="glow">🌐 <span data-i18n="proxy.nav">پروکسی خارجی</span></span>
+            <span id="px-count" class="badge" style="margin-right:auto"></span>
+          </div>
+          <div class="px-hint" data-i18n="proxy.intro">پروکسی SOCKS5 یا HTTP اضافه کنید. برای هر پروکسی یک اینباند TLS+WS روی دامنه جاری پنل ساخته می‌شود؛ کاربران را با انتخاب همان اینباند در فرم ساخت یا ویرایش کاربر وصل کنید.</div>
+
+          <button class="btn btn-p" style="width:100%;margin-top:12px" type="button" onclick="pxToggleAdd(this)" aria-expanded="false">
+            <span class="material-symbols-outlined" style="font-size:16px">add_circle</span>
+            <span data-i18n="proxy.add">افزودن پروکسی</span>
+          </button>
+
+          <!-- ADD FORM -->
+          <div class="px-add hidden" id="px-add">
+            <div class="px-proto" role="tablist">
+              <button type="button" id="px-proto-socks5" class="on" onclick="pxSetProto('socks5')">SOCKS5</button>
+              <button type="button" id="px-proto-http" onclick="pxSetProto('http')">HTTP</button>
+            </div>
+            <input type="hidden" id="px-protocol" value="socks5">
+            <div class="f-r" style="margin-top:12px">
+              <div class="f-g"><label data-i18n="proxy.host">آدرس (IP یا دامنه)</label><input id="px-host" type="text" dir="ltr" placeholder="1.2.3.4" autocomplete="off"></div>
+              <div class="f-g"><label data-i18n="proxy.port">پورت</label><input id="px-port" type="number" min="1" max="65535" dir="ltr" placeholder="1080"></div>
+            </div>
+            <div class="f-g"><label data-i18n="proxy.country">کشور (اختیاری)</label><input id="px-country" type="text" dir="ltr" placeholder="Germany یا DE یا 🇩🇪"></div>
+
+            <!-- optional credentials, collapsed -->
+            <div class="spd-acc" style="margin-top:10px">
+              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('px-auth',this)" aria-expanded="false">
+                <span class="spd-acc-title"><strong data-i18n="proxy.auth">نام کاربری و رمز (اختیاری)</strong></span>
+                <span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+              </button>
+              <div class="spd-acc-body" id="acc-px-auth">
+                <div class="px-hint" data-i18n="proxy.authHint">اگر پروکسی شناسه نمی‌خواهد این بخش را باز نکنید.</div>
+                <div class="f-r" style="margin-top:8px">
+                  <div class="f-g"><label data-i18n="proxy.username">Username</label><input id="px-username" type="text" dir="ltr" autocomplete="off"></div>
+                  <div class="f-g"><label data-i18n="proxy.password">Password</label><input id="px-password" type="password" dir="ltr" autocomplete="new-password"></div>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn btn-g" style="width:100%;margin-top:12px" type="button" id="px-test-btn" onclick="pxTestNew()">
+              <span class="material-symbols-outlined" style="font-size:16px">network_check</span>
+              <span data-i18n="proxy.test">تست اتصال</span>
+            </button>
+            <div class="px-test" id="px-test-result"></div>
+            <button class="btn btn-p hidden" style="width:100%;margin-top:10px" type="button" id="px-save-btn" onclick="pxSaveNew()">
+              <span class="material-symbols-outlined" style="font-size:16px">save</span>
+              <span data-i18n="proxy.save">ذخیره پروکسی</span>
+            </button>
+          </div>
+
+          <div id="proxy-list" style="margin-top:6px"></div>
+        </div>
+      </div>
+
+      <!-- SUGGEST TAB -->
+      <div class="tab-content hidden" id="tab-suggest">
+        <div class="panel">
+          <div class="panel-h"><span class="glow">Suggest</span></div>
+          <div class="px-hint">Useful proxy, client, scanner, and Worker resources.</div>
+          <div class="spd-acc-list suggest-acc-list" style="margin-top:12px">
+            <section class="spd-acc">
+              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('suggest-free-proxy',this)" aria-expanded="false" aria-controls="acc-suggest-free-proxy">
+                <span class="spd-acc-title"><strong>Free Proxy List</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+              </button>
+              <div class="spd-acc-body" id="acc-suggest-free-proxy">
+                <div class="suggest-link-list">
+                  <a href="https://free-proxy-list.net/" target="_blank" rel="noopener noreferrer"><span>Free-Proxy-List.net</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://proxyscrape.com/free-proxy-list" target="_blank" rel="noopener noreferrer"><span>ProxyScrape Free Proxy List</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://github.com/iplocate/free-proxy-list/blob/main/all-proxies.txt" target="_blank" rel="noopener noreferrer"><span>iplocate / free-proxy-list</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://geonode.com/free-proxy-list" target="_blank" rel="noopener noreferrer"><span>GeoNode Free Proxy List</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://www.freeproxy.world/" target="_blank" rel="noopener noreferrer"><span>FreeProxy.World</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://hide.mn/en/proxy-list/" target="_blank" rel="noopener noreferrer"><span>Hide.mn Proxy List</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://spys.one/en/" target="_blank" rel="noopener noreferrer"><span>Spys.one</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://proxydb.net/" target="_blank" rel="noopener noreferrer"><span>ProxyDB</span><span class="material-symbols-outlined">open_in_new</span></a>
+                </div>
+              </div>
+            </section>
+            <section class="spd-acc">
+              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('suggest-client',this)" aria-expanded="false" aria-controls="acc-suggest-client">
+                <span class="spd-acc-title"><strong>Client</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+              </button>
+              <div class="spd-acc-body" id="acc-suggest-client">
+                <div class="suggest-link-list">
+                  <a href="https://github.com/patterniha/PattNG" target="_blank" rel="noopener noreferrer"><span>PattNG</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://github.com/patterniha/PattN" target="_blank" rel="noopener noreferrer"><span>PattN</span><span class="material-symbols-outlined">open_in_new</span></a>
+                </div>
+              </div>
+            </section>
+            <section class="spd-acc">
+              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('suggest-scanner',this)" aria-expanded="false" aria-controls="acc-suggest-scanner">
+                <span class="spd-acc-title"><strong>Scanner</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+              </button>
+              <div class="spd-acc-body" id="acc-suggest-scanner">
+                <div class="suggest-link-list">
+                  <a href="https://github.com/mirarr-app/network-checker" target="_blank" rel="noopener noreferrer"><span>Network Checker</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://github.com/MatinSenPai/SenPaiScanner" target="_blank" rel="noopener noreferrer"><span>SenPaiScanner</span><span class="material-symbols-outlined">open_in_new</span></a>
+                </div>
+              </div>
+            </section>
+            <section class="spd-acc">
+              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('suggest-sni-scanner',this)" aria-expanded="false" aria-controls="acc-suggest-sni-scanner">
+                <span class="spd-acc-title"><strong>SNI Scanner</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+              </button>
+              <div class="spd-acc-body" id="acc-suggest-sni-scanner">
+                <div class="suggest-link-list">
+                  <a href="https://github.com/NaxonM/SNI-Finder" target="_blank" rel="noopener noreferrer"><span>SNI Finder</span><span class="material-symbols-outlined">open_in_new</span></a>
+                </div>
+              </div>
+            </section>
+            <section class="spd-acc">
+              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('suggest-worker-panel',this)" aria-expanded="false" aria-controls="acc-suggest-worker-panel">
+                <span class="spd-acc-title"><strong>Worker Panel</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span>
+              </button>
+              <div class="spd-acc-body" id="acc-suggest-worker-panel">
+                <div class="suggest-link-list">
+                  <a href="https://wizard.bpb-panel.workers.dev/" target="_blank" rel="noopener noreferrer"><span>BPB Panel Wizard</span><span class="material-symbols-outlined">open_in_new</span></a>
+                  <a href="https://github.com/cmliu/edgetunnel" target="_blank" rel="noopener noreferrer"><span>cmliu / edgetunnel</span><span class="material-symbols-outlined">open_in_new</span></a>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
       <!-- NODES TAB -->
       <!-- The Nodes section itself is always visible; each node card is independently collapsible. -->
       <div class="tab-content hidden" id="tab-nodes">
@@ -1949,57 +2225,27 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         <div class="panel">
           <div class="panel-h"><span class="glow" data-i18n="tab.advanced">پیشرفته</span></div>
           <div class="px-hint" data-i18n="advancedInboundHint">یک اینباند را انتخاب کنید و JSON کامل آن را ویرایش کنید. تغییرات ذخیره و برای سرویس اعمال می‌شوند.</div>
-          <div id="advanced-inbound-list" class="f-r" style="gap:8px;margin:12px 0"></div>
-          <div id="advanced-inbound-editor" class="hidden">
-            <input type="hidden" id="advanced-inbound-id">
-            <div class="f-g"><label data-i18n="advancedJson">Inbound JSON</label><textarea id="advanced-inbound-json" dir="ltr" spellcheck="false" style="min-height:360px;font-family:monospace;font-size:12px;white-space:pre;user-select:text;-webkit-user-select:text"></textarea></div>
-            <button class="btn btn-p" type="button" onclick="saveAdvancedInbound()"><span data-i18n="advancedSave">ذخیره JSON</span></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- HELP TAB (last content tab) -->
-      <div class="tab-content hidden" id="tab-help">
-        <div class="panel">
-          <div class="panel-h"><span class="glow" data-i18n="tab.help">راهنما</span></div>
-          <div class="px-hint" data-i18n="helpIntro">راهنما و تنظیمات کانفیگ‌های پیش‌فرض</div>
-          <div class="spd-acc-list" style="margin-top:12px">
+          <div id="advanced-inbound-list" class="adv-inbound-grid" style="margin:12px 0"></div>
+          <div class="spd-acc-list" style="margin-top:14px">
+            <!-- PANEL LOGS -->
             <div class="spd-acc">
-              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('help-template',this)" aria-expanded="false"><span class="spd-acc-title"><strong data-i18n="helpTemplate">Template</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
-              <div class="spd-acc-body" id="acc-help-template">
-                <div class="px-hint" data-i18n="helpPromptHint">این Prompt منطق صفحه ساب فعلی را توضیح می‌دهد تا بتوانید آن را به هوش مصنوعی بدهید.</div>
-                <textarea id="help-template-text" readonly dir="ltr" spellcheck="false" style="width:100%;min-height:360px;margin:10px 0;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);color:var(--txt);font:12px/1.6 monospace;white-space:pre-wrap;user-select:text;-webkit-user-select:text">You are modifying SpiderPanel's user subscription page, static/sub.html. First inspect the existing page and its server-side data contract. Preserve the established behavior unless the requested change requires otherwise.
-
-PAGE AND DATA CONTRACT
-- The page is served for a user's subscription UUID and reads the final path segment as uname. It fetches GET /api/sub/{encodeURIComponent(uname)} with cache: no-store.
-- The API returns subscription data including config_uuid, username, status/is_active, configs (and a legacy single config), traffic_used_bytes, traffic_limit_bytes, max_ip_per_user, used_ips, expire_days, expire_at_ts. Treat absent optional fields safely.
-- Build the public subscription URL as window.location.origin + '/link/' + config_uuid. This is the import URL copied by the page and used by quick-connect apps.
-- The API can return a status/telemetry line in configs. Do not show entries containing the encoded 📊 marker %F0%9F%93%8A. If configs is empty, use the single config field when present.
-- Keep config strings byte-for-byte intact for copy and QR actions. Decode only the URI fragment to create the display name; do not rebuild a VLESS URI in the browser.
-- Per-config QR images come from GET /api/sub/{uuid}/qr?cfg={zero-based-config-index}. The server maps that index to the same filtered list of real configs. The QR must encode the configuration, not the subscription URL.
-
-PAGE BEHAVIOR
-- applyData populates the subscription URL and ID, active/inactive status, username, used/total/remaining traffic, usage percentage ring and bar, current/allowed connections, and remaining expiry in days, hours, and minutes. A zero traffic limit means unlimited; a missing expiry means no expiry.
-- renderConfigs groups links into TLS, Reality, and Telegram Proxy. Identify categories from the URI: Telegram proxy links begin with t.me/proxy or tg://proxy; Reality links contain security=reality; other configs belong to TLS. Translate category labels with the page's fa/en dictionaries.
-- Each config card shows its decoded remark and protocol and has copy and QR actions. Escape remarks before inserting them into HTML. Never insert server text as trusted markup.
-- The chips filter all/TLS/Reality/Telegram groups. Search filters by the decoded config name within the active category. Update group visibility and visible counts after either action.
-- Copy Subscription Link, Copy Sub Text, Copy All Configs, and per-config Copy use the Clipboard API with the existing textarea fallback. Keep localized success/error toast messages.
-- Quick Connect opens a modal with Android, iOS, and Windows choices. Existing app deep links are: Happ happ://add/{encoded-sub-url}; v2rayNG v2rayng://install-sub?url={encoded-sub-url}&name=SPiDER; V2Box v2box://install-sub?url={encoded-sub-url}&name=SPiDER; Hiddify hiddify://install-sub?url={encoded-sub-url}&name=SPiDER; Windows v2rayN v2rayn://install-sub?url={encoded-sub-url}. Copy the subscription URL before redirecting to the chosen client.
-- The QR modal requests the server image for the selected real config index, shows its decoded name, and can close from its button. Quick Connect closes from its close button, backdrop, or chosen action.
-- Keep event binding idempotent: dynamically rendered cards are recreated, so do not attach duplicate handlers. Existing code uses a _bound marker for this.
-
-LANGUAGE, THEME, AND LAYOUT
-- Language is shared with the main panel through localStorage key spider-lang (fa or en). Every human-readable UI string, including dynamically-created buttons, empty states, titles, toasts, and errors, needs both Persian and English dictionary entries. applyLang must update text, placeholders, direction, and the visible language button.
-- Theme is shared through spider-theme (dark or light) and data-theme on the root. Use the existing CSS variables for both themes; do not hard-code colors that break the light theme.
-- Preserve responsive mobile layout, RTL for Persian and LTR for English, accessible button types/labels, safe-area spacing, and reduced overflow on narrow screens. Keep selection disabled for decorative text only; inputs and the copyable subscription URL must remain selectable.
-- Keep the existing content structure and page identity. Do not copy the admin dashboard, expose private account fields, or mix this user page with the separate public group page at /p/{uuid_key}.
-
-IMPLEMENTATION RULES
-- Before coding, trace the matching API response in main.py and inspect current IDs/classes in sub.html. Do not assume a field or endpoint that the repository does not provide.
-- Make the smallest coherent HTML/CSS/JavaScript change, keep browser code compatible with the project's current style, and escape any API-derived text.
-- If a requested UI behavior needs new server data, describe and implement the API contract in main.py too; never silently depend on a field that the endpoint does not return.
-- Preserve existing client deep links, telemetry filtering, account calculations, QR index mapping, and copy semantics while editing. Return a concise summary of files changed and any behavior that cannot be guaranteed by the current server contract.</textarea>
-                <button class="btn btn-p" type="button" onclick="copyHelpPrompt()"><span data-i18n="helpCopyPrompt">کپی Prompt</span></button>
+              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('help-logs',this);helpLogsToggled()" aria-expanded="false"><span class="spd-acc-title"><strong data-i18n="helpLogs">لاگ پنل</strong><span class="badge" id="hl-count" style="margin-right:6px"></span></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
+              <div class="spd-acc-body" id="acc-help-logs">
+                <div class="px-hint" data-i18n="helpLogsHint">لاگ کامل پنل: اتصال کاربران، ورود و خروج، ساخت/ویرایش/حذف رکوردها و همه خطاها. با فیلتر و جست‌وجو مرور کنید.</div>
+                <div class="hl-controls">
+                  <input id="hl-q" type="search" data-i18n-placeholder="helpLogsSearch" placeholder="جست‌وجو در لاگ…" oninput="helpLogsDebounced()">
+                  <select id="hl-kind" onchange="loadHelpLogs()" dir="ltr"></select>
+                  <select id="hl-level" onchange="loadHelpLogs()" dir="ltr">
+                    <option value="" data-i18n="helpLogsAllLevels">همه سطح‌ها</option>
+                    <option value="info">info</option>
+                    <option value="ok">ok</option>
+                    <option value="warn">warn</option>
+                    <option value="err">err</option>
+                  </select>
+                  <button class="btn btn-g btn-sm" type="button" onclick="loadHelpLogs()"><span class="material-symbols-outlined" style="font-size:15px">refresh</span></button>
+                </div>
+                <div class="hl-stats" id="hl-stats"></div>
+                <div class="hl-list" id="hl-list"><div class="hl-empty" data-i18n="helpLogsEmpty">در حال بارگذاری…</div></div>
               </div>
             </div>
             <div class="spd-acc">
@@ -2040,6 +2286,77 @@ IMPLEMENTATION RULES
               </div>
             </div>
           </div>
+
+        </div>
+      </div>
+
+      <!-- HELP TAB (last content tab) -->
+      <style>
+        .hl-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 8px}
+        .hl-controls input[type=search]{flex:1;min-width:170px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--txt);font-size:12px;box-sizing:border-box}
+        .hl-controls select{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--txt);font-size:12px;max-width:150px}
+        .hl-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+        .hl-list{max-height:430px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;background:var(--bg);padding:6px;direction:ltr;text-align:left}
+        .hl-list::-webkit-scrollbar{width:9px}
+        .hl-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:9px}
+        .hl-row{display:flex;gap:10px;align-items:flex-start;padding:6px 8px;border-radius:7px;font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;border-bottom:1px solid rgba(128,128,128,.09)}
+        .hl-row:hover{background:rgba(43,127,255,.06)}
+        .hl-time{color:var(--txt2);white-space:nowrap;flex-shrink:0;min-width:64px}
+        .hl-kind{flex-shrink:0;min-width:74px;font-weight:700;opacity:.85}
+        .hl-msg{flex:1;min-width:0;word-break:break-word;white-space:pre-wrap;user-select:text;-webkit-user-select:text}
+        .hl-row.lvl-ok .hl-kind{color:var(--green)}
+        .hl-row.lvl-warn .hl-kind{color:var(--orange)}
+        .hl-row.lvl-err .hl-kind{color:var(--red)}
+        .hl-row.lvl-info .hl-kind{color:var(--neon)}
+        .hl-empty{padding:24px 10px;text-align:center;color:var(--txt2);font-size:12px}
+      </style>
+      <div class="tab-content hidden" id="tab-help">
+        <div class="panel">
+          <div class="panel-h"><span class="glow" data-i18n="tab.help">راهنما</span></div>
+          <div class="px-hint" data-i18n="helpIntro">راهنما و تنظیمات کانفیگ‌های پیش‌فرض</div>
+          <div class="spd-acc-list" style="margin-top:12px">
+            
+            <div class="spd-acc">
+              <button type="button" class="spd-acc-head" onclick="spdToggleAcc('help-template',this)" aria-expanded="false"><span class="spd-acc-title"><strong data-i18n="helpTemplate">Template</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
+              <div class="spd-acc-body" id="acc-help-template">
+                <div class="px-hint" data-i18n="helpPromptHint">این Prompt منطق صفحه ساب فعلی را توضیح می‌دهد تا بتوانید آن را به هوش مصنوعی بدهید.</div>
+                <textarea id="help-template-text" readonly dir="ltr" spellcheck="false" style="width:100%;min-height:360px;margin:10px 0;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);color:var(--txt);font:12px/1.6 monospace;white-space:pre-wrap;user-select:text;-webkit-user-select:text">You are modifying SpiderPanel's user subscription page, static/sub.html. First inspect the existing page and its server-side data contract. Preserve the established behavior unless the requested change requires otherwise.
+
+PAGE AND DATA CONTRACT
+- The page is served for a user's subscription UUID and reads the final path segment as uname. It fetches GET /api/sub/{encodeURIComponent(uname)} with cache: no-store.
+- The API returns subscription data including config_uuid, username, status/is_active, configs (and a legacy single config), traffic_used_bytes, traffic_limit_bytes, max_ip_per_user, used_ips, expire_days, expire_at_ts. Treat absent optional fields safely.
+- Build the public subscription URL as window.location.origin + '/link/' + config_uuid. This is the import URL copied by the page and used by quick-connect apps.
+- The API can return a status/telemetry line in configs. Do not show entries containing the encoded 📊 marker %F0%9F%93%8A. If configs is empty, use the single config field when present.
+- Keep config strings byte-for-byte intact for copy and QR actions. Decode only the URI fragment to create the display name; do not rebuild a VLESS URI in the browser.
+- Per-config QR images come from GET /api/sub/{uuid}/qr?cfg={zero-based-config-index}. The server maps that index to the same filtered list of real configs. The QR must encode the configuration, not the subscription URL.
+
+PAGE BEHAVIOR
+- applyData populates the subscription URL and ID, active/inactive status, username, used/total/remaining traffic, usage percentage ring and bar, current/allowed connections, and remaining expiry in days, hours, and minutes. A zero traffic limit means unlimited; a missing expiry means no expiry.
+- renderConfigs groups links into TLS, Reality, and Telegram Proxy. Identify categories from the URI: Telegram proxy links begin with t.me/proxy or tg://proxy; Reality links contain security=reality; other configs belong to TLS. Translate category labels with the page's fa/en dictionaries.
+- Each config card shows its decoded remark and protocol and has copy and QR actions. Escape remarks before inserting them into HTML. Never insert server text as trusted markup.
+- The chips filter all/TLS/Reality/Telegram groups. Search filters by the decoded config name within the active category. Update group visibility and visible counts after either action.
+- Copy Subscription Link, Copy Sub Text, Copy All Configs, and per-config Copy use the Clipboard API with the existing textarea fallback. Keep localized success/error toast messages.
+- Quick Connect opens a modal with Android, iOS, and Windows choices. Existing app deep links are: Happ happ://add/{encoded-sub-url}; v2rayNG v2rayng://install-sub?url={encoded-sub-url}&name=SPiDER; V2Box v2box://install-sub?url={encoded-sub-url}&name=SPiDER; Hiddify hiddify://install-sub?url={encoded-sub-url}&name=SPiDER; Windows v2rayN v2rayn://install-sub?url={encoded-sub-url}. Copy the subscription URL before redirecting to the chosen client.
+- The QR modal requests the server image for the selected real config index, shows its decoded name, and can close from its button. Quick Connect closes from its close button, backdrop, or chosen action.
+- Keep event binding idempotent: dynamically rendered cards are recreated, so do not attach duplicate handlers. Existing code uses a _bound marker for this.
+
+LANGUAGE, THEME, AND LAYOUT
+- Language is shared with the main panel through localStorage key spider-lang (fa or en). Every human-readable UI string, including dynamically-created buttons, empty states, titles, toasts, and errors, needs both Persian and English dictionary entries. applyLang must update text, placeholders, direction, and the visible language button.
+- Theme is shared through spider-theme (dark or light) and data-theme on the root. Use the existing CSS variables for both themes; do not hard-code colors that break the light theme.
+- Preserve responsive mobile layout, RTL for Persian and LTR for English, accessible button types/labels, safe-area spacing, and reduced overflow on narrow screens. Keep selection disabled for decorative text only; inputs and the copyable subscription URL must remain selectable.
+- Keep the existing content structure and page identity. Do not copy the admin dashboard, expose private account fields, or mix this user page with the separate public group page at /p/{uuid_key}.
+
+IMPLEMENTATION RULES
+- Before coding, trace the matching API response in main.py and inspect current IDs/classes in sub.html. Do not assume a field or endpoint that the repository does not provide.
+- Make the smallest coherent HTML/CSS/JavaScript change, keep browser code compatible with the project's current style, and escape any API-derived text.
+- If a requested UI behavior needs new server data, describe and implement the API contract in main.py too; never silently depend on a field that the endpoint does not return.
+- Preserve existing client deep links, telemetry filtering, account calculations, QR index mapping, and copy semantics while editing. Return a concise summary of files changed and any behavior that cannot be guaranteed by the current server contract.</textarea>
+                <button class="btn btn-p" type="button" onclick="copyHelpPrompt()"><span data-i18n="helpCopyPrompt">کپی Prompt</span></button>
+              </div>
+            </div>
+            
+            
+          </div>
         </div>
       </div>
 
@@ -2071,7 +2388,7 @@ IMPLEMENTATION RULES
       <div class="f-r">
         <div class="f-g"><label data-i18n="username">نام کاربری</label><input type="text" id="cu-name" placeholder="خالی = تصادفی"></div>
         <div class="f-g"><label data-i18n="conn">اتصال همزمان</label><input type="number" id="cu-conn" placeholder="∞ نامحدود"></div>
-        <div class="f-g"><label data-i18n="speedLimit">محدودیت سرعت (Mbps - صفر=نامحدود)</label><input type="number" id="cu-speed" min="0" step="0.1" value="0"><div class="px-hint" data-i18n="speedLimitHint">سقف سرعت مجموع اتصال‌های WebSocket این کاربر؛ صفر یعنی نامحدود.</div></div>
+        <div class="f-g speed-limit-field"><label data-i18n="speedLimit">محدودیت سرعت (Mbps)</label><input type="number" id="cu-speed" min="0" step="0.1" value="0"><div class="px-hint" data-i18n="speedLimitHint">سقف مجموع سرعت اتصال‌های رله‌شده WebSocket/XHTTP؛ صفر یعنی نامحدود.</div></div>
     </div>
     <div class="f-r">
       <div class="f-g"><label data-i18n="volume">حجم</label><input type="number" id="cu-vol" placeholder="∞ نامحدود"></div>
@@ -2100,7 +2417,7 @@ IMPLEMENTATION RULES
     <div class="f-g"><label data-i18n="volEdit">حجم (GB - ۰=نامحدود)</label><input type="number" id="eu-vol" value="20"></div>
     <div class="f-g"><label data-i18n="daysEdit">روز اعتبار (۰=نامحدود)</label><input type="number" id="eu-exp" value="30"></div>
     <div class="f-g"><label data-i18n="conn">اتصال همزمان</label><input type="number" id="eu-conn" value="0" placeholder="۰=نامحدود"></div>
-    <div class="f-g"><label data-i18n="speedLimit">محدودیت سرعت (Mbps - صفر=نامحدود)</label><input type="number" id="eu-speed" min="0" step="0.1" value="0"></div>
+    <div class="f-g speed-limit-field"><label data-i18n="speedLimit">محدودیت سرعت (Mbps)</label><input type="number" id="eu-speed" min="0" step="0.1" value="0"><div class="px-hint" data-i18n="speedLimitHint">سقف مجموع سرعت اتصال‌های رله‌شده WebSocket/XHTTP؛ صفر یعنی نامحدود.</div></div>
     <div class="f-g"><label data-i18n="status">وضعیت</label><select id="eu-status"><option value="active" data-i18n="active">فعال</option><option value="inactive" data-i18n="inactive">غیرفعال</option></select></div>
     <div class="f-g" style="display:flex;align-items:center;gap:8px">
       <input type="checkbox" id="eu-reset" style="width:auto">
@@ -2257,11 +2574,11 @@ var selectedTheme = localStorage.getItem('spider-theme') || 'dark';
 var LANG = localStorage.getItem('spider-lang') || 'fa';
 var I18N = {
   fa: {
-    'dash': 'داشبورد', 'navGroup': 'مدیریت', 'advanced': 'پیشرفته', 'networkTotal': 'مجموع ارسال + دریافت', 'users': 'کاربران', 'inbounds': 'اینباندها', 'scanner': 'اسکنر IP', 'worker': 'ورکر (Worker)', 'settings': 'تنظیمات', 'contact': 'تماس با من', 'logout': 'خروج',
+    'dash': 'داشبورد', 'navGroup': 'مدیریت', 'systemGroup': 'سیستم', 'advanced': 'پیشرفته', 'networkTotal': 'مجموع ارسال + دریافت', 'users': 'کاربران', 'inbounds': 'اینباندها', 'scanner': 'اسکنر IP', 'worker': 'ورکر (Worker)', 'settings': 'تنظیمات', 'contact': 'تماس با من', 'logout': 'خروج',
     'workerSetupTip': 'پنل را به Cloudflare متصل کنید تا یک پروژه Pages اختصاصی ساخته شود، worker.js داخل آن Deploy شود و یک KV اختصاصی به آن متصل شود.', 'cfToken': 'توکن API کلادفلر', 'getToken': 'گرفتن توکن', 'cfAccountId': 'شناسه حساب', 'cfWorkerName': 'نام Worker', 'cfWorkerDomain': 'دامنه Worker', 'createNewWorker': 'ساخت Worker جدید', 'cfConnect': 'اتصال و Deploy', 'connected': 'متصل', 'disconnected': 'قطع', 'workerStatus': 'وضعیت', 'remoteStatus': 'وضعیت ریموت', 'lastHeartbeat': 'آخرین Heartbeat', 'workerId': 'پروژه Pages', 'kvId': 'KV ID', 'onlineUsers': 'کاربران آنلاین', 'workerTraffic': 'مصرف Worker', 'workerUrl': 'نشانی ورکر', 'lastSync': 'آخرین Sync', 'lastError': 'آخرین خطا', 'proxyPool': 'مخزن IP پروکسی', 'addProxy': 'افزودن کشور', 'workerSettings': 'تنظیمات Worker', 'removeConn': 'حذف اتصال Worker', 'noProxyYet': 'هنوز کشوری اضافه نکرده‌اید', 'connecting': 'در حال ساخت...', 'workerConnected': 'Worker جدید ساخته و Deploy شد', 'syncing': 'در حال Sync...', 'synced': 'Sync شد', 'confirmRemoveWorker': 'اتصال Worker حذف شود؟', 'workerRemoved': 'اتصال Worker حذف شد', 'proxyCodePrompt': 'کد کشور (مثلا de):', 'proxyCountryPrompt': 'نام کشور:', 'proxyHostPrompt': 'آدرس Proxy IP (مثلا de.example.com):', 'proxyPortPrompt': 'پورت Proxy IP:', 'proxySaved': 'کشور ذخیره و Worker بروزرسانی شد', 'confirmDelProxy': 'این کشور حذف شود؟', 'proxyDeleted': 'کشور حذف شد', 'workerFillAll': 'همه فیلدها را پر کنید', 'workerProxyEnabled': 'IP پروکسی Worker', 'workerProxyNone': 'بدون Proxy', 'workerRouteTip': 'کانفیگ کاربر روی دامنه Pages با مسیر /ws/{uuid} ساخته می‌شود و از Railway عبور نمی‌کند.', 'workerAutoName': 'یک پروژه Pages جدید با نام تصادفی (spider-xxxxxx) و KV اختصاصی ساخته می‌شود — نیازی به ورود نام نیست.', 'proxySource': 'منبع پروکسی روزانه', 'autoSyncHourly': 'بروزرسانی خودکار (ساعتی)', 'updateNow': 'بروزرسانی از منبع', 'updatingFromSource': 'در حال بروزرسانی از منبع', 'sourceUpdated': 'بروزرسانی شد', 'sourceError': 'خطا در بروزرسانی منبع', 'countries': 'کشور', 'syncsDone': 'تعداد بروزرسانی‌ها', 'pickCountry': 'یک کشور انتخاب کنید',
     'tab.dash': 'داشبورد', 'tab.users': 'مدیریت کاربران', 'tab.inbounds': 'مدیریت اینباندها', 'tab.scanner': 'اسکنر آی‌پی', 'tab.settings': 'تنظیمات', 'tab.advanced': 'پیشرفته', 'tab.help': 'راهنما',
     'helpTemplate': 'قالب', 'helpServerEdit': 'ویرایش سرور', 'helpConfigOptions': 'تنظیمات کانفیگ', 'helpCopyPrompt': 'کپی متن راهنما', 'helpPromptCopied': 'متن راهنما کپی شد', 'helpPromptCopyFailed': 'کپی متن راهنما ناموفق بود',
-    'helpIntro': 'راهنما و تنظیمات کانفیگ‌های پیش‌فرض', 'helpPromptHint': 'این Prompt منطق صفحه ساب فعلی را توضیح می‌دهد تا بتوانید آن را به هوش مصنوعی بدهید.',
+    'helpIntro': 'راهنمای صفحه ساب و قالب آن', 'helpPromptHint': 'این Prompt منطق صفحه ساب فعلی را توضیح می‌دهد تا بتوانید آن را به هوش مصنوعی بدهید.',
     'helpServerEditHint': 'آدرس اتصال کانفیگ‌های پیش‌فرض TLS + WS را تغییر دهید. Host و SNI دامنه پنل باقی می‌مانند.', 'helpChatgptAddress': 'قرار دادن chatgpt.com در Address', 'helpCustomAddress': 'ذخیره آدرس سفارشی', 'helpAddressLabel': 'آدرس سفارشی', 'helpAddressPlaceholder': 'دامنه یا IP (IPv4/IPv6)', 'helpPanelIpv6': 'استفاده از IPv6 دامنه پنل', 'helpResetAddress': 'استفاده از دامنه پنل',
     'helpAddressSaved': 'آدرس کانفیگ ذخیره شد', 'helpAddressInvalid': 'دامنه یا IP معتبر وارد کنید', 'helpIpv6NotFound': 'برای دامنه پنل IPv6 پیدا نشد', 'helpSettingsSaved': 'تنظیمات ذخیره شد',
     'helpFeatureHint': 'این گزینه‌ها فقط به کانفیگ‌های اینباند پیش‌فرض TLS + WS افزوده می‌شوند.', 'helpEch': 'افزودن ECH', 'helpEchHint': 'پارامتر ECH را به کانفیگ‌های TLS + WS پیش‌فرض اضافه می‌کند.', 'helpFf': 'افزودن F+F', 'helpFfHint': 'مجموعه cipher و تنظیمات fragment نمونه را به کانفیگ‌های TLS + WS پیش‌فرض اضافه می‌کند و هنگام فعال بودن، fingerprint را روی unsafe می‌گذارد.',
@@ -2281,7 +2598,7 @@ var I18N = {
     'red': 'قرمز', 'green': 'سبز', 'blue': 'آبی',
     'panelMusic': 'موسیقی پنل', 'bgMusic': 'موسیقی پس‌زمینه', 'toggleMusic': 'روشن/خاموش', 'changePassword': 'تغییر رمز عبور', 'curPass': 'رمز فعلی', 'newPass': 'رمز جدید', 'changePassBtn': 'تغییر رمز',
     'contactSub': 'برای پشتیبانی و همکاری با من در ارتباط باشید',
-    'createUser': 'ایجاد کاربر جدید', 'editUser': 'ویرایش کاربر', 'username': 'نام کاربری', 'conn': 'اتصال همزمان', 'speedLimit': 'محدودیت سرعت (Mbps - صفر=نامحدود)', 'speedLimitHint': 'سقف سرعت مجموع اتصال‌های WebSocket این کاربر؛ صفر یعنی نامحدود.', 'volume': 'حجم', 'unit': 'واحد', 'expire': 'اعتبار', 'day': 'روز', 'month': 'ماه',
+    'createUser': 'ایجاد کاربر جدید', 'editUser': 'ویرایش کاربر', 'username': 'نام کاربری', 'conn': 'اتصال همزمان', 'speedLimit': 'محدودیت سرعت (Mbps)', 'speedLimitHint': 'سقف مجموع سرعت اتصال‌های رله‌شده WebSocket/XHTTP؛ صفر یعنی نامحدود.', 'volume': 'حجم', 'unit': 'واحد', 'expire': 'اعتبار', 'day': 'روز', 'month': 'ماه',
     'inboundsMulti': 'اینباندها (چندتایی)', 'noInboundOpt': 'اینباندی وجود ندارد',
     'inboundPickHint': 'برای هر اینباند، گزینه‌های مخصوصش نمایش داده می‌شود: Worker → انتخاب کشور؛ VLESS غیرپیش‌فرض → Cloudflare و Railway؛ Reality → بدون گزینه.',
     'workerCountries': 'کشورهای چندمنطقه‌ای (برای هر کشور یک تیک فعال کنید):',
@@ -2325,11 +2642,11 @@ var I18N = {
     'login': { 'signIn': 'ورود' }
   },
   en: {
-    'dash': 'Dashboard', 'navGroup': 'Management', 'advanced': 'Advanced', 'networkTotal': 'Total sent + received', 'users': 'Users', 'inbounds': 'Inbounds', 'scanner': 'IP Scanner', 'worker': 'Worker', 'settings': 'Settings', 'contact': 'Contact Me', 'logout': 'Logout',
+    'dash': 'Dashboard', 'navGroup': 'Management', 'systemGroup': 'System', 'advanced': 'Advanced', 'networkTotal': 'Total sent + received', 'users': 'Users', 'inbounds': 'Inbounds', 'scanner': 'IP Scanner', 'worker': 'Worker', 'settings': 'Settings', 'contact': 'Contact Me', 'logout': 'Logout',
     'workerSetupTip': 'Connect the panel to Cloudflare to create a dedicated Pages project, deploy worker.js, and attach a private KV namespace automatically.', 'cfToken': 'Cloudflare API Token', 'getToken': 'Get Token', 'cfAccountId': 'Account ID', 'cfWorkerName': 'Worker Name', 'cfWorkerDomain': 'Worker Domain', 'createNewWorker': 'Create New Worker', 'cfConnect': 'Connect & Deploy', 'connected': 'Connected', 'disconnected': 'Disconnected', 'workerStatus': 'Status', 'remoteStatus': 'Remote Status', 'lastHeartbeat': 'Last Heartbeat', 'workerId': 'Pages Project', 'kvId': 'KV ID', 'onlineUsers': 'Online Users', 'workerTraffic': 'Worker Traffic', 'workerUrl': 'Worker URL', 'lastSync': 'Last Sync', 'lastError': 'Last Error', 'proxyPool': 'Proxy IP Pool', 'addProxy': 'Add Country', 'workerSettings': 'Worker Settings', 'removeConn': 'Remove Worker Connection', 'noProxyYet': 'No country added yet', 'connecting': 'Creating...', 'workerConnected': 'New worker created & deployed', 'syncing': 'Syncing...', 'synced': 'Synced', 'confirmRemoveWorker': 'Remove the Worker connection?', 'workerRemoved': 'Worker connection removed', 'proxyCodePrompt': 'Country code (e.g. de):', 'proxyCountryPrompt': 'Country name:', 'proxyHostPrompt': 'Proxy IP host (e.g. de.example.com):', 'proxyPortPrompt': 'Proxy IP port:', 'proxySaved': 'Country saved, worker updated', 'confirmDelProxy': 'Delete this country?', 'proxyDeleted': 'Country deleted', 'workerFillAll': 'Fill in all fields', 'workerProxyEnabled': 'Worker Proxy IP', 'workerProxyNone': 'No Proxy', 'workerRouteTip': 'The user config is built on the Pages Worker domain with the /ws/{uuid} path.', 'workerAutoName': 'A dedicated Pages project is created with a random name (spider-xxxxxx) and its own dedicated KV — no project name is needed.', 'proxySource': 'Daily Proxy Source', 'autoSyncHourly': 'Auto-update (hourly)', 'updateNow': 'Update Now', 'updatingFromSource': 'Updating from source', 'sourceUpdated': 'Updated', 'sourceError': 'Failed to update source', 'countries': 'countries', 'syncsDone': 'Syncs done', 'pickCountry': 'Pick a country',
     'tab.dash': 'Dashboard', 'tab.users': 'Manage Users', 'tab.inbounds': 'Manage Inbounds', 'tab.scanner': 'IP Scanner', 'tab.settings': 'Settings', 'tab.advanced': 'Advanced', 'tab.help': 'Help',
     'helpTemplate': 'Template', 'helpServerEdit': 'Server Edit', 'helpConfigOptions': 'Config Options', 'helpCopyPrompt': 'Copy Prompt', 'helpPromptCopied': 'Prompt copied', 'helpPromptCopyFailed': 'Could not copy the prompt',
-    'helpIntro': 'Help and default config settings', 'helpPromptHint': 'This prompt documents the current subscription page so you can give it to an AI.',
+    'helpIntro': 'Subscription page help and template', 'helpPromptHint': 'This prompt documents the current subscription page so you can give it to an AI.',
     'helpServerEditHint': 'Change the connect address in default TLS + WS configs. Host and SNI remain the panel domain.', 'helpChatgptAddress': 'Set Address to chatgpt.com', 'helpCustomAddress': 'Save custom address', 'helpAddressLabel': 'Custom Address', 'helpAddressPlaceholder': 'Domain or IP (IPv4/IPv6)', 'helpPanelIpv6': 'Use the panel domain IPv6', 'helpResetAddress': 'Use the panel domain',
     'helpAddressSaved': 'Config address saved', 'helpAddressInvalid': 'Enter a valid domain or IP address', 'helpIpv6NotFound': 'No IPv6 address was found for the panel domain', 'helpSettingsSaved': 'Settings saved',
     'helpFeatureHint': 'These options are added only to configs from the default TLS + WS inbound.', 'helpEch': 'Add ECH', 'helpEchHint': 'Adds the ECH parameter to default TLS + WS configs.', 'helpFf': 'Add F+F', 'helpFfHint': 'Adds the sample cipher suite and fragmentation parameters to default TLS + WS configs, and sets the fingerprint to unsafe while it is on.',
@@ -2349,7 +2666,7 @@ var I18N = {
     'red': 'Red', 'green': 'Green', 'blue': 'Blue',
     'panelMusic': 'Panel Music', 'bgMusic': 'Background Music', 'toggleMusic': 'On/Off', 'changePassword': 'Change Password', 'curPass': 'Current Password', 'newPass': 'New Password', 'changePassBtn': 'Change Password',
     'contactSub': 'Get in touch with me for support and collaboration',
-    'createUser': 'Create New User', 'editUser': 'Edit User', 'username': 'Username', 'conn': 'Concurrent Connections', 'speedLimit': 'Speed limit (Mbps - 0=unlimited)', 'speedLimitHint': 'Combined bandwidth cap for this user’s WebSocket connections; 0 means unlimited.', 'volume': 'Traffic', 'unit': 'Unit', 'expire': 'Expiry', 'day': 'Day', 'month': 'Month',
+    'createUser': 'Create New User', 'editUser': 'Edit User', 'username': 'Username', 'conn': 'Concurrent Connections', 'speedLimit': 'Speed limit (Mbps)', 'speedLimitHint': 'Combined WebSocket/XHTTP relay cap; 0 means unlimited.', 'volume': 'Traffic', 'unit': 'Unit', 'expire': 'Expiry', 'day': 'Day', 'month': 'Month',
     'inboundsMulti': 'Inbounds (multi-select)', 'noInboundOpt': 'No inbounds available',
     'inboundPickHint': 'Each inbound shows its own options: Worker → choose countries, TLS → scanned-IP switch, Reality → no extra options.',
     'workerCountries': 'Multi-location countries (tick each country you want):',
@@ -2404,7 +2721,32 @@ Object.assign(I18N.fa, {
   nodeDomain: 'دامنه', nodeIpCountry: 'IP / کشور', nodeStatusLabel: 'وضعیت', nodeLatency: 'تأخیر', nodeLastSeen: 'آخرین مشاهده', nodeLastSync: 'آخرین همگام‌سازی', nodeInboundCount: 'تعداد اینباندها', nodeSyncedUsers: 'کاربران همگام‌شده', nodeLastError: 'آخرین خطا', refreshTest: 'بروزرسانی / آزمایش', cloudflareIp: 'IP کلادفلر', railwayIp: 'IP Railway', approved: 'تأییدشده', rejected: 'ردشده', cancelled: 'لغوشده', uptimeLabel: 'زمان فعالیت',
   'notif.nav': 'اعلان‌ها', 'notif.title': 'اعلان‌ها', 'notif.refresh': 'بروزرسانی', 'notif.date': 'تاریخ و ساعت',
   'notif.hint': 'اعلان‌ها از مخزن گیت‌هاب دریافت می‌شوند. هر اعلان یک آکاردیون است؛ با زدن روی موضوع، متن کامل به همراه تاریخ و ساعت نمایش داده می‌شود.',
-  'notif.loading': 'در حال دریافت اعلان‌ها...', 'notif.empty': 'فعلاً اعلانی ثبت نشده است.', 'notif.error': 'دریافت اعلان‌ها از گیت‌هاب ممکن نشد.'
+  'notif.loading': 'در حال دریافت اعلان‌ها...', 'notif.empty': 'فعلاً اعلانی ثبت نشده است.', 'notif.error': 'دریافت اعلان‌ها از گیت‌هاب ممکن نشد.',
+  'proxy.nav': 'پروکسی', 'proxy.detectedCountry': 'کشور شناسایی‌شده', 'proxy.intro': 'پروکسی SOCKS5 یا HTTP اضافه کنید. برای هر پروکسی یک اینباند TLS+WS روی دامنه جاری پنل ساخته می‌شود؛ کاربرها را با انتخاب همان اینباند در فرم ساخت یا ویرایش کاربر وصل کنید.', 'proxy.inboundHint': 'ترافیک این اینباند از پروکسی انتخاب‌شده عبور می‌کند.',
+  'proxy.add': 'افزودن پروکسی', 'proxy.host': 'آدرس (IP یا دامنه)', 'proxy.port': 'پورت', 'proxy.country': 'کشور (اختیاری)',
+  'proxy.auth': 'نام کاربری و رمز (اختیاری)', 'proxy.authHint': 'اگر پروکسی شناسه نمی‌خواهد این بخش را باز نکنید.', 'proxy.username': 'Username', 'proxy.password': 'Password',
+  'proxy.test': 'تست اتصال', 'proxy.testing': 'در حال تست', 'proxy.save': 'ذخیره پروکسی', 'proxy.working': 'سالم ✓', 'proxy.notWorking': 'کار نمی‌کند',
+  'proxy.ping': 'پینگ', 'proxy.egress': 'IP خروجی', 'proxy.error': 'خطا', 'proxy.fillHost': 'آدرس و پورت را وارد کنید', 'proxy.testOk': 'اتصال موفق — حالا می‌توانید ذخیره کنید',
+  'proxy.testFail': 'اتصال ناموفق بود', 'proxy.testFirst': 'اول «تست اتصال» را بزنید', 'proxy.saved': 'پروکسی ذخیره شد', 'proxy.count': 'پروکسی',
+  'proxy.empty': 'هنوز پروکسی اضافه نشده است — دکمه «افزودن پروکسی» را بزنید',
+  'proxy.ok': 'فعال ✓', 'proxy.untested': 'تست‌نشده', 'proxy.off': 'غیرفعال', 'proxy.users': 'کاربران', 'proxy.lastTest': 'آخرین تست',
+  'proxy.pingBtn': 'پینگ', 'proxy.activate': 'فعال', 'proxy.deactivate': 'غیرفعال', 'proxy.delete': 'حذف', 'proxy.usersBtn': 'کاربران',
+  'proxy.activated': 'پروکسی فعال شد', 'proxy.deactivated': 'پروکسی غیرفعال شد', 'proxy.deleted': 'پروکسی حذف شد', 'proxy.confirmDelete': 'این پروکسی و کانفیگ‌های آن حذف شود؟',
+  'proxy.usersHint': 'برای هر کاربر تیک‌خورده، یک کانفیگ جدید TLS+WS به حسابش اضافه می‌شود که ترافیکش فقط از این پروکسی عبور می‌کند. برداشتن تیک دقیقاً همان کانفیگ را پاک می‌کند.',
+  'proxy.searchUsers': 'جست‌وجوی کاربر…', 'proxy.selected': 'انتخاب‌شده', 'proxy.visible': 'نمایش‌داده‌شده', 'proxy.loading': 'در حال بارگذاری کاربران…',
+  'proxy.userAdded': 'کاربر به پروکسی متصل شد', 'proxy.userRemoved': 'کاربر از پروکسی جدا شد',
+  'wk.sectionHint': 'سه بخش مستقل: هرکدام از Tunnel، Reverse و Worker اینباند جداگانه و تنظیمات خودش را دارد.',
+  'wk.tunnel': 'Tunnel', 'wk.reverse': 'Reverse', 'wk.worker': 'Worker',
+  'wk.tunnelHint': 'مسیر اتصال: User → Railway → Cloudflare Worker → Site. اینباند روی دامنه پنل با مسیر /tunnel/{uuid} ساخته می‌شود.',
+  'wk.reverseHint': 'مسیر اتصال: User → Cloudflare Worker → Railway → Site. اینباند جداگانه روی دامنه Worker با مسیر /reverse/{uuid} ساخته می‌شود.',
+  'wk.workerHint': 'Worker چند-لوکیشن: اتصال به Cloudflare، ساخت اینباند جدا و مدیریت لوکیشن‌های خروجی. ترافیک هر کاربر بر اساس کشورش به نزدیک‌ترین لوکیشن می‌رود.',
+  'wk.createReverse': 'ایجاد اینباند Reverse', 'wk.createInbound': 'ایجاد اینباند Worker', 'wk.reverseCreated': 'اینباند Reverse ایجاد شد', 'wk.inboundCreated': 'اینباند Worker ایجاد شد',
+  'wk.refresh': 'بروزرسانی', 'wk.noLogs': 'لاگی ثبت نشده', 'wk.locations': 'لوکیشن‌ها (Multi-Location)', 'wk.locationsHint': 'هر لوکیشن یک خروجی در کشور مشخص است. اگر لوکیشنی نسازید، از منبع روزانه بارگذاری می‌شود.',
+  'wk.code': 'کد', 'wk.addLocation': 'افزودن لوکیشن', 'wk.location': 'لوکیشن', 'wk.noLocations': 'هنوز لوکیشنی ثبت نشده است', 'wk.auto': 'خودکار', 'wk.deploy': 'Deploy / Sync',
+  'notCreated': 'ساخته نشده',
+  'helpLogs': 'لاگ پنل', 'helpLogsHint': 'لاگ کامل پنل: اتصال کاربران، ورود و خروج، ساخت/ویرایش/حذف رکوردها و همه خطاها. با فیلتر و جست‌وجو مرور کنید.',
+  'helpLogsSearch': 'جست‌وجو در لاگ…', 'helpLogsAll': 'همه دسته‌ها', 'helpLogsAllLevels': 'همه سطح‌ها', 'helpLogsAuto': 'زنده', 'helpLogsEmpty': 'در حال بارگذاری…',
+  'helpLogsTotal': 'کل', 'helpLogsConn': 'اتصال', 'helpLogsAuth': 'ورود/خروج', 'helpLogsErr': 'خطا', 'helpLogsNone': 'هیچ لاگی با این فیلتر پیدا نشد.'
 });
 Object.assign(I18N.en, {
   loginSubtitle: 'High performance admin panel', loginUsernameLabel: 'Username', loginPasswordLabel: 'Password', loginUsernamePlaceholder: 'Enter username', loginPasswordPlaceholder: 'Enter password', signIn: 'Sign In',
@@ -2416,7 +2758,32 @@ Object.assign(I18N.en, {
   nodeDomain: 'Domain', nodeIpCountry: 'IP / Country', nodeStatusLabel: 'Status', nodeLatency: 'Latency', nodeLastSeen: 'Last Seen', nodeLastSync: 'Last Sync', nodeInboundCount: 'Inbound Count', nodeSyncedUsers: 'Synced Users', nodeLastError: 'Last Error', refreshTest: 'Refresh / Test', cloudflareIp: 'Cloudflare IP', railwayIp: 'Railway IP', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled', uptimeLabel: 'Uptime',
   'notif.nav': 'Notifications', 'notif.title': 'Notifications', 'notif.refresh': 'Refresh', 'notif.date': 'Date & time',
   'notif.hint': 'Announcements are pulled from the GitHub repository. Each one is an accordion: click the subject to reveal the full text together with its date and time.',
-  'notif.loading': 'Loading announcements...', 'notif.empty': 'No announcements published yet.', 'notif.error': 'Could not fetch announcements from GitHub.'
+  'notif.loading': 'Loading announcements...', 'notif.empty': 'No announcements published yet.', 'notif.error': 'Could not fetch announcements from GitHub.',
+  'proxy.nav': 'Proxies', 'proxy.detectedCountry': 'Detected country', 'proxy.intro': 'Add a SOCKS5 or HTTP proxy. Each proxy creates a TLS+WS inbound on the panel’s current domain; assign it by selecting that inbound when creating or editing a user.', 'proxy.inboundHint': 'Traffic on this inbound exits through the selected proxy.',
+  'proxy.add': 'Add proxy', 'proxy.host': 'Host (IP or domain)', 'proxy.port': 'Port', 'proxy.country': 'Country (optional)',
+  'proxy.auth': 'Username & password (optional)', 'proxy.authHint': 'Leave this collapsed if the proxy needs no credentials.', 'proxy.username': 'Username', 'proxy.password': 'Password',
+  'proxy.test': 'Test connection', 'proxy.testing': 'Testing', 'proxy.save': 'Save proxy', 'proxy.working': 'Working ✓', 'proxy.notWorking': 'Not working',
+  'proxy.ping': 'Ping', 'proxy.egress': 'Egress IP', 'proxy.error': 'Error', 'proxy.fillHost': 'Enter the host and port', 'proxy.testOk': 'Connection OK — you can save it now',
+  'proxy.testFail': 'Connection failed', 'proxy.testFirst': 'Run «Test connection» first', 'proxy.saved': 'Proxy saved', 'proxy.count': 'proxies',
+  'proxy.empty': 'No proxy yet — press «Add proxy»',
+  'proxy.ok': 'Active ✓', 'proxy.untested': 'Untested', 'proxy.off': 'Disabled', 'proxy.users': 'Users', 'proxy.lastTest': 'Last test',
+  'proxy.pingBtn': 'Ping', 'proxy.activate': 'Enable', 'proxy.deactivate': 'Disable', 'proxy.delete': 'Delete', 'proxy.usersBtn': 'Users',
+  'proxy.activated': 'Proxy enabled', 'proxy.deactivated': 'Proxy disabled', 'proxy.deleted': 'Proxy deleted', 'proxy.confirmDelete': 'Delete this proxy and all its configs?',
+  'proxy.usersHint': 'Every ticked user gets a second TLS+WS config whose traffic only exits through this proxy; unticking removes exactly that config.',
+  'proxy.searchUsers': 'Search users…', 'proxy.selected': 'Selected', 'proxy.visible': 'Shown', 'proxy.loading': 'Loading users…',
+  'proxy.userAdded': 'User routed through the proxy', 'proxy.userRemoved': 'User removed from the proxy',
+  'wk.sectionHint': 'Three independent sections: Tunnel, Reverse and Worker each have their own inbound and settings.',
+  'wk.tunnel': 'Tunnel', 'wk.reverse': 'Reverse', 'wk.worker': 'Worker',
+  'wk.tunnelHint': 'Path: User → Railway → Cloudflare Worker → Site. The inbound is created on the panel domain with /tunnel/{uuid}.',
+  'wk.reverseHint': 'Path: User → Cloudflare Worker → Railway → Site. A standalone inbound is created on the worker domain with /reverse/{uuid}.',
+  'wk.workerHint': 'Multi-location Worker: connect to Cloudflare, create its own inbound and manage the egress locations. Each user is routed to the location closest to their country.',
+  'wk.createReverse': 'Create Reverse inbound', 'wk.createInbound': 'Create Worker inbound', 'wk.reverseCreated': 'Reverse inbound created', 'wk.inboundCreated': 'Worker inbound created',
+  'wk.refresh': 'Refresh', 'wk.noLogs': 'No logs yet', 'wk.locations': 'Locations (Multi-Location)', 'wk.locationsHint': 'Each location is an egress in a specific country. With no location, the Worker loads from the daily source.',
+  'wk.code': 'Code', 'wk.addLocation': 'Add location', 'wk.location': 'locations', 'wk.noLocations': 'No location yet', 'wk.auto': 'auto', 'wk.deploy': 'Deploy / Sync',
+  'notCreated': 'Not created',
+  'helpLogs': 'Panel Logs', 'helpLogsHint': 'Full panel log: user connections, logins and logouts, create/edit/delete events and every error. Filter and search through them.',
+  'helpLogsSearch': 'Search the log…', 'helpLogsAll': 'All kinds', 'helpLogsAllLevels': 'All levels', 'helpLogsAuto': 'Live', 'helpLogsEmpty': 'Loading…',
+  'helpLogsTotal': 'Total', 'helpLogsConn': 'Connections', 'helpLogsAuth': 'Auth', 'helpLogsErr': 'Errors', 'helpLogsNone': 'No log entries match this filter.'
 });
 
 function t(key) {
@@ -2505,61 +2872,16 @@ function toast(msg, type) {
 })();
 
 // ─── Init ───
+// The particle canvas (2D) and the login shader (WebGL) used to start here.
+// Both were hidden by CSS yet still ran an infinite requestAnimationFrame loop
+// per frame on the main thread / GPU, so they were removed outright instead of
+// being "switched off" while their loops kept burning battery.
 document.addEventListener('DOMContentLoaded', function() {
   loadAccent();
   loadTheme();
-  initLoginShader();
-  initParticles();
   applyLang();
   checkAuth();
 });
-
-function initParticles() {
-  var c = $id('particles'), ctx = c.getContext('2d');
-  var w, h, particles = [];
-  function resize() { w = c.width = window.innerWidth; h = c.height = window.innerHeight; }
-  resize(); window.addEventListener('resize', resize);
-
-  for (var i = 0; i < 40; i++) {
-    particles.push({
-      x: Math.random() * w, y: Math.random() * h,
-      r: Math.random() * 1.5 + 0.5,
-      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
-      alpha: Math.random() * 0.5 + 0.1
-    });
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, w, h);
-    var color = getComputedStyle(document.documentElement).getPropertyValue('--neon').trim();
-    for (var i = 0; i < particles.length; i++) {
-      var p = particles[i];
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = color.replace(')', ', ' + p.alpha + ')').replace('rgb', 'rgba');
-      if (color.startsWith('#')) {
-        var hex = color.replace('#', '');
-        var rr = parseInt(hex.substring(0,2), 16), gg = parseInt(hex.substring(2,4), 16), bb = parseInt(hex.substring(4,6), 16);
-        ctx.fillStyle = 'rgba(' + rr + ',' + gg + ',' + bb + ',' + p.alpha + ')';
-      }
-      ctx.fill();
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0 || p.x > w) p.vx *= -1;
-      if (p.y < 0 || p.y > h) p.vy *= -1;
-      // Draw connections
-      for (var j = i + 1; j < particles.length; j++) {
-        var p2 = particles[j], dx = p.x - p2.x, dy = p.y - p2.y, dist = Math.sqrt(dx*dx+dy*dy);
-        if (dist < 120) {
-          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y);
-          ctx.strokeStyle = 'rgba(255,255,255,' + (0.03 * (1 - dist/120)) + ')';
-          ctx.stroke();
-        }
-      }
-    }
-    requestAnimationFrame(draw);
-  }
-  draw();
-}
 
 // ─── Theme ───
 // ─── Light / Dark mode ───
@@ -2600,12 +2922,10 @@ function showLogin() { $id('login-wrap').style.display = 'flex'; $id('app-wrap')
 function showApp() {
   $id('login-wrap').style.display = 'none';
   $id('app-wrap').classList.add('active');
+  // Opening the panel fetches the dashboard only. Every other tab loads the
+  // first time it is opened (see switchTab), which keeps the initial request
+  // burst — and the DOM built from its responses — to a single screen.
   loadAll();
-  // Announcements are pulled once per panel open/refresh so the Notifications
-  // tab is already current by the time it is clicked.
-  NOTIF_DATA = null;
-  NOTIF_PENDING = null;
-  loadNotifs(false);
   updateGreeting();
 }
 
@@ -2620,45 +2940,6 @@ async function doLogin() {
     errText.textContent = e.message || 'Connection error'; errEl.classList.add('show');
   }
   btn.disabled = false; btnText.classList.remove('hidden'); btnSpinner.classList.remove('show');
-}
-
-// ─── Shader Canvas Init ───
-function initLoginShader() {
-  var canvas = $id('shader-canvas');
-  if (!canvas) return;
-  function syncSize() {
-    var w = canvas.clientWidth || 1280;
-    var h = canvas.clientHeight || 720;
-    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
-  }
-  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(syncSize).observe(canvas);
-  syncSize();
-  var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-  if (!gl) return;
-  var vs = 'attribute vec2 a_position; varying vec2 v_texCoord; void main() { v_texCoord = a_position * 0.5 + 0.5; gl_Position = vec4(a_position, 0.0, 1.0); }';
-  var fs = 'precision highp float; uniform float u_time; uniform vec2 u_resolution; uniform vec2 u_mouse; varying vec2 v_texCoord; float noise(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); } float smoothNoise(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f); float a = noise(i); float b = noise(i + vec2(1.0, 0.0)); float c = noise(i + vec2(0.0, 1.0)); float d = noise(i + vec2(1.0, 1.0)); return mix(mix(a, b, f.x), mix(c, d, f.x), f.y); } void main() { vec2 uv = v_texCoord; vec2 p1 = uv * 3.0 + u_time * 0.05; vec2 p2 = uv * 5.0 - u_time * 0.08; float n = smoothNoise(p1) * 0.5 + smoothNoise(p2) * 0.3; float wave = sin(uv.y * 10.0 + n * 5.0 + u_time * 0.2) * 0.5 + 0.5; wave *= sin(uv.x * 8.0 - u_time * 0.1) * 0.5 + 0.5; vec3 c1 = vec3(0.047, 0.047, 0.047); vec3 c2 = vec3(0.106, 0.106, 0.106); vec3 fc = mix(c1, c2, wave * 0.4); float d = distance(uv, u_mouse / u_resolution); fc += 0.03 * (1.0 - smoothstep(0.0, 0.5, d)); gl_FragColor = vec4(fc, 1.0); }';
-  function cs(type, src) { var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
-  var prog = gl.createProgram(); gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog); gl.useProgram(prog);
-  var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-  var pos = gl.getAttribLocation(prog, 'a_position'); gl.enableVertexAttribArray(pos); gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-  var uTime = gl.getUniformLocation(prog, 'u_time'), uRes = gl.getUniformLocation(prog, 'u_resolution'), uMouse = gl.getUniformLocation(prog, 'u_mouse');
-  var mouse = {x: canvas.width / 2, y: canvas.height / 2};
-  canvas.addEventListener('mousemove', function(e) {
-    var rect = canvas.getBoundingClientRect();
-    if (rect.width && rect.height) {
-      mouse.x = (e.clientX - rect.left) / rect.width * canvas.width;
-      mouse.y = (1.0 - (e.clientY - rect.top) / rect.height) * canvas.height;
-    }
-  });
-  (function render(t) {
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    if (uTime) gl.uniform1f(uTime, t * 0.001);
-    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
-    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    requestAnimationFrame(render);
-  })(0);
 }
 
 async function doLogout() {
@@ -2677,6 +2958,16 @@ function updateGreeting() {
 // ─── Navigation ───
 function toggleNavAccordion(forceOpen) {
   var wrap = $id('main-nav-accordion');
+  if (!wrap) return;
+  var open = wrap.classList.contains('open');
+  if (typeof forceOpen === 'boolean') open = !forceOpen;
+  wrap.classList.toggle('open', !open);
+  var head = wrap.querySelector('.nav-accordion-head');
+  if (head) head.setAttribute('aria-expanded', String(!open));
+}
+
+function toggleSystemNavAccordion(forceOpen) {
+  var wrap = $id('system-nav-accordion');
   if (!wrap) return;
   var open = wrap.classList.contains('open');
   if (typeof forceOpen === 'boolean') open = !forceOpen;
@@ -2709,7 +3000,8 @@ function toggleNodeAccordion(btn) {
 }
 
 function switchTab(tab, el) {
-  if (['users','inbounds','scanner','worker','bot','settings'].indexOf(tab) >= 0) toggleNavAccordion(true);
+  if (['users','inbounds','scanner','worker','bot','settings','proxy'].indexOf(tab) >= 0) toggleNavAccordion(true);
+  if (['advanced','help','notif'].indexOf(tab) >= 0) toggleSystemNavAccordion(true);
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   if (el) el.classList.add('active');
   var content = document.querySelector('.content');
@@ -2728,7 +3020,7 @@ function switchTab(tab, el) {
   target.style.setProperty('margin-top', '0px', 'important');
   target.style.setProperty('top', '0px', 'important');
   target.style.setProperty('transform', 'none', 'important');
-  if (tab === 'worker' || tab === 'contact' || tab === 'settings' || tab === 'nodes' || tab === 'advanced' || tab === 'help' || tab === 'notif') {
+  if (tab === 'worker' || tab === 'contact' || tab === 'settings' || tab === 'nodes' || tab === 'advanced' || tab === 'help' || tab === 'notif' || tab === 'proxy' || tab === 'suggest') {
     target.style.setProperty('position', 'static', 'important');
     target.style.setProperty('flex', 'none', 'important');
   }
@@ -2744,17 +3036,10 @@ function switchTab(tab, el) {
   requestAnimationFrame(resetScroll);
 
   stopLiveStats();
-  if (tab === 'dashboard') loadDashboard();
-  if (tab === 'users') loadUsers();
-  if (tab === 'inbounds') loadInbounds();
-  if (tab === 'scanner') scnInit();
-  if (tab === 'worker') loadWorker();
-  if (tab === 'tunnel') loadTunnel();
-  if (tab === 'nodes') loadNodes();
-  if (tab === 'bot') loadBot();
-  if (tab === 'advanced') loadAdvancedInbounds();
-  if (tab === 'help') loadHelpSettings();
-  if (tab === 'notif') loadNotifs(false);
+  if (tab !== 'advanced') stopHelpLogsAuto();
+  // Data for this tab arrives now, not at panel open. `TAB_LOADERS` coalesces
+  // repeat visits so a quick tab flip cannot stack duplicate requests.
+  loadTabData(tab);
   closeSidebar();
 }
 
@@ -2764,17 +3049,81 @@ function toggleSidebar() { $id('sidebar').classList.contains('open') ? closeSide
 
 // ─── Load All ───
 async function loadAll() {
+  // Only the dashboard is pulled when the panel opens. Everything else is
+  // fetched by switchTab() the first time its tab is shown, so opening the
+  // panel costs one request instead of five and never builds hidden DOM.
   loadDashboard();
-  loadUsers();
-  loadInbounds();
-  loadProxyCountries();
-  // Keep the worker proxy pool warm so the create-user country dropdowns work
-  // even before the Worker tab is opened.
-  if (typeof loadWorker === 'function') loadWorker();
+}
+
+// Per-tab loaders. Each visit re-runs its loader (data stays current) but two
+// visits that overlap share one in-flight request instead of doubling up.
+var TAB_BUSY = {};
+var TAB_LOADERS = {
+  dashboard: function () { return loadDashboard(); },
+  // Users needs the inbound list for the create/edit pickers and the Worker
+  // country pool for the Worker inbound's chips, both of which used to arrive
+  // with loadAll() and would otherwise render empty on first open.
+  users: function () { return Promise.all([loadUsers(), ensureInbounds(), ensureWorkerPool()]); },
+  inbounds: function () { return loadInbounds(); },
+  scanner: function () { return scnInit(); },
+  worker: function () { return loadWorker(); },
+  tunnel: function () { return loadTunnel(); },
+  nodes: function () { return loadNodes(); },
+  bot: function () { return loadBot(); },
+  proxy: function () { return loadProxies(); },
+  advanced: function () {
+    startHelpLogsAuto();
+    return Promise.all([loadAdvancedInbounds(), loadHelpSettings(), loadHelpLogs()]);
+  },
+  settings: function () { return loadServerInfo(); },
+  notif: function () { return loadNotifs(false); },
+  suggest: function () {},
+  help: function () {},
+  contact: function () {}
+};
+
+function loadTabData(tab) {
+  var run = TAB_LOADERS[tab];
+  if (!run) return Promise.resolve();
+  if (TAB_BUSY[tab]) return TAB_BUSY[tab];
+  var p = Promise.resolve()
+    .then(run)
+    .catch(function (e) { console.error('tab load failed:', tab, e); })
+    .then(function (v) { TAB_BUSY[tab] = null; return v; });
+  TAB_BUSY[tab] = p;
+  return p;
+}
+
+// The inbound picker must not render before ALL_IB is filled. The memo only
+// coalesces requests that are still in flight; it is cleared on settle so the
+// next visit fetches again instead of serving a stale list.
+var INBOUNDS_PROMISE = null;
+function ensureInbounds() {
+  if (INBOUNDS_PROMISE) return INBOUNDS_PROMISE;
+  INBOUNDS_PROMISE = settle(function () { return loadInbounds(); }, function (v) { INBOUNDS_PROMISE = null; return v; });
+  return INBOUNDS_PROMISE;
+}
+
+var WORKER_POOL_PROMISE = null;
+function ensureWorkerPool() {
+  if (WORKER_POOL_PROMISE) return WORKER_POOL_PROMISE;
+  if (typeof loadWorker !== 'function') return Promise.resolve();
+  WORKER_POOL_PROMISE = settle(loadWorker, function (v) { WORKER_POOL_PROMISE = null; return v; });
+  return WORKER_POOL_PROMISE;
+}
+
+// Run `fn` and always release its memo slot when the call settles.
+function settle(fn, done) {
+  return Promise.resolve()
+    .then(fn)
+    .then(done, function (e) { done(undefined); throw e; });
 }
 
 // ─── Dashboard ───
 var liveInterval = null;
+var DASH_HISTORY = {cpu: [], ram: [], swap: [], disk: []};
+var DASH_IPS_VISIBLE = false;
+var DASH_IP_VALUES = {ipv4: '', ipv6: ''};
 
 function startLiveStats() {
   if (liveInterval) clearInterval(liveInterval);
@@ -2795,39 +3144,94 @@ async function loadDashboard() {
     html += statCard(iconConn, '<span id="dash-conn">' + (s.active_connections || '۰') + '</span>', t('activeConns'));
     html += statCard(iconUptime, '<span id="dash-uptime">...</span>', t('uptime'));
     html += '</div>';
-    html += '<div class="panel"><div class="panel-h" style="align-items:center"><span class="glow">' + t('srv') + '</span><span id="dash-server-status" class="badge badge-g" style="margin-right:auto;font-size:9px;animation:pulse 1.5s infinite">' + t('liveBadge') + '</span></div>';
-    html += '<div class="srv-bar"><div class="srv-bar-h"><strong>' + t('cpu') + '</strong><span id="live-cpu">--</span>%</div><div class="srv-bar-bg"><div class="srv-bar-f" id="bar-cpu" style="width:0%"></div></div></div>';
-    html += '<div class="srv-bar"><div class="srv-bar-h"><strong>' + t('ram') + '</strong><span id="live-ram">--</span></div><div class="srv-bar-bg"><div class="srv-bar-f" id="bar-ram" style="width:0%"></div></div></div>';
-    html += '<div class="srv-bar"><div class="srv-bar-h"><strong>' + t('disk') + '</strong><span id="live-disk">--</span></div><div class="srv-bar-bg"><div class="srv-bar-f" id="bar-disk" style="width:0%"></div></div></div>';
-    html += '<div style="font-size:10px;color:var(--txt2);margin-top:12px;padding-top:10px;border-top:1px solid var(--bg3)">';
-    html += '<div style="text-align:center;margin-top:6px"><span>Uptime: <strong style="color:var(--txt)" id="live-uptime">...</strong></span></div>';
-    html += '</div></div>';
+    html += '<section class="panel dash-system-card">';
+    html += '<div class="ds-title"><span>SYSTEM STATUS</span></div>';
+    html += dashResourceRow('cpu', 'CPU', 'developer_board', '#62c8b2');
+    html += dashResourceRow('ram', 'RAM', 'memory', '#62c8b2');
+    html += dashResourceRow('swap', 'Swap', 'swap_vert', '#62c8b2');
+    html += dashResourceRow('disk', 'Storage', 'storage', '#4489e4');
+    html += '<div class="ds-section"><div class="ds-section-title">CONNECTION STATS</div>';
+    html += '<div class="ds-conn-grid"><div><div class="ds-conn-label"><span class="material-symbols-outlined">cable</span>TCP</div><b class="ds-conn-count" id="ds-tcp">0</b></div>';
+    html += '<div><div class="ds-conn-label udp"><span class="material-symbols-outlined">cable</span>UDP</div><b class="ds-conn-count" id="ds-udp">0</b></div></div>';
+    html += '<div class="ds-conn-bar"><span class="ds-conn-tcp" id="ds-tcp-bar"></span><span class="ds-conn-udp" id="ds-udp-bar"></span></div></div>';
+    html += '<div class="ds-ips"><div class="ds-ips-heading"><div class="ds-section-title" style="margin:0">IP ADDRESSES</div>';
+    html += '<button class="ds-ip-toggle" id="ds-ip-toggle" type="button" onclick="toggleDashIps()" aria-label="Show or hide IP addresses" title="Show or hide IP addresses"><span class="material-symbols-outlined">visibility_off</span></button></div>';
+    html += '<div class="ds-ip-row"><span>IPv4</span><b class="ds-ip-value" id="ds-ipv4">—</b></div>';
+    html += '<div class="ds-ip-row"><span>IPv6</span><b class="ds-ip-value" id="ds-ipv6">—</b></div></div>';
+    html += '</section>';
     $id('dashboard-content').innerHTML = html;
+    DASH_HISTORY = {cpu: [], ram: [], swap: [], disk: []};
+    DASH_IPS_VISIBLE = false;
     startLiveStats();
   } catch(e) { $id('dashboard-content').innerHTML = '<div class="empty">' + t('errLoadStats') + '</div>'; }
 }
 
+function dashResourceRow(key, label, icon, color) {
+  return '<div class="ds-row"><div class="ds-gauge" id="ds-gauge-' + key + '" style="--pct:0;--gauge-color:' + color + '"><span class="material-symbols-outlined">' + icon + '</span></div>' +
+    '<div class="ds-main"><div class="ds-line"><strong>' + label + '</strong><b id="ds-' + key + '-pct">0%</b></div>' +
+    '<div class="ds-sub" id="ds-' + key + '-sub">—</div><svg class="ds-spark" viewBox="0 0 320 24" preserveAspectRatio="none" aria-hidden="true"><polyline id="ds-' + key + '-spark" points="0,12 320,12"></polyline></svg></div></div>';
+}
+
+function dashSetResource(key, percent, detail) {
+  var pct = Math.max(0, Math.min(100, Number(percent) || 0));
+  var gauge = $id('ds-gauge-' + key); if (gauge) gauge.style.setProperty('--pct', pct);
+  var label = $id('ds-' + key + '-pct'); if (label) label.textContent = pct.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + '%';
+  var sub = $id('ds-' + key + '-sub'); if (sub) sub.textContent = detail;
+  var history = DASH_HISTORY[key] || (DASH_HISTORY[key] = []);
+  history.push(pct); if (history.length > 32) history.shift();
+  var line = $id('ds-' + key + '-spark');
+  if (line) {
+    var low = Math.min.apply(Math, history), high = Math.max.apply(Math, history), spread = Math.max(high - low, 1);
+    var points = history.map(function(v, i) {
+      var x = history.length < 2 ? 320 : i * 320 / (history.length - 1);
+      var y = 20 - ((v - low) / spread) * 15;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    if (history.length === 1) {
+      var flatY = (20 - ((history[0] - low) / spread) * 15).toFixed(1);
+      points = '0,' + flatY + ' 320,' + flatY;
+    }
+    line.setAttribute('points', points);
+  }
+}
+
+function dashGb(value) { return (Number(value) || 0).toFixed(2); }
+
+function dashMaskIp(value, family) {
+  if (!value) return '—';
+  return family === 'ipv4' ? '•••.•••.•••.•••' : '••••:••••:••••:••••';
+}
+
+function renderDashIps() {
+  var v4 = $id('ds-ipv4'), v6 = $id('ds-ipv6'), toggle = $id('ds-ip-toggle');
+  if (v4) v4.textContent = DASH_IPS_VISIBLE ? (DASH_IP_VALUES.ipv4 || '—') : dashMaskIp(DASH_IP_VALUES.ipv4, 'ipv4');
+  if (v6) v6.textContent = DASH_IPS_VISIBLE ? (DASH_IP_VALUES.ipv6 || '—') : dashMaskIp(DASH_IP_VALUES.ipv6, 'ipv6');
+  if (toggle) toggle.innerHTML = '<span class="material-symbols-outlined">' + (DASH_IPS_VISIBLE ? 'visibility' : 'visibility_off') + '</span>';
+}
+
+function toggleDashIps() { DASH_IPS_VISIBLE = !DASH_IPS_VISIBLE; renderDashIps(); }
+
 async function refreshLiveStats() {
   try {
     var st = await api('/api/server/stats');
-    // Update bar fills
-    var barCpu = $id('bar-cpu'); if (barCpu) barCpu.style.width = Math.min(st.cpu_percent||0, 100) + '%';
-    var barRam = $id('bar-ram'); if (barRam) barRam.style.width = Math.min(st.ram_percent||0, 100) + '%';
-    var barDisk = $id('bar-disk'); if (barDisk) barDisk.style.width = Math.min(st.disk_percent||0, 100) + '%';
-    // Update text labels
-    var cpuEl = $id('live-cpu'); if (cpuEl) cpuEl.textContent = (st.cpu_percent||'--');
-    var ramEl = $id('live-ram'); if (ramEl) ramEl.textContent = (st.ram_used_gb||'?') + ' / ' + (st.ram_total_gb||'?') + ' GB';
-    var diskEl = $id('live-disk'); if (diskEl) diskEl.textContent = (st.disk_used_gb||'?') + ' / ' + (st.disk_total_gb||'?') + ' GB';
-    var uptEl = $id('live-uptime'); if (uptEl) uptEl.textContent = fmtUptime(st.uptime_seconds);
+    dashSetResource('cpu', st.cpu_percent, (st.cpu_count || '?') + ' Cores');
+    dashSetResource('ram', st.ram_percent, dashGb(st.ram_used_gb) + ' GB / ' + dashGb(st.ram_total_gb) + ' GB');
+    dashSetResource('swap', st.swap_percent, dashGb(st.swap_used_gb) + ' GB / ' + dashGb(st.swap_total_gb) + ' GB');
+    dashSetResource('disk', st.disk_percent, dashGb(st.disk_used_gb) + ' GB / ' + dashGb(st.disk_total_gb) + ' GB');
     var duptEl = $id('dash-uptime'); if (duptEl) duptEl.textContent = fmtUptime(st.uptime_seconds);
     var connEl = $id('dash-conn'); if (connEl) connEl.textContent = String(st.active_connections || 0);
     var trEl = $id('dash-traffic'); if (trEl) trEl.textContent = (typeof st.total_traffic_used_gb !== 'undefined' ? st.total_traffic_used_gb + ' GB' : fmtBytes((st.total_traffic_used_tb || 0) * 1099511627776));
     var usrEl = $id('dash-users'); if (usrEl) usrEl.textContent = (st.active_users || 0) + ' / ' + (st.total_users || 0);
-    var statusEl = $id('dash-server-status'); if (statusEl) {
-      var ss = String(st.server_status || 'healthy');
-      statusEl.textContent = ss === 'healthy' ? 'HEALTHY' : ss === 'degraded' ? 'DEGRADED' : 'DOWN';
-      statusEl.className = 'badge ' + (ss === 'healthy' ? 'badge-g' : ss === 'degraded' ? 'badge-b' : 'badge-r');
-    }
+    var tcp = Number(st.tcp_connections != null ? st.tcp_connections : st.active_connections) || 0;
+    var udp = Number(st.udp_connections) || 0;
+    var tcpEl = $id('ds-tcp'); if (tcpEl) tcpEl.textContent = String(tcp);
+    var udpEl = $id('ds-udp'); if (udpEl) udpEl.textContent = String(udp);
+    var totalProto = tcp + udp, tcpPct = totalProto ? tcp * 100 / totalProto : 50;
+    var tcpBar = $id('ds-tcp-bar'); if (tcpBar) tcpBar.style.width = tcpPct + '%';
+    var udpBar = $id('ds-udp-bar'); if (udpBar) udpBar.style.width = (100 - tcpPct) + '%';
+    DASH_IP_VALUES.ipv4 = String(st.public_ipv4 || st.public_ip || '');
+    DASH_IP_VALUES.ipv6 = String(st.public_ipv6 || '');
+    renderDashIps();
   } catch(e) { /* keep old values */ }
 }
 
@@ -2944,9 +3348,10 @@ if (window.matchMedia) {
 // ─── User CRUD (SIMPLIFIED) ───
 async function openCreateUser() {
   cuInboundState = { picks: {}, countries: {} };
-  // Refresh worker proxy pool so the country dropdowns are current, then render.
-  if (typeof loadWorker === 'function') {
-    try { await loadWorker(); } catch(e) {}
+  await ensureInbounds();
+  // Worker locations are only needed when a Worker inbound is selected.
+  if (ALL_IB.some(function(ib) { return (ib.protocol || '').toLowerCase() === 'worker'; })) {
+    try { await ensureWorkerPool(); } catch(e) {}
   }
   populateInboundSelects();
   $id('cu-name').value = '';
@@ -3001,7 +3406,7 @@ async function submitCreateUser(e) {
     }});
     toast(r.username + ' ' + t('userCreated'), 'ok');
     closeModal('mod-user');
-    loadAll();
+    loadTabData('users');
   } catch(e) { toast(e.message || t('toast.err'), 'err'); }
   btn.disabled = false; btn.textContent = t('submitUser');
 }
@@ -3037,7 +3442,9 @@ function renderEditInboundPicker(u) {
       '</div>' +
       '<div class="ib-pick-check"><span class="material-symbols-outlined">check</span></div>' +
     '</div>';
-    if (selected && type === 'worker') {
+    if (selected && ib.proxy_managed) {
+      html += '<div style="flex-basis:100%;padding:8px 12px;color:var(--txt2);font-size:11px">' + t('proxy.inboundHint') + '</div>';
+    } else if (selected && type === 'worker') {
       var sel = EU_COUNTRIES[id] || {};
       var chipHtml = '';
       (window.cuWorkerProxies ? cuWorkerProxies() : []).forEach(function(p) {
@@ -3076,7 +3483,8 @@ function selectedEditInboundIds() {
   return Object.keys(EU_INBOUND_PICKS).filter(function(k) { return EU_INBOUND_PICKS[k]; });
 }
 
-function editUser(uid) {
+async function editUser(uid) {
+  await ensureInbounds();
   var u = ALL_USERS.find(function(x) { return x.user_id === uid; });
   if (!u) return;
   EU_COUNTRIES = {};
@@ -3126,7 +3534,7 @@ async function submitEditUser(e) {
     }});
     toast(t('toast.userUpdated'), 'ok');
     closeModal('mod-edit-user');
-    loadAll();
+    loadTabData('users');
   } catch(e) { toast(e.message || t('toast.err'), 'err'); }
 }
 
@@ -3136,7 +3544,7 @@ async function toggleUser(uid) {
 
 async function deleteUser(uid) {
   if (!confirm(t('confirmDeleteUser'))) return;
-  try { await api('/api/users/' + uid, {method: 'DELETE'}); toast(t('toast.userDeleted'), 'ok'); loadAll(); } catch(e) { toast(e.message, 'err'); }
+  try { await api('/api/users/' + uid, {method: 'DELETE'}); toast(t('toast.userDeleted'), 'ok'); loadTabData('users'); } catch(e) { toast(e.message, 'err'); }
 }
 
 // ─── Config & Sub ───
@@ -3228,10 +3636,10 @@ function renderInbounds() {
       '</button>' +
       '<div class="spd-acc-body" id="acc-ia-' + ib.inbound_id + '">' +
         _ibDetail(ib) +
-        '<div class="spd-acc-btns">' +
+        (ib.proxy_managed ? '' : '<div class="spd-acc-btns">' +
           '<button class="btn btn-sm btn-g" onclick="editInbound(\'' + ib.inbound_id + '\')">' + t('edit') + '</button>' +
           ((ib.system || ib.inbound_id === 'Node') ? '' : '<button class="btn btn-sm btn-g" onclick="deleteInbound(\'' + ib.inbound_id + '\')">' + t('delete') + '</button>') +
-        '</div>' +
+        '</div>') +
       '</div>' +
     '</div>';
   }
@@ -3243,7 +3651,7 @@ function populateInboundSelects() {
   // Default-select every inbound so per-inbound options show immediately.
   if (!Object.keys(cuInboundState.picks).length) {
     cuInboundState.picks = {};
-    ALL_IB.forEach(function(ib){ cuInboundState.picks[ib.inbound_id] = true; });
+    ALL_IB.forEach(function(ib){ cuInboundState.picks[ib.inbound_id] = !ib.proxy_managed; });
     cuInboundState.countries = {};
   }
   cuRenderInboundOpts();
@@ -3659,63 +4067,69 @@ function renderAdvancedInboundList() {
   if (!list) return;
   if (!ALL_ADV_IB.length) {
     list.innerHTML = '<div class="empty">' + esc(t('advancedNoInbounds')) + '</div>';
-    $id('advanced-inbound-editor').classList.add('hidden');
     return;
   }
-  list.innerHTML = ALL_ADV_IB.map(function(ib) {
+  list.innerHTML = ALL_ADV_IB.map(function(ib, index) {
     var title = _advancedInboundTitle(ib);
-    var meta = [ib.protocol || '', ib.network || '', ib.security || ''].filter(Boolean).join(' · ');
-    return '<button type="button" class="btn btn-sm ' + (ib.inbound_id === SELECTED_ADV_IB ? 'btn-p' : 'btn-g') + '" data-inbound-id="' + esc(ib.inbound_id) + '" style="height:auto;min-height:38px;display:flex;flex-direction:column;align-items:flex-start">' +
-      '<strong>' + esc(title) + '</strong><small dir="ltr">' + esc(meta) + '</small></button>';
+    var iid = String(ib.inbound_id || '');
+    var meta = [iid, ib.protocol || '', ib.network || '', ib.security || ''].filter(Boolean).join(' · ');
+    var editable = Object.assign({}, ib);
+    delete editable.inbound_id;
+    delete editable.users_count;
+    delete editable.advanced_customized;
+    delete editable._managed_kind;
+    var opened = iid === SELECTED_ADV_IB;
+    var bodyId = 'acc-adv-inbound-' + index;
+    return '<section class="spd-acc adv-inbound-card' + (opened ? ' open' : '') + '" data-adv-inbound-card="' + escAttr(iid) + '">' +
+      '<button type="button" class="spd-acc-head adv-inbound-head" data-inbound-id="' + escAttr(iid) + '" aria-expanded="' + opened + '" aria-controls="' + bodyId + '">' +
+        '<span class="adv-inbound-title"><strong>' + esc(title) + '</strong><small class="adv-inbound-meta" dir="ltr">' + esc(meta) + '</small></span>' +
+        '<span class="badge badge-b">' + esc(ib.protocol || 'Inbound') + '</span>' +
+        '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span>' +
+      '</button>' +
+      '<div class="spd-acc-body adv-inbound-body" id="' + bodyId + '">' +
+        '<label for="adv-inbound-json-' + index + '" data-i18n="advancedJson">' + esc(t('advancedJson')) + '</label>' +
+        '<textarea class="adv-inbound-json" id="adv-inbound-json-' + index + '" data-inbound-json-id="' + escAttr(iid) + '" dir="ltr" spellcheck="false">' + esc(JSON.stringify(editable, null, 2)) + '</textarea>' +
+        '<button type="button" class="btn btn-p adv-inbound-save" data-advanced-save="' + escAttr(iid) + '"><span data-i18n="advancedSave">' + esc(t('advancedSave')) + '</span></button>' +
+      '</div>' +
+    '</section>';
   }).join('');
   Array.prototype.forEach.call(list.querySelectorAll('[data-inbound-id]'), function(btn) {
     btn.addEventListener('click', function() { selectAdvancedInbound(btn.getAttribute('data-inbound-id')); });
   });
-  if (SELECTED_ADV_IB) {
-    if ($id('advanced-inbound-editor').classList.contains('hidden') || $id('advanced-inbound-id').value !== SELECTED_ADV_IB) {
-      selectAdvancedInbound(SELECTED_ADV_IB, true);
-    } else {
-      Array.prototype.forEach.call($id('advanced-inbound-list').querySelectorAll('[data-inbound-id]'), function(btn) {
-        var selected = btn.getAttribute('data-inbound-id') === SELECTED_ADV_IB;
-        btn.classList.toggle('btn-p', selected);
-        btn.classList.toggle('btn-g', !selected);
-      });
-    }
-  }
+  Array.prototype.forEach.call(list.querySelectorAll('[data-advanced-save]'), function(btn) {
+    btn.addEventListener('click', function() { saveAdvancedInbound(btn.getAttribute('data-advanced-save')); });
+  });
 }
 
-function selectAdvancedInbound(iid, keepSelection) {
+function selectAdvancedInbound(iid) {
   var ib = ALL_ADV_IB.find(function(item) { return item.inbound_id === iid; });
   if (!ib) return;
-  SELECTED_ADV_IB = iid;
-  var editable = Object.assign({}, ib);
-  delete editable.inbound_id;
-  delete editable.users_count;
-  delete editable.advanced_customized;
-  delete editable._managed_kind;
-  $id('advanced-inbound-id').value = iid;
-  $id('advanced-inbound-json').value = JSON.stringify(editable, null, 2);
-  $id('advanced-inbound-editor').classList.remove('hidden');
-  if (!keepSelection) renderAdvancedInboundList();
-  else {
-    Array.prototype.forEach.call($id('advanced-inbound-list').querySelectorAll('[data-inbound-id]'), function(btn) {
-      var selected = btn.getAttribute('data-inbound-id') === iid;
-      btn.classList.toggle('btn-p', selected);
-      btn.classList.toggle('btn-g', !selected);
-    });
-  }
+  SELECTED_ADV_IB = String(iid);
+  var list = $id('advanced-inbound-list');
+  if (!list) return;
+  Array.prototype.forEach.call(list.querySelectorAll('.adv-inbound-card'), function(card) {
+    var selected = card.getAttribute('data-adv-inbound-card') === SELECTED_ADV_IB;
+    card.classList.toggle('open', selected);
+    var head = card.querySelector('.adv-inbound-head');
+    if (head) head.setAttribute('aria-expanded', String(selected));
+  });
 }
 
-async function saveAdvancedInbound() {
-  var iid = $id('advanced-inbound-id').value;
+async function saveAdvancedInbound(iid) {
+  iid = String(iid || SELECTED_ADV_IB || '');
   if (!iid) return;
+  var list = $id('advanced-inbound-list');
+  var editor = list && Array.prototype.slice.call(list.querySelectorAll('[data-inbound-json-id]')).find(function(el) {
+    return el.getAttribute('data-inbound-json-id') === iid;
+  });
+  if (!editor) return;
   var inbound;
-  try { inbound = JSON.parse($id('advanced-inbound-json').value); }
+  try { inbound = JSON.parse(editor.value); }
   catch(e) { toast(t('advancedInvalidJson'), 'err'); return; }
   try {
     await api('/api/inbounds/' + encodeURIComponent(iid) + '/raw', {method: 'PUT', body: {inbound: inbound}});
     toast(t('advancedSaved'), 'ok');
-    $id('advanced-inbound-id').value = '';
+    SELECTED_ADV_IB = iid;
     await Promise.all([loadAdvancedInbounds(), loadInbounds()]);
   } catch(e) { toast(e.message || t('toast.err'), 'err'); }
 }
@@ -3804,6 +4218,93 @@ async function copyHelpPrompt() {
   } catch(e) { toast(t('helpPromptCopyFailed'), 'err'); }
 }
 
+// ─── Panel logs box (Advanced tab) ───
+var HL_AUTO_TIMER = null;
+var HL_DEBOUNCE = null;
+
+function helpLogsToggled() {
+  var acc = $id('acc-help-logs');
+  if (!acc) return;
+  // spdToggleAcc has already flipped the class by the time onclick runs.
+  if (acc.parentElement.classList.contains('open') && !$id('hl-list').dataset.loaded) loadHelpLogs();
+}
+
+function helpLogsDebounced() {
+  if (HL_DEBOUNCE) clearTimeout(HL_DEBOUNCE);
+  HL_DEBOUNCE = setTimeout(loadHelpLogs, 350);
+}
+
+function startHelpLogsAuto() {
+  if (HL_AUTO_TIMER) clearInterval(HL_AUTO_TIMER);
+  HL_AUTO_TIMER = setInterval(function() {
+    var tab = $id('tab-advanced');
+    if (tab && !tab.classList.contains('hidden')) loadHelpLogs(true);
+  }, 5000);
+}
+
+function stopHelpLogsAuto() {
+  if (HL_AUTO_TIMER) { clearInterval(HL_AUTO_TIMER); HL_AUTO_TIMER = null; }
+}
+
+function hlKindColor(kind, level) {
+  if (level === 'err' || level === 'error') return 'lvl-err';
+  if (level === 'warn') return 'lvl-warn';
+  if (level === 'ok') return 'lvl-ok';
+  return 'lvl-info';
+}
+
+function helpLogsHtml(d) {
+  var list = $id('hl-list');
+  if (!list) return;
+  var logs = d.logs || [];
+  var kindSel = $id('hl-kind');
+  if (kindSel && !kindSel.options.length && (d.kinds || []).length) {
+    kindSel.innerHTML = '<option value="">' + esc(t('helpLogsAll')) + '</option>' +
+      (d.kinds || []).map(function(k) { return '<option value="' + escAttr(k) + '">' + esc(k) + '</option>'; }).join('');
+  }
+  if ($id('hl-count')) $id('hl-count').textContent = d.total != null ? String(d.total) : '';
+  var c = d.counts || {};
+  var st = $id('hl-stats');
+  if (st) {
+    st.innerHTML =
+      '<span class="badge">' + esc(t('helpLogsTotal')) + ': ' + (c.total || 0) + '</span>' +
+      '<span class="badge badge-g">' + esc(t('helpLogsConn')) + ': ' + (c.connections || 0) + '</span>' +
+      '<span class="badge badge-b">' + esc(t('helpLogsAuth')) + ': ' + (c.auth || 0) + '</span>' +
+      '<span class="badge badge-r">' + esc(t('helpLogsErr')) + ': ' + (c.errors || 0) + '</span>';
+  }
+  if (!logs.length) {
+    list.innerHTML = '<div class="hl-empty">' + esc(t('helpLogsNone')) + '</div>';
+    return;
+  }
+  list.innerHTML = logs.map(function(e) {
+    var time = String(e.time || '').replace('T', ' ').slice(5, 19);
+    return '<div class="hl-row ' + hlKindColor(e.kind, e.level) + '">' +
+      '<span class="hl-time">' + esc(time || '—') + '</span>' +
+      '<span class="hl-kind">' + esc(String(e.kind || '')) + '</span>' +
+      '<span class="hl-msg">' + esc(e.message || '') + '</span></div>';
+  }).join('');
+  list.dataset.loaded = '1';
+}
+
+async function loadHelpLogs(quiet) {
+  var list = $id('hl-list');
+  if (!list) return;
+  var q = ($id('hl-q') && $id('hl-q').value || '').trim();
+  var kind = ($id('hl-kind') && $id('hl-kind').value) || '';
+  var level = ($id('hl-level') && $id('hl-level').value) || '';
+  var params = new URLSearchParams({limit: '50'});
+  if (q) params.append('q', q);
+  if (kind) params.append('kind', kind);
+  if (level === 'err') params.append('level', 'err');
+  else if (level) params.append('level', level);
+  try {
+    var d = await api('/api/logs?' + params.toString());
+    helpLogsHtml(d);
+  } catch (e) {
+    if (!quiet) list.innerHTML = '<div class="hl-empty">' + esc(e.message || t('toast.err')) + '</div>';
+  }
+}
+
 async function changePassword(e) {
   e.preventDefault();
   try {
@@ -3818,6 +4319,21 @@ async function changePassword(e) {
 
 // ─── Panel self-update (Settings tab) ───
 var UPD_POLL = null;
+
+function renderUpdVersion(s) {
+  var el = $id('upd-ver');
+  if (!el || !s) return;
+  var rows = [
+    [LANG === 'en' ? 'Installed' : 'نسخه نصب‌شده', s.current || '—'],
+    [LANG === 'en' ? 'Latest' : 'آخرین نسخه', s.latest || '—'],
+    [LANG === 'en' ? 'Repository' : 'مخزن', (s.repo || '') + ' @ ' + (s.branch || '')],
+  ];
+  el.innerHTML = rows.map(function(r) {
+    return '<div style="display:flex;gap:8px"><span style="opacity:.7">' + esc(r[0]) + ':</span>' +
+      '<b dir="ltr" style="margin-right:auto">' + esc(r[1]) + '</b></div>';
+  }).join('') + (s.running ? '<div style="color:var(--green)">' + esc(LANG === 'en' ? 'Update in progress…' : 'بروزرسانی در حال اجراست…') + '</div>' : '');
+}
+
 async function runPanelUpdate() {
   var btn = $id('upd-btn');
   var logEl = $id('upd-log');
@@ -3833,6 +4349,7 @@ async function runPanelUpdate() {
     UPD_POLL = setInterval(async function() {
       try {
         var s = await api('/api/settings/update/status');
+        renderUpdVersion(s);
         if (s.log && s.log.length) {
           logEl.textContent = s.log.join('\n');
           logEl.scrollTop = logEl.scrollHeight;
@@ -3843,11 +4360,18 @@ async function runPanelUpdate() {
           if (s.success) toast(t('updateDone'), 'ok');
           else toast(t('updateFailed'), 'err');
         }
-      } catch(e) {}
+      } catch(e) {
+        clearInterval(UPD_POLL); UPD_POLL = null;
+        btn.disabled = false;
+        logEl.style.display = 'block';
+        logEl.textContent = e.message || t('toast.err');
+        toast(e.message || t('toast.err'), 'err');
+      }
     }, 1200);
   } catch(e) {
     btn.disabled = false;
-    logEl.style.display = 'none';
+    logEl.style.display = 'block';
+    logEl.textContent = e.message || t('toast.err');
     toast(e.message || t('toast.err'), 'err');
   }
 }
@@ -4013,28 +4537,31 @@ function togglePanelAudio() {
   if (!p) return;
   p.volume = 0.3;
   var sw = $id('audio-autoplay');
+  if (!sw) return;
   var saved = localStorage.getItem('spider_audio');
   var on = saved === null ? true : saved !== '0';
+  var loading = false;
   if (saved === null) { try { localStorage.setItem('spider_audio', '1'); } catch(e) {} }
   sw.classList.toggle('on', on);
   p.addEventListener('ended', function(){ if (sw.classList.contains('on')) musixPlayRandom(); });
-  api('/api/musix').then(function(d) {
-    MUSIX_TRACKS = (d.tracks || []).map(function(x){ return x.url; });
-    if (!MUSIX_TRACKS.length) { var lbl = $id('audio-file'); if (lbl) lbl.textContent = 'musix: empty'; return; }
-    var started = false;
-    function start(){
-      if (started) return; started = true;
-      if (on) musixPlayRandom();
-      document.removeEventListener('click', start);
-      document.removeEventListener('touchstart', start);
-      document.removeEventListener('keydown', start);
-    }
-    if (on) {
-      document.addEventListener('click', start);
-      document.addEventListener('touchstart', start);
-      document.addEventListener('keydown', start);
-    }
-  }).catch(function(){});
+  function startAfterGesture() {
+    if (!sw.classList.contains('on') || loading) return;
+    loading = true;
+    document.removeEventListener('click', startAfterGesture);
+    document.removeEventListener('touchstart', startAfterGesture);
+    document.removeEventListener('keydown', startAfterGesture);
+    api('/api/musix').then(function(d) {
+      MUSIX_TRACKS = (d.tracks || []).map(function(x){ return x.url; });
+      if (MUSIX_TRACKS.length && sw.classList.contains('on')) musixPlayRandom();
+      else if (!MUSIX_TRACKS.length) {
+        var lbl = $id('audio-file');
+        if (lbl) lbl.textContent = 'musix: empty';
+      }
+    }).catch(function(){ loading = false; });
+  }
+  document.addEventListener('click', startAfterGesture);
+  document.addEventListener('touchstart', startAfterGesture);
+  document.addEventListener('keydown', startAfterGesture);
 })();
 
 // The old Leaflet map + proxy-IP selector was removed — per-inbound options
@@ -4888,153 +5415,183 @@ async function tunnelCreate() {
   loadTunnel();
 }
 
-// ═══ CLOUDFLARE WORKER (proxy manager) ═══
-var WK_STATE = {connected: false, proxies: []};
+// ═══ CLOUDFLARE WORKER — Tunnel / Reverse / Worker as three sections ═══
+var WK_STATE = {connected: false, worker: {}, tunnel: {}, reverse: {}, locations: [], proxies: []};
+var WK_HB_TIMER = null;
 
-async function loadWorker() {
-  var setup = $id('worker-setup');
-  var managed = $id('worker-managed');
+function wkFlag(code) {
+  var c = String(code || '').trim().toUpperCase();
+  if (c.length !== 2 || !/^[A-Z]{2}$/.test(c)) return '🌐';
+  return String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65, 0x1F1E6 + c.charCodeAt(1) - 65);
+}
+
+function wkSetBadge(el, on, onText, offText) {
+  if (!el) return;
+  el.textContent = on ? onText : offText;
+  el.className = 'badge ' + (on ? 'badge-g' : 'badge-b');
+}
+
+function wkFmtTime(iso) {
+  if (!iso) return '—';
+  return String(iso).replace('T', ' ').slice(0, 19);
+}
+
+async function loadWorkerSections() {
   var badge = $id('worker-badge');
   try {
-    var w = await api('/api/worker');
-    WK_STATE = w;
-    var connected = !!w.connected;
-    if (setup) setup.classList.toggle('hidden', connected);
-    if (managed) managed.classList.toggle('hidden', !connected);
+    var d = await api('/api/worker/sections');
+    var w = d.worker || {}, tn = d.tunnel || {}, rv = d.reverse || {};
+    WK_STATE = {connected: !!w.connected, worker: w, tunnel: tn, reverse: rv, locations: w.locations || []};
+    if (typeof WK_PROXY_LIST !== 'undefined') WK_PROXY_LIST = WK_STATE.locations;
+
     if (badge) {
-      badge.textContent = connected ? t('connected') : t('disconnected');
-      badge.className = 'badge ' + (connected ? 'badge-g' : 'badge-r');
+      badge.textContent = w.connected ? t('connected') : t('disconnected');
+      badge.className = 'badge ' + (w.connected ? 'badge-g' : 'badge-r');
     }
-    if (connected) {
-      var statusEl = $id('worker-status');
-      if (statusEl) { statusEl.textContent = t('connected'); statusEl.className = 'badge badge-g'; }
-      var uEl = $id('worker-url');
-      if (uEl) { uEl.textContent = w.worker_url || ''; uEl.href = w.worker_url || '#'; }
-      var rsEl = $id('worker-remote-status');
-      if (rsEl) {
-        var rOk = (w.remote_status === 'online');
-        rsEl.textContent = w.remote_status ? w.remote_status : '—';
-        rsEl.className = 'badge ' + (rOk ? 'badge-g' : 'badge-r');
-      }
-      var hbEl = $id('worker-heartbeat');
-      if (hbEl) hbEl.textContent = w.last_heartbeat || '—';
-      var wnEl = $id('worker-name-id');
-      if (wnEl) wnEl.textContent = w.worker_name || '—';
-      var kvEl = $id('worker-kv-id');
-      if (kvEl) kvEl.textContent = (w.kv_namespace_title ? w.kv_namespace_title + ' · ' : '') + (w.kv_namespace_id || '—');
-      var onEl = $id('worker-online');
-      if (onEl) onEl.textContent = String(w.worker_users_online != null ? w.worker_users_online : 0);
-      var trEl = $id('worker-traffic');
-      if (trEl) trEl.textContent = fmtBytes(w.worker_traffic_bytes || 0);
-      var sEl = $id('worker-sync');
-      if (sEl) sEl.textContent = w.last_sync || '—';
-      var eEl = $id('worker-error');
-      if (eEl) eEl.textContent = (w.sync_error || w.last_error) || '';
-      renderWorkerProxies();
-      workerHeartbeat();
+
+    var setup = $id('wk-setup'), managed = $id('wk-managed');
+    if (setup) setup.classList.toggle('hidden', !!w.connected);
+    if (managed) managed.classList.toggle('hidden', !w.connected);
+
+    // ── 1. TUNNEL ──
+    wkSetBadge($id('wk-tun-badge'), !!tn.enabled, t('connected'), t('notCreated'));
+    wkSetBadge($id('wk-tun-status'), !!tn.enabled, t('connected'), t('notCreated'));
+    var tp = $id('wk-tun-ping'); if (tp) tp.textContent = tn.ping_ms != null ? tn.ping_ms + ' ms' : '—';
+    var td = $id('wk-tun-domain'); if (td) td.textContent = tn.domain || '—';
+    var tpa = $id('wk-tun-path'); if (tpa) tpa.textContent = tn.path || '—';
+    var tkv = $id('wk-tun-kv'); if (tkv) tkv.textContent = (tn.kv_title ? tn.kv_title + ' · ' : '') + (tn.kv_id || '—');
+    var thb = $id('wk-tun-hb'); if (thb) thb.textContent = wkFmtTime(tn.last_heartbeat);
+    var tib = $id('wk-tun-inbound'); if (tib) tib.textContent = tn.inbound_id ? tn.inbound_id : '—';
+    var tlogs = $id('wk-tun-logs');
+    if (tlogs) {
+      tlogs.innerHTML = (tn.logs || []).slice().reverse().map(function (l) {
+        return '<div class="scn-item"><span class="scn-ip">' + esc(String(l.time || '').slice(11)) + '</span>' +
+               '<span style="font-size:12px;color:var(--txt2)">' + esc(l.msg) + '</span></div>';
+      }).join('') || '<div class="scn-empty">' + esc(t('wk.noLogs')) + '</div>';
     }
-    var autoEl = $id('wk-auto');
-    if (autoEl) autoEl.classList.toggle('on', !!w.auto_sync);
-    var cntEl = $id('wk-source-count');
-    if (cntEl) cntEl.textContent = (w.proxies ? w.proxies.length : 0) + ' ' + t('countries');
-    var stEl = $id('wk-source-status');
-    if (stEl) stEl.textContent = (w.sync_count ? t('syncsDone') + ': ' + w.sync_count : '');
-  } catch(e) {
+
+    // ── 2. REVERSE ──
+    wkSetBadge($id('wk-rev-badge'), !!rv.enabled, t('connected'), t('notCreated'));
+    wkSetBadge($id('wk-rev-status'), !!rv.enabled, t('connected'), t('notCreated'));
+    var rp = $id('wk-rev-ping'); if (rp) rp.textContent = rv.ping_ms != null ? rv.ping_ms + ' ms' : '—';
+    var rd = $id('wk-rev-domain'); if (rd) rd.textContent = rv.domain || '—';
+    var rpa = $id('wk-rev-path'); if (rpa) rpa.textContent = rv.path || '—';
+    var rkv = $id('wk-rev-kv'); if (rkv) rkv.textContent = (rv.kv_title ? rv.kv_title + ' · ' : '') + (rv.kv_id || '—');
+    var rib = $id('wk-rev-inbound'); if (rib) rib.textContent = rv.inbound_id ? rv.inbound_id : '—';
+
+    // ── 3. WORKER ──
+    wkSetBadge($id('wk-badge'), !!w.connected, t('connected'), t('disconnected'));
+    wkSetBadge($id('wk-status'), !!w.connected, t('connected'), t('disconnected'));
+    var rOk = w.remote_status === 'online';
+    var rs = $id('wk-remote');
+    if (rs) { rs.textContent = w.remote_status || '—'; rs.className = 'badge ' + (rOk ? 'badge-g' : 'badge-r'); }
+    var u = $id('wk-url'); if (u) { u.textContent = w.worker_url || ''; u.href = w.worker_url || '#'; }
+    var nm = $id('wk-name'); if (nm) nm.textContent = w.worker_name || '—';
+    var kv = $id('wk-kv'); if (kv) kv.textContent = (w.kv_title ? w.kv_title + ' · ' : '') + (w.kv_id || '—');
+    var wping = $id('wk-ping'); if (wping) wping.textContent = w.ping_ms != null ? w.ping_ms + ' ms' : '—';
+    var on = $id('wk-online'); if (on) on.textContent = String(w.online || 0);
+    var tr = $id('wk-traffic'); if (tr) tr.textContent = fmtBytes(w.traffic_bytes || 0);
+    var sy = $id('wk-sync'); if (sy) sy.textContent = wkFmtTime(w.last_sync);
+    var er = $id('wk-error'); if (er) er.textContent = w.last_error || '';
+    var wi = $id('wk-inbound');
+    if (wi) wi.textContent = w.inbound_id ? w.inbound_id + '  ·  ' + (w.inbound_domain || '') + w.inbound_path : '—';
+    var auto = $id('wk-auto'); if (auto) auto.classList.toggle('on', !!w.auto_sync);
+
+    renderWorkerLocations();
+    if (w.connected) wkHeartbeat();
+  } catch (e) {
     if (badge) { badge.textContent = t('disconnected'); badge.className = 'badge badge-r'; }
   }
 }
 
-// Compact proxy pool: a single country dropdown (with flags) that lists the
-// current worker locations without making the page huge.
-function renderWorkerProxies() {
-  var el = $id('worker-proxies');
-  if (!el) return;
-  var list = WK_STATE.proxies || [];
-  if (!list.length) { el.innerHTML = '<div class="scn-empty" data-i18n="noProxyYet">هنوز کشوری اضافه نکرده‌اید</div>'; return; }
-  var opts = '';
-  list.forEach(function(p) {
-    var flag = cuCodeToFlag(p.code);
-    var ips = (p.proxies && p.proxies.length) ? p.proxies : [p.proxy];
-    opts += '<option value="' + esc(p.code) + '">' + flag + ' ' + esc(p.country || p.code) + ' — ' + esc(ips[0]) + (ips.length > 1 ? ' +' + (ips.length - 1) : '') + '</option>';
-  });
-  el.innerHTML =
-    '<select id="wk-proxy-select" class="f-g" onchange="wkEditSelectedProxy(this)" style="direction:ltr;text-align:left">' +
-      '<option value="">— ' + esc(t('pickCountry')) + ' —</option>' + opts +
-    '</select>' +
-    '<div style="display:flex;gap:6px;margin-top:8px">' +
-      '<button class="btn btn-sm btn-b" onclick="wkEditSelected()">' + esc(t('edit')) + '</button>' +
-      '<button class="btn btn-sm btn-r" onclick="wkDeleteSelected()">' + esc(t('delete')) + '</button>' +
-    '</div>';
+// Back-compat alias: the tab and a few helpers call loadWorker().
+async function loadWorker() { return loadWorkerSections(); }
+
+function renderWorkerLocations() {
+  var box = $id('wk-locations');
+  if (!box) return;
+  var list = WK_STATE.locations || [];
+  var cnt = $id('wk-loc-count');
+  if (cnt) cnt.textContent = list.length + ' ' + t('wk.location');
+  if (!list.length) {
+    box.innerHTML = '<div class="px-empty">' + esc(t('wk.noLocations')) + '</div>';
+    return;
+  }
+  box.innerHTML = list.map(function (p) {
+    return '<div class="set-row" style="border-bottom:1px solid var(--border)">' +
+      '<span class="set-lbl">' + esc(p.country_flag || wkFlag(p.code)) + ' ' + esc(p.country) +
+        (p.manual ? '' : ' <span class="badge badge-b" style="font-size:9px">' + esc(t('wk.auto')) + '</span>') + '</span>' +
+      '<span style="display:flex;align-items:center;gap:8px">' +
+        '<span dir="ltr" style="font-size:11px;font-family:monospace;color:var(--txt2)">' + esc(p.proxy) + ':' + esc(String(p.port)) + '</span>' +
+        '<button class="btn btn-sm btn-r" type="button" onclick="wkDelLocation(\'' + escAttr(String(p.code)) + '\')">' + esc(t('delete')) + '</button>' +
+      '</span></div>';
+  }).join('');
 }
 
-function wkSelectedCode() {
-  var s = $id('wk-proxy-select');
-  return s ? s.value : '';
+async function workerCreateTunnel() {
+  try {
+    await api('/api/tunnel/create', {method: 'POST'});
+    toast(t('tunnelCreated'), 'ok');
+  } catch (e) { toast(e.message || t('toast.err'), 'err'); }
+  await loadWorkerSections();
 }
 
-function wkEditSelectedProxy() { /* keep select state; actions read the value */ }
-
-function wkEditSelected() {
-  var code = wkSelectedCode();
-  if (!code) { toast(t('pickCountry'), 'warn'); return; }
-  workerEditProxy(code);
+async function workerCreateReverse() {
+  try {
+    await api('/api/reverse/create', {method: 'POST'});
+    toast(t('wk.reverseCreated'), 'ok');
+  } catch (e) { toast(e.message || t('toast.err'), 'err'); }
+  await loadWorkerSections();
 }
 
-function wkDeleteSelected() {
-  var code = wkSelectedCode();
-  if (!code) { toast(t('pickCountry'), 'warn'); return; }
-  workerDelProxy(code);
+async function workerCreateInbound() {
+  try {
+    await api('/api/worker/inbound', {method: 'POST'});
+    toast(t('wk.inboundCreated'), 'ok');
+  } catch (e) { toast(e.message || t('toast.err'), 'err'); }
+  await loadWorkerSections();
 }
 
 async function workerSetup() {
   var token = ($id('wk-token').value || '').trim();
-  if (!token) { toast('Token is required', 'err'); return; }
-  var btn = null;
-  document.querySelectorAll('#worker-setup .btn-p').forEach(function(b){ btn = b; });
+  if (!token) { toast(t('workerFillAll'), 'err'); return; }
+  var btn = document.querySelector('#wk-setup .btn-p');
   if (btn) { btn.disabled = true; btn.textContent = t('connecting'); }
   try {
     var w = await api('/api/worker/setup', {method: 'POST', body: {token: token}});
     $id('wk-token').value = '';
-    if (w && w.deferred_sync) {
-      toast(t('workerConnected') + ' — ' + (w.deferred_reason || 'sync will retry automatically'), 'warn');
-    } else {
-      toast(t('workerConnected'), 'ok');
-    }
-    await loadWorker();
-  } catch(e) { toast(e.message || t('toast.err'), 'err'); }
+    if (w && w.deferred_sync) toast(t('workerConnected') + ' — ' + (w.deferred_reason || ''), 'warn');
+    else toast(t('workerConnected'), 'ok');
+  } catch (e) { toast(e.message || t('toast.err'), 'err'); }
   if (btn) { btn.disabled = false; btn.textContent = t('createNewWorker'); }
+  await loadWorkerSections();
 }
 
-var WK_HB_TIMER = null;
-function workerHeartbeat() {
+function wkHeartbeat() {
   if (WK_HB_TIMER) clearTimeout(WK_HB_TIMER);
-  WK_HB_TIMER = setTimeout(async function() {
+  WK_HB_TIMER = setTimeout(async function () {
+    if (!WK_STATE.connected) return;
     try {
       var w = await api('/api/worker/heartbeat', {method: 'POST'});
-      if (w && w.ok) {
-        var rsEl = $id('worker-remote-status');
-        if (rsEl) { rsEl.textContent = 'online'; rsEl.className = 'badge badge-g'; }
-        var hbEl = $id('worker-heartbeat');
-        if (hbEl) hbEl.textContent = w.last_heartbeat || '—';
-        var onEl = $id('worker-online');
-        if (onEl) onEl.textContent = String(w.worker_users_online || 0);
-        var trEl = $id('worker-traffic');
-        if (trEl) trEl.textContent = fmtBytes(w.worker_traffic_bytes || 0);
-      } else {
-        var rsEl2 = $id('worker-remote-status');
-        if (rsEl2) { rsEl2.textContent = w.detail || 'unreachable'; rsEl2.className = 'badge badge-r'; }
+      var rs = $id('wk-remote');
+      if (rs) { rs.textContent = w.ok ? 'online' : (w.detail || 'unreachable'); rs.className = 'badge ' + (w.ok ? 'badge-g' : 'badge-r'); }
+      if (w.ok) {
+        var on = $id('wk-online'); if (on) on.textContent = String(w.worker_users_online || 0);
+        var tr = $id('wk-traffic'); if (tr) tr.textContent = fmtBytes(w.worker_traffic_bytes || 0);
+        var hb = $id('wk-tun-hb'); if (hb) hb.textContent = wkFmtTime(w.last_heartbeat);
       }
-    } catch(e) {}
-  }, 1500);
+    } catch (e) {}
+    wkHeartbeat();
+  }, 15000);
 }
 
 async function workerSync() {
+  toast(t('syncing'), 'warn');
   try {
-    toast(t('syncing'), 'warn');
     await api('/api/worker/sync', {method: 'POST'});
     toast(t('synced'), 'ok');
-    loadWorker();
-  } catch(e) { toast(e.message, 'err'); }
+  } catch (e) { toast(e.message, 'err'); }
+  await loadWorkerSections();
 }
 
 function workerToggleAuto() {
@@ -5042,8 +5599,8 @@ function workerToggleAuto() {
   if (!sw) return;
   sw.classList.toggle('on');
   api('/api/worker/settings', {method: 'POST', body: {auto_sync: sw.classList.contains('on')}})
-    .then(loadWorker)
-    .catch(function(e){ toast(e.message, 'err'); sw.classList.toggle('on'); });
+    .then(loadWorkerSections)
+    .catch(function (e) { toast(e.message, 'err'); sw.classList.toggle('on'); });
 }
 
 async function workerSyncSource() {
@@ -5053,17 +5610,17 @@ async function workerSyncSource() {
     var r = await api('/api/worker/sync-source', {method: 'POST'});
     if (st) {
       st.textContent = (r.sync && r.sync.ok)
-        ? t('sourceUpdated') + ': ' + r.sync.countries + ' ' + t('countries') + ' — ' + r.sync.count + ' IP'
+        ? t('sourceUpdated') + ': ' + r.sync.countries + ' ' + t('countries')
         : t('sourceError');
       st.style.color = (r.sync && r.sync.ok) ? 'var(--green)' : 'var(--red)';
     }
     if (r.sync && r.sync.ok) toast(t('sourceUpdated') + ' ✓', 'ok');
     else toast(t('sourceError'), 'err');
-    loadWorker();
-  } catch(e) {
+  } catch (e) {
     if (st) { st.textContent = e.message || t('sourceError'); st.style.color = 'var(--red)'; }
     toast(e.message || t('sourceError'), 'err');
   }
+  await loadWorkerSections();
 }
 
 async function workerDisconnect() {
@@ -5071,50 +5628,241 @@ async function workerDisconnect() {
   try {
     await api('/api/worker', {method: 'DELETE'});
     toast(t('workerRemoved'), 'ok');
-    loadWorker();
-  } catch(e) { toast(e.message, 'err'); }
+  } catch (e) { toast(e.message, 'err'); }
+  await loadWorkerSections();
 }
 
-function workerAddProxy() {
-  var code = prompt(t('proxyCodePrompt'));
-  if (code === null || !code.trim()) return;
-  code = code.trim().toLowerCase();
-  var country = prompt(t('proxyCountryPrompt'));
-  if (country === null || !country.trim()) return;
-  var proxy = prompt(t('proxyHostPrompt'));
-  if (proxy === null || !proxy.trim()) return;
-  var port = prompt(t('proxyPortPrompt'), '443');
-  workerSaveProxy(code, country, proxy, port, null);
+function wkAutoCode(country, host) {
+  var c = String(country || '').trim();
+  if (/^[A-Za-z]{2}$/.test(c)) return c.toLowerCase();
+  var h = String(host || '').split('.')[0] || '';
+  var m = h.match(/^([a-z]{2})[-.]/i);
+  if (m) return m[1].toLowerCase();
+  return (h.replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'loc').toLowerCase();
 }
 
-function workerEditProxy(code) {
-  var p = (WK_STATE.proxies || []).find(function(x){ return x.code === code; });
-  if (!p) return;
-  var country = prompt(t('proxyCountryPrompt'), p.country || p.code);
-  if (country === null) return;
-  var proxy = prompt(t('proxyHostPrompt'), p.proxy);
-  if (proxy === null) return;
-  var port = prompt(t('proxyPortPrompt'), String(p.port || 443));
-  workerSaveProxy(code, country, proxy, port, p);
-}
-
-async function workerSaveProxy(code, country, proxy, port, existing) {
+async function wkAddLocation() {
+  var country = ($id('wk-loc-country').value || '').trim();
+  var host = ($id('wk-loc-host').value || '').trim();
+  var port = parseInt($id('wk-loc-port').value || '443', 10);
+  var code = ($id('wk-loc-code').value || '').trim().toLowerCase() || wkAutoCode(country, host);
+  if (!country || !host) { toast(t('workerFillAll'), 'err'); return; }
   try {
-    var w = await api('/api/worker/proxies', {method: 'POST', body: {code: code, country: country, proxy: proxy, port: parseInt(port) || 443}});
-    WK_STATE = w;
+    await api('/api/worker/proxies', {
+      method: 'POST',
+      body: {code: code, country: country, proxy: host, port: port}
+    });
+    $id('wk-loc-country').value = ''; $id('wk-loc-code').value = '';
+    $id('wk-loc-host').value = ''; $id('wk-loc-port').value = '443';
     toast(t('proxySaved'), 'ok');
-    loadWorker();
-  } catch(e) { toast(e.message || t('toast.err'), 'err'); }
+  } catch (e) { toast(e.message || t('toast.err'), 'err'); }
+  await loadWorkerSections();
 }
 
-async function workerDelProxy(code) {
+async function wkDelLocation(code) {
   if (!confirm(t('confirmDelProxy'))) return;
   try {
-    var w = await api('/api/worker/proxies/' + encodeURIComponent(code), {method: 'DELETE'});
-    WK_STATE = w;
+    await api('/api/worker/proxies/' + encodeURIComponent(code), {method: 'DELETE'});
     toast(t('proxyDeleted'), 'ok');
-    loadWorker();
-  } catch(e) { toast(e.message, 'err'); }
+  } catch (e) { toast(e.message, 'err'); }
+  await loadWorkerSections();
+}
+
+// ═══ EXTERNAL PROXIES (PROXY tab) ═══
+// Flow: fill the form → «تست اتصال» → a ping/working report appears → only then
+// does the Save button show up. Each saved proxy renders as an accordion whose
+// body holds ping / delete / active / users (a scrollable checklist).
+var PX_STATE = {list: [], tested: null};
+
+function pxToggleAdd(btn) {
+  var box = $id('px-add');
+  if (!box) return;
+  var opening = box.classList.contains('hidden');
+  box.classList.toggle('hidden', !opening);
+  if (btn) btn.setAttribute('aria-expanded', String(opening));
+  if (!opening) pxResetAdd();
+}
+
+function pxSetProto(p) {
+  PX_STATE.tested = null;
+  var pf = $id('px-protocol');
+  if (pf) pf.value = p;
+  ['socks5', 'http'].forEach(function(k) {
+    var b = $id('px-proto-' + k);
+    if (b) b.classList.toggle('on', k === p);
+  });
+  pxInvalidateTest();
+}
+
+function pxInvalidateTest() {
+  var out = $id('px-test-result');
+  if (out) { out.classList.remove('show'); out.innerHTML = ''; }
+  var sv = $id('px-save-btn');
+  if (sv) sv.classList.add('hidden');
+}
+
+function pxResetAdd() {
+  ['px-host', 'px-country', 'px-username', 'px-password'].forEach(function(id) {
+    var el = $id(id); if (el) el.value = '';
+  });
+  var port = $id('px-port'); if (port) port.value = '';
+  pxSetProto('socks5');
+  pxInvalidateTest();
+}
+
+function pxTestPayload() {
+  return {
+    protocol: ($id('px-protocol') || {}).value || 'socks5',
+    host: (($id('px-host') || {}).value || '').trim(),
+    port: parseInt(($id('px-port') || {}).value || '0', 10),
+    username: (($id('px-username') || {}).value || '').trim(),
+    password: ($id('px-password') || {}).value || '',
+    country: (($id('px-country') || {}).value || '').trim()
+  };
+}
+
+function pxTestHtml(r) {
+  var ok = !!r.working;
+  return '<b style="color:' + (ok ? 'var(--green)' : 'var(--red)') + '">' +
+    (ok ? '✔ ' : '✖ ') + esc(ok ? t('proxy.working') : t('proxy.notWorking')) + '</b><br>' +
+    esc(t('proxy.ping')) + ': <b dir="ltr">' + (r.ping_ms != null ? esc(String(r.ping_ms)) + ' ms' : '—') + '</b><br>' +
+    esc(t('proxy.egress')) + ': <b dir="ltr">' + esc(r.egress_ip || '—') + '</b>' +
+    (r.country_name ? '<br>' + esc(t('proxy.detectedCountry')) + ': <b>' + esc((r.country_flag || '') + ' ' + r.country_name) + '</b>' : '') +
+    (r.error ? '<br><span style="color:var(--red)">' + esc(r.error) + '</span>' : '');
+}
+
+async function pxTestNew() {
+  var btn = $id('px-test-btn'), out = $id('px-test-result'), sv = $id('px-save-btn');
+  var payload = pxTestPayload();
+  if (!payload.host || !payload.port) { toast(t('proxy.fillHost'), 'err'); return; }
+  PX_STATE.tested = null;
+  if (sv) sv.classList.add('hidden');
+  if (out) { out.classList.add('show'); out.innerHTML = '<span style="color:var(--txt2)">⏳ ' + esc(t('proxy.testing')) + '…</span>'; }
+  if (btn) btn.disabled = true;
+  try {
+    var r = await api('/api/proxies/test', {method: 'POST', body: payload});
+    if (out) out.innerHTML = pxTestHtml(r);
+    if (r.working) {
+      PX_STATE.tested = Object.assign({}, payload, {
+        working: true, ping_ms: r.ping_ms, egress_ip: r.egress_ip || '',
+        country_code: r.country_code || '', country_flag: r.country_flag || '', country_name: r.country_name || ''
+      });
+      if (sv) sv.classList.remove('hidden');
+      toast(t('proxy.testOk'), 'ok');
+    } else {
+      toast(r.error || t('proxy.testFail'), 'err');
+    }
+  } catch (e) {
+    if (out) out.innerHTML = '<span style="color:var(--red)">✖ ' + esc(e.message || '') + '</span>';
+    toast(e.message || t('toast.err'), 'err');
+  }
+  if (btn) btn.disabled = false;
+}
+
+async function pxSaveNew() {
+  if (!PX_STATE.tested) { toast(t('proxy.testFirst'), 'warn'); return; }
+  var btn = $id('px-save-btn');
+  if (btn) btn.disabled = true;
+  try {
+    await api('/api/proxies', {method: 'POST', body: PX_STATE.tested});
+    toast(t('proxy.saved'), 'ok');
+    pxResetAdd();
+    var add = $id('px-add');
+    if (add) add.classList.add('hidden');
+    await loadProxies();
+    await loadInbounds();
+  } catch (e) {
+    toast(e.message || t('toast.err'), 'err');
+  }
+  if (btn) btn.disabled = false;
+}
+
+async function loadProxies() {
+  var list = $id('proxy-list');
+  if (!list) return;
+  try {
+    var d = await api('/api/proxies');
+    PX_STATE.list = d.proxies || [];
+    renderProxies();
+    var c = $id('px-count');
+    if (c) {
+      var n = PX_STATE.list.length;
+      c.textContent = n + ' ' + t('proxy.count');
+      c.className = 'badge ' + (n ? 'badge-g' : 'badge-b');
+    }
+  } catch (e) {
+    list.innerHTML = '<div class="px-empty">' + esc(e.message || t('toast.err')) + '</div>';
+  }
+}
+
+function pxRow(label, value) {
+  return '<div class="set-row"><span class="set-lbl">' + esc(label) + '</span>' +
+    '<span dir="ltr" style="font-size:12px;color:var(--txt);word-break:break-all">' + esc(String(value == null ? '—' : value)) + '</span></div>';
+}
+
+function pxCardHtml(p) {
+  var statusTxt = p.active ? (p.working ? t('proxy.ok') : t('proxy.untested')) : t('proxy.off');
+  var statusCls = p.active ? (p.working ? 'badge-g' : 'badge-b') : 'badge-r';
+  var accId = 'px-' + String(p.id);
+  return '<div class="spd-acc px-card' + (p.active ? '' : ' off') + '" id="px-card-' + escAttr(p.id) + '">' +
+    '<button type="button" class="spd-acc-head px-head" onclick="spdToggleAcc(\'' + escAttr(accId) + '\',this)" aria-expanded="false" aria-controls="acc-' + escAttr(accId) + '">' +
+      '<span class="px-flag">' + esc(p.country_flag || '🌐') + '</span>' +
+      '<span class="px-meta"><b>' + esc(p.country || p.host) + '</b>' +
+        '<span>' + esc(p.protocol) + ' · ' + esc(p.host) + ':' + esc(String(p.port)) + (p.username ? ' · ' + esc(p.username) : '') + '</span></span>' +
+      '<span class="badge ' + statusCls + '">' + esc(statusTxt) + '</span>' +
+      '<span class="material-symbols-outlined spd-acc-arrow">expand_more</span>' +
+    '</button>' +
+    '<div class="spd-acc-body px-body" id="acc-' + escAttr(accId) + '">' +
+      '<div class="px-rows">' +
+        pxRow(t('proxy.ping'), p.ping_ms != null ? p.ping_ms + ' ms' : '—') +
+        pxRow(t('proxy.egress'), p.egress_ip || '—') +
+        pxRow(t('proxy.lastTest'), p.last_test_at ? String(p.last_test_at).replace('T', ' ').slice(0, 19) : '—') +
+        (p.error ? pxRow(t('proxy.error'), p.error) : '') +
+      '</div>' +
+      '<div class="px-actions">' +
+        '<button class="btn btn-g btn-sm" type="button" onclick="event.stopPropagation();pxPing(\'' + escAttr(p.id) + '\')">🔄 ' + esc(t('proxy.pingBtn')) + '</button>' +
+        '<button class="btn btn-sm ' + (p.active ? 'btn-r' : 'btn-p') + '" type="button" onclick="event.stopPropagation();pxToggleActive(\'' + escAttr(p.id) + '\',' + (p.active ? 'false' : 'true') + ')">' +
+          esc(p.active ? t('proxy.deactivate') : t('proxy.activate')) + '</button>' +
+        '<button class="btn btn-sm btn-r" type="button" onclick="event.stopPropagation();pxDelete(\'' + escAttr(p.id) + '\')">🗑 ' + esc(t('proxy.delete')) + '</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderProxies() {
+  var list = $id('proxy-list');
+  if (!list) return;
+  if (!PX_STATE.list.length) {
+    list.innerHTML = '<div class="px-empty">' + esc(t('proxy.empty')) + '</div>';
+    return;
+  }
+  list.innerHTML = PX_STATE.list.map(pxCardHtml).join('');
+}
+
+async function pxPing(pid) {
+  try {
+    var r = await api('/api/proxies/' + encodeURIComponent(pid) + '/ping', {method: 'POST'});
+    toast(t('proxy.ping') + ': ' + (r.ping_ms != null ? r.ping_ms + ' ms' : '—'), r.working ? 'ok' : 'err');
+  } catch (e) { toast(e.message || t('toast.err'), 'err'); }
+  await loadProxies();
+}
+
+async function pxToggleActive(pid, on) {
+  try {
+    await api('/api/proxies/' + encodeURIComponent(pid), {method: 'PATCH', body: {active: !!on}});
+    toast(on ? t('proxy.activated') : t('proxy.deactivated'), 'ok');
+  } catch (e) { toast(e.message || t('toast.err'), 'err'); }
+  await loadProxies();
+}
+
+async function pxDelete(pid) {
+  if (!confirm(t('proxy.confirmDelete'))) return;
+  try {
+    await api('/api/proxies/' + encodeURIComponent(pid), {method: 'DELETE'});
+    toast(t('proxy.deleted'), 'ok');
+    await loadProxies();
+    await loadInbounds();
+  } catch (e) { toast(e.message || t('toast.err'), 'err'); }
 }
 
 // ═══ PER-INBOUND CONFIG OPTIONS (create-user modal) ═══
@@ -5125,7 +5873,12 @@ async function workerDelProxy(code) {
 //   - worker → the same iOS switch additionally adds 10 Cloudflare scanned-IP configs
 var cuInboundState = { picks: {}, countries: {} };
 var cuWorkerProxyList = (WK_STATE && WK_STATE.proxies) || [];
-function cuWorkerProxies() { return (WK_STATE && WK_STATE.proxies) || cuWorkerProxyList; }
+function cuWorkerProxies() {
+  // `locations` is the rebuilt Worker section's name for the proxy pool; the
+  // `proxies` fallback keeps older payloads working.
+  if (WK_STATE && (WK_STATE.locations || WK_STATE.proxies)) return WK_STATE.locations || WK_STATE.proxies;
+  return cuWorkerProxyList;
+}
 
 function cuInboundType(ib) {
   var p = (ib && ib.protocol || '').toLowerCase();
@@ -5210,7 +5963,9 @@ function cuRenderInboundOpts() {
     '</div>';
     if (selected) {
       html += '<div class="ib-opts" data-for="' + esc(id) + '" style="flex-basis:100%">';
-      if (type === 'worker') {
+      if (ib.proxy_managed) {
+        html += '<div class="px-hint" style="margin:0">' + t('proxy.inboundHint') + '</div>';
+      } else if (type === 'worker') {
         var sel = cuInboundState.countries[id] || {};
         var chipHtml = '';
         cuWorkerProxies().forEach(function(p) {
@@ -5458,9 +6213,21 @@ async function loadBotInbounds() {
     ['bot-channel-inbound','bot-plan-inbound'].forEach(function(id){
       var el=$id(id); if(!el) return;
       var first = id==='bot-channel-inbound' ? '<option value="">Default TLS/WS</option>' : '<option value="">انتخاب Inbound</option>';
-      el.innerHTML = first + items.filter(function(x){return x.id!=='Node' && !(x.system)}).map(function(x){ return '<option value="'+escAttr(String(x.id||''))+'">'+esc(x.name||x.id||'Inbound')+'</option>'; }).join('');
+      // The API field is inbound_id (not id) — reading x.id produced options with
+      // an empty value, so every inbound the admin picked was silently dropped.
+      el.innerHTML = first + items.filter(function(x){return x.inbound_id!=='Node' && !(x.system)}).map(function(x){ return '<option value="'+escAttr(String(x.inbound_id||''))+'">'+esc(x.name||x.inbound_id||'Inbound')+'</option>'; }).join('');
     });
   }catch(e){console.error(e);}
+}
+// Select an inbound, re-adding a lost option so a configured inbound_id is
+// never silently reset to "" when the list reloads.
+function selBotInbound(el, value) {
+  if (!el) return;
+  value = String(value || '');
+  var found = false;
+  for (var i = 0; i < el.options.length; i++) { if (el.options[i].value === value) { found = true; break; } }
+  if (!found && value) el.insertAdjacentHTML('beforeend', '<option value="' + escAttr(value) + '">' + esc(value) + '</option>');
+  el.value = value;
 }
 function fillBotStatus(d){
   var b=$id('bot-status-badge'); if(b){b.textContent=d.token_configured?'ON':'OFF';b.className='badge '+(d.token_configured?'badge-g':'badge-b');}
@@ -5515,13 +6282,13 @@ function resetSellPlanForm(){
 async function loadSellPlans(){try{var d=await api('/api/bot/sell/plans');renderSellPlans(d.plans||[]);}catch(e){console.error(e);}}
 function sellPlanPayload(){return{ name:($id('bot-plan-name').value||'').trim(), price:($id('bot-plan-price').value||'').trim(), inbound_id:$id('bot-plan-inbound').value||'', traffic_gb:parseFloat($id('bot-plan-traffic').value||0), expire_days:parseInt($id('bot-plan-days').value||0,10), username_prefix:($id('bot-plan-prefix').value||'shop').trim(), enabled:true};}
 async function saveSellPlan(){try{var payload=sellPlanPayload();if(!payload.name||!payload.price||!payload.inbound_id)throw new Error('نام Plan، قیمت و Inbound الزامی است');var id=($id('bot-plan-id').value||'').trim();if(id){await api('/api/bot/sell/plans/'+encodeURIComponent(id),{method:'PATCH',body:payload});toast('Plan بروزرسانی شد','ok');}else{await api('/api/bot/sell/plans',{method:'POST',body:payload});toast('Plan اضافه شد','ok');}resetSellPlanForm();await loadSellPlans();await loadBot();}catch(e){toast(e.message||'خطا در ذخیره Plan','err');}}
-async function editSellPlan(id){try{var d=await api('/api/bot/sell/plans');var p=(d.plans||[]).find(function(x){return String(x.id)===String(id);});if(!p)throw new Error('Plan پیدا نشد');$id('bot-plan-id').value=p.id||'';$id('bot-plan-name').value=p.name||'';$id('bot-plan-price').value=p.price||'';$id('bot-plan-inbound').value=p.inbound_id||'';$id('bot-plan-traffic').value=p.traffic_gb||0;$id('bot-plan-days').value=p.expire_days||0;$id('bot-plan-prefix').value=p.username_prefix||'shop';$id('bot-plan-save-label').textContent='💾 ذخیره تغییرات';toggleBotAcc('botacc-sell-products');window.scrollTo({top:$id('tab-bot').offsetTop,behavior:'smooth'});}catch(e){toast(e.message||'خطا','err');}}
+async function editSellPlan(id){try{var d=await api('/api/bot/sell/plans');var p=(d.plans||[]).find(function(x){return String(x.id)===String(id);});if(!p)throw new Error('Plan پیدا نشد');$id('bot-plan-id').value=p.id||'';$id('bot-plan-name').value=p.name||'';$id('bot-plan-price').value=p.price||'';selBotInbound($id('bot-plan-inbound'),p.inbound_id||'');$id('bot-plan-traffic').value=p.traffic_gb||0;$id('bot-plan-days').value=p.expire_days||0;$id('bot-plan-prefix').value=p.username_prefix||'shop';$id('bot-plan-save-label').textContent='💾 ذخیره تغییرات';toggleBotAcc('botacc-sell-products');window.scrollTo({top:$id('tab-bot').offsetTop,behavior:'smooth'});}catch(e){toast(e.message||'خطا','err');}}
 async function toggleSellPlan(id,enabled){try{var d=await api('/api/bot/sell/plans');var p=(d.plans||[]).find(function(x){return String(x.id)===String(id);});if(!p)throw new Error('Plan پیدا نشد');p.enabled=!!enabled;await api('/api/bot/sell/plans/'+encodeURIComponent(id),{method:'PATCH',body:p});await loadSellPlans();await loadBot();toast(enabled?'Plan فعال شد':'Plan غیرفعال شد','ok');}catch(e){toast(e.message||'خطا','err');}}
 async function deleteSellPlan(id){if(!confirm('این Plan حذف شود؟'))return;try{await api('/api/bot/sell/plans/'+encodeURIComponent(id),{method:'DELETE'});resetSellPlanForm();await loadSellPlans();await loadBot();toast('Plan حذف شد','ok');}catch(e){toast(e.message||'خطا','err');}}
 function addBotJoinRow(item){var wrap=$id('bot-join-list');if(!wrap)return;item=item||{};var row=document.createElement('div');row.className='bot-join-row';row.innerHTML='<div class="f-g" style="margin:0"><label>Channel / Chat ID</label><input class="bot-join-chat" type="text" dir="ltr" placeholder="@channel یا -100123456789" value="'+escAttr(item.chat_id||item.channel||'')+'"></div><div class="f-g" style="margin:0"><label>Join Link</label><input class="bot-join-url" type="url" dir="ltr" placeholder="https://t.me/channel" value="'+escAttr(item.join_url||item.url||'')+'"></div><button class="btn-glass" type="button" onclick="this.parentElement.remove()">حذف</button>';wrap.appendChild(row);}
 function renderBotJoinRows(items){var wrap=$id('bot-join-list');if(!wrap)return;wrap.innerHTML='';(items||[]).forEach(addBotJoinRow);if(!items||!items.length)addBotJoinRow();}
 function getBotJoinPayload(){return Array.prototype.slice.call(document.querySelectorAll('#bot-join-list .bot-join-row')).map(function(row){return{chat_id:(row.querySelector('.bot-join-chat').value||'').trim(),join_url:(row.querySelector('.bot-join-url').value||'').trim()};}).filter(function(x){return x.chat_id;});}
-async function loadBot(){try{var d=await api('/api/bot/status');fillBotStatus(d);if($id('bot-token')&&!d.token_configured)$id('bot-token').value='';var ch=d.channel||{},sell=d.sell||{};$id('bot-channel-enabled').checked=!!ch.enabled;$id('bot-channel').value=ch.channel||'';$id('bot-channel-interval').value=ch.interval_minutes||60;$id('bot-channel-prefix').value=ch.username_prefix||'spider';$id('bot-channel-traffic').value=ch.traffic_limit_gb||0;$id('bot-channel-days').value=ch.expire_days||30;$id('bot-channel-replace').checked=ch.replace_previous!==false;await loadBotInbounds();$id('bot-channel-inbound').value=ch.inbound_id||'';$id('bot-sell-enabled').checked=!!sell.enabled;$id('bot-sell-admin').value=sell.admin_chat_id||'';$id('bot-sell-support').value=sell.support_username||'';$id('bot-sell-support-text').value=sell.support_text||'💬 برای پشتیبانی با مدیر فروش تماس بگیرید.';$id('bot-sell-payment').value=sell.payment_url||'';$id('bot-sell-payment-details').value=sell.payment_details||'';renderBotJoinRows(sell.required_channels||[]);}catch(e){console.error(e);}}
+async function loadBot(){try{var d=await api('/api/bot/status');fillBotStatus(d);if($id('bot-token')&&!d.token_configured)$id('bot-token').value='';var ch=d.channel||{},sell=d.sell||{};$id('bot-channel-enabled').checked=!!ch.enabled;$id('bot-channel').value=ch.channel||'';$id('bot-channel-interval').value=ch.interval_minutes||60;$id('bot-channel-prefix').value=ch.username_prefix||'spider';$id('bot-channel-traffic').value=ch.traffic_limit_gb||0;$id('bot-channel-days').value=ch.expire_days||30;$id('bot-channel-replace').checked=ch.replace_previous!==false;await loadBotInbounds();selBotInbound($id('bot-channel-inbound'),ch.inbound_id||'');$id('bot-sell-enabled').checked=!!sell.enabled;$id('bot-sell-admin').value=sell.admin_chat_id||'';$id('bot-sell-support').value=sell.support_username||'';$id('bot-sell-support-text').value=sell.support_text||'💬 برای پشتیبانی با مدیر فروش تماس بگیرید.';$id('bot-sell-payment').value=sell.payment_url||'';$id('bot-sell-payment-details').value=sell.payment_details||'';renderBotJoinRows(sell.required_channels||[]);}catch(e){console.error(e);}}
 function botPayload(){return{token:($id('bot-token').value||'').trim(),channel:{enabled:$id('bot-channel-enabled').checked,channel:($id('bot-channel').value||'').trim(),interval_minutes:parseInt($id('bot-channel-interval').value||60,10),username_prefix:($id('bot-channel-prefix').value||'spider').trim(),traffic_limit_gb:parseFloat($id('bot-channel-traffic').value||0),expire_days:parseInt($id('bot-channel-days').value||0,10),inbound_id:$id('bot-channel-inbound').value||'',replace_previous:$id('bot-channel-replace').checked},sell:{enabled:$id('bot-sell-enabled').checked,admin_chat_id:($id('bot-sell-admin').value||'').trim(),support_username:($id('bot-sell-support').value||'').trim(),support_text:$id('bot-sell-support-text').value||'',payment_url:($id('bot-sell-payment').value||'').trim(),payment_details:$id('bot-sell-payment-details').value||'',required_channels:getBotJoinPayload(),welcome_text:'سلام 👋\nبرای استفاده از فروشگاه یکی از بخش‌های زیر را انتخاب کنید.'}};}
 async function saveBotConfig(){try{var p=botPayload();if(!p.token){var st=await api('/api/bot/status');if(!st.token_configured)throw new Error('Telegram Bot API Key را وارد کنید');}await api('/api/bot/config',{method:'POST',body:p});await loadBot();toast('تنظیمات Bot ذخیره شد','ok');}catch(e){toast(e.message||'خطا در ذخیره تنظیمات','err');}}
 async function testBotConfig(){try{var p=botPayload();var d=await api('/api/bot/test',{method:'POST',body:{token:p.token,channel:p.channel.channel}});var msg='Bot: @'+(d.bot&&d.bot.username||'?');if(d.channel){msg+=' · Channel: '+(d.channel.username||d.channel.title||d.channel.id);if(!d.channel.is_admin)msg+=' · Bot admin نیست';}toast(msg,d.channel&&!d.channel.is_admin?'warn':'ok');}catch(e){toast(e.message||'Telegram test failed','err');}}
@@ -5562,12 +6329,6 @@ async function generateApiKey() {
     }
   } catch(e) { toast(e.message || 'خطا', 'err'); }
 }
-
-// Add server info to settings on load
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(loadServerInfo, 500);
-  setTimeout(loadBot, 600);
-});
 
 // Start neon bars when tab opens
 setTimeout(updateNeonBars, 500);
