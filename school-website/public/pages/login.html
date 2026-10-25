@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ورود با شماره موبایل | دبیرستان دوره دوم امام امیرالمؤمنین (ع)</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body data-page="login">
+  <div class="topbar" id="site-topbar"></div>
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <div class="breadcrumb"><a href="/">صفحه اصلی</a><span>/</span><span>ورود کاربران</span></div>
+        <h1>ورود با شماره موبایل</h1>
+        <p>برای دیدن درخواست‌های پیش‌ثبت‌نام خود، با شماره موبایل و کد یک‌بارمصرف وارد شوید.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="grid grid--2" style="align-items:start">
+          <div class="form-card">
+            <h2>ورود به حساب</h2>
+            <div class="alert alert--info" id="sms-status">در حال بررسی وضعیت سرویس پیامک…</div>
+            <div class="alert" id="login-alert" hidden></div>
+
+            <form id="otp-form" novalidate>
+              <div class="form-row">
+                <label for="login-mobile">شماره موبایل</label>
+                <input id="login-mobile" name="mobile" type="tel" inputmode="numeric" placeholder="09123456789" required>
+                <span class="hint">شماره موبایلی که با آن پیش‌ثبت‌نام کرده‌اید.</span>
+              </div>
+              <div class="form-actions" style="margin-top:0.8rem">
+                <button class="btn btn--turquoise" type="submit">دریافت کد ورود</button>
+              </div>
+            </form>
+
+            <form id="verify-box" novalidate hidden>
+              <hr style="margin:1.2rem 0;border:none;border-top:1px solid var(--gray-200)">
+              <div class="form-row">
+                <label for="login-code">کد پیامک‌شده</label>
+                <input id="login-code" name="code" type="text" inputmode="numeric" class="mono" required>
+                <input type="hidden" name="mobile_for_verify">
+                <span class="hint">اعتبار کد محدود است؛ در صورت انقضا کد جدید درخواست کنید.</span>
+              </div>
+              <div class="form-actions" style="margin-top:0.8rem">
+                <button class="btn btn--navy" type="submit">تأیید کد و ورود</button>
+              </div>
+            </form>
+
+            <div id="session-box" hidden>
+              <hr style="margin:1.2rem 0;border:none;border-top:1px solid var(--gray-200)">
+              <p>شما با شماره <strong data-mobile></strong> وارد شده‌اید.</p>
+              <div class="form-actions">
+                <a class="btn btn--ghost btn--sm" href="/my-requests">درخواست‌های من</a>
+                <button class="btn btn--danger btn--sm" type="button" id="logout-button">خروج</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel" style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:1.2rem">
+              <h3>درخواست‌های پیش‌ثبت‌نام من</h3>
+              <div id="my-requests">
+                <p class="help-text">پس از ورود، وضعیت درخواست‌های ثبت‌شده با این شماره در همین بخش نمایش داده می‌شود.</p>
+              </div>
+            </div>
+            <div class="notice-box" style="margin-top:1rem">
+              اگر سرویس پیامک مدرسه فعال نباشد، ورود با کد پیامکی کار نمی‌کند؛ در این حالت می‌توانید با کد پیگیری و
+              شماره موبایل، وضعیت درخواست را در صفحه <a href="/track">پیگیری پیش‌ثبت‌نام</a> ببینید.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/site.js"></script>
+  <script src="/assets/js/forms.js"></script>
+</body>
+</html>

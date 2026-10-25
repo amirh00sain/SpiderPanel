@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>پیگیری پیش‌ثبت‌نام | دبیرستان دوره دوم امام امیرالمؤمنین (ع)</title>
+  <meta name="description" content="پیگیری وضعیت درخواست پیش‌ثبت‌نام با کد پیگیری و شماره موبایل.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body data-page="track">
+  <div class="topbar" id="site-topbar"></div>
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <div class="breadcrumb"><a href="/">صفحه اصلی</a><span>/</span><span>پیگیری پیش‌ثبت‌نام</span></div>
+        <h1>پیگیری وضعیت پیش‌ثبت‌نام</h1>
+        <p>کد پیگیری و شماره موبایلی که با آن ثبت‌نام کرده‌اید را وارد کنید.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="grid grid--2" style="align-items:start">
+          <div class="form-card">
+            <h2>ورود اطلاعات پیگیری</h2>
+            <div class="alert" id="tracking-alert" hidden></div>
+            <form id="tracking-form" novalidate>
+              <div class="form-row">
+                <label for="tracking-code">کد پیگیری</label>
+                <input id="tracking-code" name="tracking_code" type="text" class="mono" placeholder="SW-XXXXX-XXXXX" required>
+              </div>
+              <div class="form-row">
+                <label for="tracking-mobile">شماره موبایل</label>
+                <input id="tracking-mobile" name="mobile" type="tel" inputmode="numeric" placeholder="09123456789" required>
+              </div>
+              <div class="form-actions" style="margin-top:1rem">
+                <button class="btn btn--turquoise" type="submit">نمایش وضعیت درخواست</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="tracking-result" class="panel" hidden></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/site.js"></script>
+  <script src="/assets/js/forms.js"></script>
+</body>
+</html>

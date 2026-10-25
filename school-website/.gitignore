@@ -1,0 +1,25 @@
+# وابستگی‌ها
+node_modules/
+
+# متغیرهای محیطی و کلیدها (هرگز نباید در مخزن ذخیره شوند)
+.env
+.env.*
+!.env.example
+
+# دیتابیس و فایل‌های پشتیبان (باید خارج از پوشه عمومی باشند)
+storage/*.db
+storage/*.db-journal
+storage/*.db-wal
+storage/*.db-shm
+storage/backups/
+storage/uploads/
+
+# فایل‌های موقت و لاگ
+*.log
+logs/
+tmp/
+*.tmp
+
+# فایل‌های سیستم
+.DS_Store
+Thumbs.db

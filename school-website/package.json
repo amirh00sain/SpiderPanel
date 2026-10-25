@@ -1,0 +1,29 @@
+{
+  "name": "imam-ali-school-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "وب‌سایت رسمی دبیرستان دوره دوم امام امیرالمؤمنین (ع) — HTML/CSS/Vanilla JS + Node.js + SQLite",
+  "main": "server/app.js",
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "node --watch server/app.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "admin:create": "node scripts/create-admin.js",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js",
+    "test": "node --test \"server/tests/*.test.js\""
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.5.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "helmet": "^8.0.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}

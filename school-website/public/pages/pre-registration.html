@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>پیش‌ثبت‌نام | دبیرستان دوره دوم امام امیرالمؤمنین (ع)</title>
+  <meta name="description" content="فرم آنلاین پیش‌ثبت‌نام دبیرستان دوره دوم امام امیرالمؤمنین (ع) با دریافت کد پیگیری.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body data-page="pre-registration">
+  <div class="topbar" id="site-topbar"></div>
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <div class="breadcrumb"><a href="/">صفحه اصلی</a><span>/</span><span>پیش‌ثبت‌نام</span></div>
+        <h1>پیش‌ثبت‌نام مدارس</h1>
+        <p>برای ثبت درخواست، فرم زیر را با دقت تکمیل کنید. پس از ثبت، یک کد پیگیری به شما نمایش داده می‌شود.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="grid grid--2" style="align-items:start">
+          <div class="form-card">
+            <h2>فرم پیش‌ثبت‌نام</h2>
+            <p class="help-text" id="pre-registration-notice"></p>
+            <div class="alert" id="form-alert" hidden></div>
+            <div class="tracking-result" id="form-result" hidden></div>
+
+            <form id="pre-registration-form" novalidate>
+              <div class="form-grid">
+                <div class="form-row" data-field="student_name">
+                  <label for="student-name">نام و نام خانوادگی دانش‌آموز *</label>
+                  <input id="student-name" name="student_name" type="text" autocomplete="name" required>
+                  <span class="form-row__error"></span>
+                </div>
+
+                <div class="form-row" data-field="mobile">
+                  <label for="student-mobile">شماره موبایل دانش‌آموز یا ولی *</label>
+                  <input id="student-mobile" name="mobile" type="tel" inputmode="numeric" placeholder="09123456789" required>
+                  <span class="hint">عدد انگلیسی یا فارسی؛ نمونه: ۰۹۱۲۳۴۵۶۷۸۹</span>
+                  <span class="form-row__error"></span>
+                </div>
+
+                <div class="form-row" data-field="grade_title">
+                  <label for="student-grade">پایه تحصیلی موردنظر *</label>
+                  <select id="student-grade" name="grade_title" required>
+                    <option value="">— انتخاب کنید —</option>
+                  </select>
+                  <span class="form-row__error"></span>
+                </div>
+
+                <div class="form-row" data-field="field_title">
+                  <label for="student-field">رشته تحصیلی موردنظر *</label>
+                  <select id="student-field" name="field_title" required>
+                    <option value="">— انتخاب کنید —</option>
+                  </select>
+                  <span class="form-row__error"></span>
+                </div>
+
+                <div class="form-row" data-field="parent_name">
+                  <label for="parent-name">نام و نام خانوادگی ولی *</label>
+                  <input id="parent-name" name="parent_name" type="text" required>
+                  <span class="form-row__error"></span>
+                </div>
+
+                <div class="form-row" data-field="note">
+                  <label for="student-note">توضیحات تکمیلی (اختیاری)</label>
+                  <textarea id="student-note" name="note"></textarea>
+                  <span class="form-row__error"></span>
+                </div>
+
+                <div class="form-row" data-field="agree">
+                  <label class="checkbox-row">
+                    <input type="checkbox" name="agree">
+                    <span>صحت اطلاعات واردشده را تأیید می‌کنم و با ثبت آن برای بررسی پیش‌ثبت‌نام موافقم. *</span>
+                  </label>
+                  <span class="form-row__error"></span>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top:1rem">
+                <button class="btn btn--turquoise" type="submit">ثبت درخواست پیش‌ثبت‌نام</button>
+                <a class="btn btn--ghost" href="/track">پیگیری درخواست قبلی</a>
+              </div>
+            </form>
+          </div>
+
+          <aside>
+            <div class="panel" style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:1.2rem">
+              <h3>چه چیزی ثبت می‌شود؟</h3>
+              <ul>
+                <li>نام دانش‌آموز و نام ولی</li>
+                <li>شماره موبایل برای پیگیری</li>
+                <li>پایه و رشته موردنظر</li>
+                <li>توضیحات اختیاری شما</li>
+              </ul>
+              <h3 style="margin-top:1rem">حریم خصوصی</h3>
+              <p class="help-text">
+                اطلاعات شما فقط در اختیار مدرسه قرار می‌گیرد و در سایت برای بازدیدکنندگان نمایش داده نمی‌شود.
+                برای پیگیری، کد پیگیری و شماره موبایل خود را وارد می‌کنید.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/site.js"></script>
+  <script src="/assets/js/forms.js"></script>
+</body>
+</html>
