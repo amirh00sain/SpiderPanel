@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>نصب اولیه | پنل مدیریت دبیرستان</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/admin/assets/css/admin.css">
+</head>
+<body>
+  <main class="login-shell">
+    <div class="login-card">
+      <h1>ساخت حساب مدیر ارشد</h1>
+      <p class="sub">این صفحه فقط یک بار و پیش از ساخت اولین مدیر در دسترس است.</p>
+
+      <div class="alert" id="setup-alert" hidden></div>
+
+      <form id="setup-form" novalidate>
+        <div class="form-row">
+          <label for="setup-token">توکن نصب (ADMIN_SETUP_TOKEN)</label>
+          <input id="setup-token" name="setup_token" type="password" autocomplete="off" required>
+          <span class="hint">این توکن در فایل .env سرور تعیین می‌شود و هرگز در سایت نمایش داده نمی‌شود.</span>
+          <span class="form-row__error"></span>
+        </div>
+        <div class="form-row">
+          <label for="setup-username">نام کاربری مدیر</label>
+          <input id="setup-username" name="username" type="text" autocomplete="username" required>
+          <span class="form-row__error"></span>
+        </div>
+        <div class="form-row">
+          <label for="setup-name">نام و نام خانوادگی</label>
+          <input id="setup-name" name="full_name" type="text">
+        </div>
+        <div class="form-row">
+          <label for="setup-password">رمز عبور</label>
+          <input id="setup-password" name="password" type="password" autocomplete="new-password" required>
+          <span class="hint">حداقل ۱۰ نویسه و شامل حرف و رقم.</span>
+          <span class="form-row__error"></span>
+        </div>
+        <div class="form-actions" style="margin-top:1rem">
+          <button class="btn btn--turquoise btn--block" type="submit">ساخت حساب مدیر</button>
+        </div>
+      </form>
+
+      <p class="help-text" style="margin-top:1rem">
+        روش جایگزین از خط فرمان: <span class="mono">npm run admin:create -- --username admin --password "..."</span>
+      </p>
+      <p class="help-text"><a href="/admin/login">بازگشت به صفحه ورود</a></p>
+    </div>
+  </main>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/admin/assets/js/setup.js"></script>
+</body>
+</html>

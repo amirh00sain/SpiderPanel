@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ورود مدیران | پنل مدیریت دبیرستان</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/admin/assets/css/admin.css">
+</head>
+<body>
+  <main class="login-shell">
+    <div class="login-card">
+      <h1>ورود به پنل مدیریت</h1>
+      <p class="sub">این بخش فقط برای مدیران مجاز مدرسه است.</p>
+
+      <div class="alert" id="login-alert" hidden></div>
+      <div class="alert alert--info" id="setup-hint" hidden></div>
+
+      <form id="admin-login-form" novalidate>
+        <div class="form-row">
+          <label for="username">نام کاربری</label>
+          <input id="username" name="username" type="text" autocomplete="username" required>
+          <span class="form-row__error"></span>
+        </div>
+        <div class="form-row">
+          <label for="password">رمز عبور</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <span class="form-row__error"></span>
+        </div>
+        <div class="form-actions" style="margin-top:1rem">
+          <button class="btn btn--turquoise btn--block" type="submit">ورود به پنل</button>
+        </div>
+      </form>
+
+      <p class="help-text" style="margin-top:1rem">
+        در صورت فراموشی رمز عبور، از طریق خط فرمان سرور با دستور
+        <span class="mono">node scripts/create-admin.js --username &lt;نام کاربری&gt;</span> رمز جدید تعیین کنید.
+      </p>
+      <p class="help-text"><a href="/">بازگشت به سایت</a></p>
+    </div>
+  </main>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/admin/assets/js/login.js"></script>
+</body>
+</html>

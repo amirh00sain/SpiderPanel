@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>دبیرستان دوره دوم امام امیرالمؤمنین (ع)</title>
+  <meta name="description" content="وب‌سایت رسمی دبیرستان دوره دوم امام امیرالمؤمنین (ع) — معرفی مدرسه، پایه‌ها و رشته‌های تحصیلی، اخبار، گالری و پیش‌ثبت‌نام آنلاین.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body data-page="home">
+  <div class="topbar" id="site-topbar"></div>
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <section class="hero" id="home-hero" aria-label="معرفی کوتاه مدرسه"></section>
+
+    <section class="section" data-section="about">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">درباره مدرسه</span>
+            <h2 id="home-about-title">معرفی مدرسه</h2>
+          </div>
+          <a class="section-head__link" href="/about">معرفی کامل مدرسه ←</a>
+        </div>
+        <div class="grid grid--2">
+          <div>
+            <div id="about-short" class="prose"></div>
+          </div>
+          <div>
+            <div id="about-long" class="prose"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--muted" data-section="news">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">اطلاعیه‌های مدرسه</span>
+            <h2>اطلاعیه‌های مهم</h2>
+          </div>
+          <a class="section-head__link" href="/news">همه اخبار ←</a>
+        </div>
+        <div class="grid grid--2" id="announcements-list"></div>
+      </div>
+    </section>
+
+    <section class="section" data-section="grades">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">پایه‌های تحصیلی</span>
+            <h2>پایه‌های دهم، یازدهم و دوازدهم</h2>
+          </div>
+          <a class="section-head__link" href="/grades">جزئیات پایه‌ها ←</a>
+        </div>
+        <div class="grid grid--3" data-render="grades"></div>
+      </div>
+    </section>
+
+    <section class="section section--muted" data-section="fields">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">رشته‌های تحصیلی</span>
+            <h2>رشته‌های قابل انتخاب</h2>
+          </div>
+          <a class="section-head__link" href="/fields">معرفی رشته‌ها ←</a>
+        </div>
+        <div class="grid grid--3" data-render="fields"></div>
+      </div>
+    </section>
+
+    <section class="section" data-section="staff">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">کادر مدرسه</span>
+            <h2>کادر مدیریتی و دبیران</h2>
+          </div>
+          <a class="section-head__link" href="/staff">فهرست کامل کادر ←</a>
+        </div>
+        <div class="grid grid--4" data-render="staff"></div>
+      </div>
+    </section>
+
+    <section class="section section--muted" data-section="achievements">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">افتخارات</span>
+            <h2>افتخارات و دستاوردها</h2>
+          </div>
+          <a class="section-head__link" href="/achievements">همه افتخارات ←</a>
+        </div>
+        <div class="grid grid--2" data-render="achievements"></div>
+      </div>
+    </section>
+
+    <section class="section" data-section="news">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">اخبار</span>
+            <h2>آخرین اخبار مدرسه</h2>
+          </div>
+          <a class="section-head__link" href="/news">آرشیو اخبار ←</a>
+        </div>
+        <div class="news-list" id="news-list"></div>
+      </div>
+    </section>
+
+    <section class="section section--muted" data-section="gallery">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">گالری تصاویر</span>
+            <h2>تصاویری از مدرسه</h2>
+          </div>
+          <a class="section-head__link" href="/gallery">گالری کامل ←</a>
+        </div>
+        <div data-render="gallery"></div>
+      </div>
+    </section>
+
+    <section class="section" data-section="faqs">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">پرسش‌های متداول</span>
+            <h2>پرسش‌ها و پاسخ‌ها</h2>
+          </div>
+          <a class="section-head__link" href="/faq">صفحه پرسش‌های متداول ←</a>
+        </div>
+        <div data-render="faqs"></div>
+      </div>
+    </section>
+
+    <section class="section section--navy" data-section="contact">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head__text">
+            <span class="section__kicker">تماس با مدرسه</span>
+            <h2>راه‌های ارتباطی</h2>
+            <p id="contact-notice"></p>
+          </div>
+          <a class="section-head__link" href="/contact" style="color:#e0a800">صفحه ارتباط با ما ←</a>
+        </div>
+        <div class="contact-grid" id="contact-grid"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="form-card" style="text-align:center">
+          <h2>پیش‌ثبت‌نام سال تحصیلی جدید</h2>
+          <p>فرم پیش‌ثبت‌نام را تکمیل کنید و کد پیگیری درخواست خود را دریافت کنید.</p>
+          <div class="form-actions" style="justify-content:center">
+            <a class="btn btn--gold" href="/pre-registration">ورود به فرم پیش‌ثبت‌نام</a>
+            <a class="btn btn--ghost" href="/track">پیگیری درخواست</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/site.js"></script>
+  <script src="/assets/js/forms.js"></script>
+</body>
+</html>
