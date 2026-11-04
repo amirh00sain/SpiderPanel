@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 720" fill="none">
+  <defs>
+    <linearGradient id="wire" x1="35" y1="600" x2="230" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff263d" stop-opacity=".12"/>
+      <stop offset=".5" stop-color="#ff263d" stop-opacity=".7"/>
+      <stop offset="1" stop-color="#ff263d" stop-opacity=".2"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g stroke="url(#wire)" stroke-width=".8">
+    <path d="M-18 595 55 559 121 515 184 475 278 447M-10 645 59 592 115 554 172 514 266 486M-18 530 51 514 105 484 158 449 270 420M-16 465 45 457 91 430 137 392 255 371M45 559 35 514 51 457 74 403 95 338M121 515 105 484 91 430 95 338 114 262M184 475 158 449 137 392 147 324 166 253M278 447 255 371 232 309 208 249 183 190M-10 645 45 559 105 484 158 449 232 428M-18 530 59 592 121 515 184 475 255 371M51 457 105 484 158 449 208 408 255 371M74 403 137 392 183 420 232 428M95 338 147 324 208 349 255 371M114 262 166 253 208 249 232 309M147 324 183 190 166 253M208 249 236 150 183 190M166 253 236 150 260 92"/>
+  </g>
+  <g fill="#ff3349" filter="url(#glow)" opacity=".62">
+    <circle cx="51" cy="457" r="1.8"/><circle cx="95" cy="338" r="1.5"/><circle cx="147" cy="324" r="2"/>
+    <circle cx="183" cy="190" r="1.8"/><circle cx="208" cy="249" r="1.6"/><circle cx="158" cy="449" r="1.7"/>
+  </g>
+</svg>

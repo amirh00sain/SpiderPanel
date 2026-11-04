@@ -1,0 +1,14 @@
+{
+  "name": "spiderpanel-websocket-relay",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  },
+  "scripts": {
+    "build": "node -e \"process.exit(0)\""
+  }
+}

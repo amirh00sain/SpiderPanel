@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 500" role="img" aria-labelledby="title desc">
+<title id="title">SpiderPanel — network operations, beautifully connected</title>
+<desc id="desc">A dark, glass-inspired SpiderPanel hero with animated network paths and a dashboard preview.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#08090d"/><stop offset=".58" stop-color="#12121b"/><stop offset="1" stop-color="#190b12"/></linearGradient>
+  <linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff747d"/><stop offset=".48" stop-color="#f33e52"/><stop offset="1" stop-color="#a90f2f"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#23232f" stop-opacity=".95"/><stop offset="1" stop-color="#111118" stop-opacity=".82"/></linearGradient>
+  <linearGradient id="beam"><stop stop-color="#ff4a5f" stop-opacity="0"/><stop offset=".5" stop-color="#ff4a5f"/><stop offset="1" stop-color="#ff4a5f" stop-opacity="0"/></linearGradient>
+  <radialGradient id="glow"><stop stop-color="#f43f5e" stop-opacity=".24"/><stop offset="1" stop-color="#f43f5e" stop-opacity="0"/></radialGradient>
+  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#8a8b9a" stroke-opacity=".10" stroke-width="1"/></pattern>
+  <filter id="blur"><feGaussianBlur stdDeviation="18"/></filter>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000" flood-opacity=".4"/></filter>
+  <style>
+    .drift{animation:drift 8s ease-in-out infinite}.float2{animation:drift 10s ease-in-out -3s infinite}.dash{stroke-dasharray:7 15;animation:flow 5s linear infinite}.pulse{transform-box:fill-box;transform-origin:center;animation:pulse 2.8s ease-in-out infinite}.blink{animation:blink 2.1s ease-in-out infinite}
+    @keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}@keyframes flow{to{stroke-dashoffset:-110}}@keyframes pulse{0%,100%{opacity:.65;transform:scale(.88)}50%{opacity:1;transform:scale(1.18)}}@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+    @media (prefers-reduced-motion:reduce){.drift,.float2,.dash,.pulse,.blink{animation:none}}
+  </style>
+</defs>
+<rect x="1" y="1" width="1398" height="498" rx="30" fill="url(#bg)" stroke="#38303a" stroke-width="2"/>
+<rect x="2" y="2" width="1396" height="496" rx="30" fill="url(#grid)"/>
+<circle cx="980" cy="210" r="320" fill="url(#glow)"/>
+<circle cx="1310" cy="455" r="190" fill="#b31332" opacity=".08" filter="url(#blur)"/>
+<g fill="none" stroke-linecap="round">
+  <path d="M-30 420 C220 345 370 485 600 360 S1010 180 1450 255" stroke="#ff4a5f" stroke-opacity=".18" stroke-width="2"/>
+  <path class="dash" d="M-30 420 C220 345 370 485 600 360 S1010 180 1450 255" stroke="#ff5a6b" stroke-opacity=".82" stroke-width="2"/>
+  <path d="M520 0 C700 150 730 250 880 500" stroke="#8b91a6" stroke-opacity=".12" stroke-width="1.5"/>
+</g>
+<g transform="translate(74 66)">
+  <g transform="translate(0 0)">
+    <circle cx="25" cy="24" r="24" fill="#291019" stroke="#803044"/>
+    <g fill="none" stroke="url(#red)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M25 16L14 9 6 13M25 16L36 9 44 13M20 22L9 22 4 30M30 22L41 22 46 30M20 29L13 37 7 36M30 29L37 37 43 36"/>
+      <path d="M18 18Q25 12 32 18L34 28 25 35 16 28Z" fill="#f43f5e" fill-opacity=".2"/>
+      <circle cx="22" cy="22" r="1.6" fill="#fff" stroke="none"/><circle cx="28" cy="22" r="1.6" fill="#fff" stroke="none"/>
+    </g>
+  </g>
+  <text x="65" y="21" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="800" letter-spacing="4">SPIDER<tspan fill="#ff596d">PANEL</tspan></text>
+  <text x="65" y="43" fill="#9293a5" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="2.5">CONTROL PLANE · ONE PLACE</text>
+</g>
+<g transform="translate(76 165)">
+  <text x="0" y="0" fill="#ff6677" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="800" letter-spacing="3.6">MANAGE YOUR NETWORK</text>
+  <text x="-2" y="70" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="59" font-weight="900" letter-spacing="-2">One panel.</text>
+  <text x="-2" y="132" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="59" font-weight="900" letter-spacing="-2">Every connection.</text>
+  <text x="0" y="171" fill="#b6b7c6" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="18">Users · subscriptions · nodes · scanners · Telegram</text>
+  <g transform="translate(0 208)" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="800" letter-spacing=".5">
+    <rect width="158" height="37" rx="18.5" fill="#25141c" stroke="#7c2a3b"/><circle cx="19" cy="18.5" r="4" fill="#ff566b"/><text x="32" y="23" fill="#ffe6e9">SUBSCRIPTIONS</text>
+    <rect x="170" width="126" height="37" rx="18.5" fill="#171b26" stroke="#344154"/><circle cx="189" cy="18.5" r="4" fill="#62d8f3"/><text x="202" y="23" fill="#d9f8ff">NODES</text>
+    <rect x="308" width="143" height="37" rx="18.5" fill="#211927" stroke="#51304f"/><circle cx="327" cy="18.5" r="4" fill="#d879ff"/><text x="340" y="23" fill="#f6e5ff">TELEGRAM</text>
+  </g>
+</g>
+<g class="drift" filter="url(#shadow)" transform="translate(790 84)">
+  <rect width="535" height="336" rx="25" fill="url(#glass)" stroke="#55505f" stroke-opacity=".85" stroke-width="1.5"/>
+  <path d="M1 62H534" stroke="#393743"/>
+  <circle cx="28" cy="30" r="4" fill="#ff596b"/><circle cx="43" cy="30" r="4" fill="#ffbd5e"/><circle cx="58" cy="30" r="4" fill="#62d8f3"/>
+  <text x="82" y="35" fill="#dfe0e8" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700">SYSTEM OVERVIEW</text>
+  <g transform="translate(24 84)" font-family="Inter,Arial,sans-serif">
+    <rect width="142" height="77" rx="14" fill="#151720" stroke="#383b49"/><text x="16" y="25" fill="#9297a9" font-size="10" font-weight="700" letter-spacing="1">ACCOUNTS</text><text x="16" y="54" fill="#fff" font-size="25" font-weight="800">Manage</text><circle cx="117" cy="20" r="4" fill="#ff566b" class="pulse"/>
+    <rect x="158" width="142" height="77" rx="14" fill="#151720" stroke="#383b49"/><text x="174" y="25" fill="#9297a9" font-size="10" font-weight="700" letter-spacing="1">SUBSCRIPTIONS</text><text x="174" y="54" fill="#fff" font-size="22" font-weight="800">Deliver</text><circle cx="275" cy="20" r="4" fill="#62d8f3" class="pulse"/>
+    <rect x="316" width="170" height="77" rx="14" fill="#151720" stroke="#383b49"/><text x="332" y="25" fill="#9297a9" font-size="10" font-weight="700" letter-spacing="1">AUTOMATION</text><text x="332" y="54" fill="#fff" font-size="22" font-weight="800">Telegram</text><circle cx="461" cy="20" r="4" fill="#d879ff" class="pulse"/>
+  </g>
+  <g transform="translate(24 183)">
+    <rect width="487" height="125" rx="16" fill="#0e1119" stroke="#2f3443"/>
+    <text x="17" y="24" fill="#aeb3c5" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">NETWORK ACTIVITY</text>
+    <g stroke="#282d3b" stroke-width="1"><path d="M18 48H468M18 72H468M18 96H468"/></g>
+    <path d="M18 94 C56 89 69 56 112 68 S160 105 196 77 S249 42 281 60 S325 92 364 56 S424 54 468 38" fill="none" stroke="#ff556a" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M18 94 C56 89 69 56 112 68 S160 105 196 77 S249 42 281 60 S325 92 364 56 S424 54 468 38 L468 109H18Z" fill="#f43f5e" opacity=".08"/>
+    <circle cx="364" cy="56" r="5" fill="#ff7382" stroke="#ffb0b8" stroke-width="2" class="pulse"/>
+    <circle cx="281" cy="60" r="3.2" fill="#67dff7" class="blink"/>
+  </g>
+</g>
+<text x="1320" y="469" text-anchor="end" fill="#7f8092" font-family="Inter,Arial,sans-serif" font-size="11" letter-spacing="2">BUILT FOR THE WAY YOU DEPLOY</text>
+</svg>

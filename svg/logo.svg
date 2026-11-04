@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 170" role="img" aria-labelledby="title desc">
+<title id="title">SpiderPanel logo</title><desc id="desc">SpiderPanel red spider-inspired network symbol and wordmark on a dark premium panel.</desc>
+<defs><linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff8995"/><stop offset=".52" stop-color="#ff455f"/><stop offset="1" stop-color="#a80d2b"/></linearGradient><radialGradient id="halo"><stop stop-color="#f33e58" stop-opacity=".3"/><stop offset="1" stop-color="#f33e58" stop-opacity="0"/></radialGradient><filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter><style>.breathe{transform-box:fill-box;transform-origin:center;animation:breathe 3.2s ease-in-out infinite}.orbit{stroke-dasharray:5 9;animation:flow 12s linear infinite}@keyframes breathe{0%,100%{opacity:.88;transform:scale(.98)}50%{opacity:1;transform:scale(1.03)}}@keyframes flow{to{stroke-dashoffset:-140}}@media(prefers-reduced-motion:reduce){.breathe,.orbit{animation:none}}</style></defs>
+<rect x="1" y="1" width="518" height="168" rx="24" fill="#090a0f" stroke="#3c3039" stroke-width="2"/>
+<circle cx="87" cy="85" r="65" fill="url(#halo)"/>
+<circle cx="87" cy="85" r="49" fill="#151018" stroke="#743042" stroke-width="1.5"/>
+<circle cx="87" cy="85" r="54" fill="none" stroke="#db4058" stroke-opacity=".4" stroke-width="1.2" class="orbit"/>
+<g class="breathe" fill="none" stroke="url(#red)" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+  <path d="M78 74L59 57 44 62M96 74L115 57 130 62M75 83L55 82 41 95M99 83L119 82 133 95M75 96L61 112 47 112M99 96L113 112 127 112"/>
+  <path d="M71 78Q87 63 103 78L108 98 87 114 66 98Z" fill="#e93652" fill-opacity=".22"/>
+  <circle cx="81" cy="83" r="2.5" fill="#fff" stroke="none"/><circle cx="93" cy="83" r="2.5" fill="#fff" stroke="none"/>
+</g>
+<text x="160" y="77" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="31" font-weight="900" letter-spacing="1.5">SPIDER<tspan fill="#ff566d">PANEL</tspan></text>
+<text x="162" y="105" fill="#a3a5b3" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="3.1">CONTROL · CONNECT · MANAGE</text>
+<rect x="162" y="121" width="132" height="24" rx="12" fill="#29151e" stroke="#733044"/><circle cx="176" cy="133" r="3" fill="#ff5a70"/><text x="187" y="137" fill="#ffe0e5" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="800" letter-spacing="1">PORT 8080</text>
+<text x="478" y="151" text-anchor="end" fill="#595b6a" font-family="Inter,Arial,sans-serif" font-size="9" letter-spacing="1.4">SPIDERPANEL</text>
+</svg>

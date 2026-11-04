@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 650" role="img" aria-labelledby="title desc">
+<title id="title">SpiderPanel animated 3D network globe</title>
+<desc id="desc">A stylized 3D globe with animated routes, network nodes and orbiting signals. This is an illustrative visual, not live telemetry.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#090b12"/><stop offset=".55" stop-color="#10131d"/><stop offset="1" stop-color="#160d15"/></linearGradient>
+  <radialGradient id="ocean" cx="30%" cy="25%" r="80%"><stop stop-color="#24465a"/><stop offset=".44" stop-color="#142637"/><stop offset=".78" stop-color="#0e1a29"/><stop offset="1" stop-color="#080b14"/></radialGradient>
+  <linearGradient id="land" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3e7b83"/><stop offset=".5" stop-color="#28535d"/><stop offset="1" stop-color="#183642"/></linearGradient>
+  <linearGradient id="route" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#ff566b" stop-opacity=".1"/><stop offset=".5" stop-color="#ff566b"/><stop offset="1" stop-color="#67e4ff"/></linearGradient>
+  <radialGradient id="aura"><stop stop-color="#ed344f" stop-opacity=".17"/><stop offset="1" stop-color="#ed344f" stop-opacity="0"/></radialGradient>
+  <clipPath id="sphere"><circle cx="880" cy="325" r="220"/></clipPath>
+  <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="22"/></filter>
+  <pattern id="stars" width="83" height="79" patternUnits="userSpaceOnUse"><circle cx="6" cy="17" r="1" fill="#b2d9f0" opacity=".48"/><circle cx="48" cy="62" r=".8" fill="#fff" opacity=".34"/><circle cx="73" cy="28" r=".7" fill="#ff9fac" opacity=".45"/></pattern>
+  <style>
+    .route{stroke-dasharray:8 13;animation:routeFlow 4.8s linear infinite}.route2{animation-delay:-2.4s}.orbit{transform-origin:880px 325px;animation:orbit 18s linear infinite}.orbitReverse{transform-origin:880px 325px;animation:orbit 26s linear infinite reverse}.pulse{transform-box:fill-box;transform-origin:center;animation:pulse 2.2s ease-in-out infinite}.pulse2{animation-delay:-1.1s}.turn{transform-origin:880px 325px;animation:turn 36s linear infinite}.shine{animation:shine 3s ease-in-out infinite}.float{animation:float 6s ease-in-out infinite}
+    @keyframes routeFlow{to{stroke-dashoffset:-126}}@keyframes orbit{to{transform:rotate(360deg)}}@keyframes turn{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:.6;transform:scale(.78)}50%{opacity:1;transform:scale(1.28)}}@keyframes shine{0%,100%{opacity:.4}50%{opacity:1}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+    @media (prefers-reduced-motion:reduce){.route,.route2,.orbit,.orbitReverse,.pulse,.pulse2,.turn,.shine,.float{animation:none}}
+  </style>
+</defs>
+<rect x="1" y="1" width="1398" height="648" rx="30" fill="url(#bg)" stroke="#343442" stroke-width="2"/>
+<rect x="2" y="2" width="1396" height="646" rx="29" fill="url(#stars)" opacity=".72"/>
+<circle cx="880" cy="325" r="320" fill="url(#aura)"/>
+<text x="64" y="77" fill="#ff667a" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="12" font-weight="800" letter-spacing="3.5">GLOBAL NETWORK</text>
+<text x="62" y="128" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="39" font-weight="900">Your network,</text>
+<text x="62" y="171" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="39" font-weight="900">at a glance.</text>
+<text x="64" y="210" fill="#9ea7ba" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">An animated 3D topology view</text>
+<text x="64" y="233" fill="#9ea7ba" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">for the SpiderPanel experience.</text>
+<g transform="translate(64 278)" font-family="Inter,Segoe UI,Arial,sans-serif">
+  <rect width="238" height="76" rx="14" fill="#151823" fill-opacity=".9" stroke="#35394a"/>
+  <circle cx="23" cy="24" r="4" fill="#ff586b" class="pulse"/><text x="39" y="28" fill="#c3c7d3" font-size="10" font-weight="800" letter-spacing="1.4">VISUALIZED PATHS</text><text x="20" y="56" fill="#fff" font-size="16" font-weight="800">Animated route arcs</text>
+  <rect y="91" width="238" height="76" rx="14" fill="#151823" fill-opacity=".9" stroke="#35394a"/>
+  <circle cx="23" cy="115" r="4" fill="#67e2fa" class="pulse pulse2"/><text x="39" y="119" fill="#c3c7d3" font-size="10" font-weight="800" letter-spacing="1.4">GLOBE LAYERS</text><text x="20" y="147" fill="#fff" font-size="16" font-weight="800">Grid · nodes · orbit</text>
+</g>
+<g transform="translate(64 492)" font-family="Inter,Segoe UI,Arial,sans-serif">
+  <path d="M0 0H238" stroke="#343846"/>
+  <circle cx="6" cy="25" r="3" fill="#ff596d"/><text x="18" y="29" fill="#a7adbe" font-size="12">Illustrative animation</text>
+  <text x="0" y="55" fill="#71798b" font-size="11">No live traffic feed is implied.</text>
+</g>
+<!-- Orbital rings behind the globe -->
+<g fill="none" stroke="#8ca7c5" stroke-opacity=".25">
+  <ellipse cx="880" cy="325" rx="274" ry="96" transform="rotate(-26 880 325)" stroke-width="1.2"/>
+  <ellipse cx="880" cy="325" rx="286" ry="123" transform="rotate(31 880 325)" stroke-width="1.1" stroke-dasharray="3 10"/>
+  <circle cx="880" cy="325" r="246" stroke="#ff5269" stroke-opacity=".18" stroke-dasharray="2 11"/>
+</g>
+<circle cx="880" cy="325" r="230" fill="#0b1522" stroke="#70d9f2" stroke-opacity=".3" stroke-width="2"/>
+<circle cx="880" cy="325" r="220" fill="url(#ocean)" stroke="#8be8ff" stroke-opacity=".5" stroke-width="1.5"/>
+<g clip-path="url(#sphere)">
+  <circle cx="880" cy="325" r="220" fill="url(#ocean)"/>
+  <g fill="none" stroke="#70bfd3" stroke-opacity=".2" stroke-width="1.2">
+    <ellipse cx="880" cy="325" rx="207" ry="65"/><ellipse cx="880" cy="325" rx="214" ry="120"/><ellipse cx="880" cy="325" rx="217" ry="171"/>
+    <ellipse cx="880" cy="325" rx="60" ry="217"/><ellipse cx="880" cy="325" rx="125" ry="217"/><ellipse cx="880" cy="325" rx="178" ry="217"/>
+    <path d="M660 325H1100M675 260Q880 294 1085 260M675 390Q880 356 1085 390"/>
+  </g>
+  <g fill="url(#land)" stroke="#5eb0bd" stroke-opacity=".42" stroke-width="1.1">
+    <!-- Stylized continents: deliberately illustrative rather than a geographic basemap. -->
+    <path d="M710 187l18-17 28 3 13 12 27 3 14 18-9 15-23 4-9 18-18 5-4 22-17 7-4 20-17 8-7 25-13-9-2-29-14-13 8-27-10-23 8-27 19-14z"/>
+    <path d="M776 321l22 6 14 19-7 22-12 10 2 22-13 27-8 34-14 26-11-16 2-33-11-29 6-21-8-20 12-19z"/>
+    <path d="M835 176l23-11 21 8 12 16 24-4 20 13 16-4 23 18-3 16-23 3-16 16-20-3-18 18-18-4-15 17-18-8-10-21-18-6-6-25-17-6 4-21z"/>
+    <path d="M852 273l25-12 29 9 13 18-3 26-14 19-7 29-18 30-14-11-4-25-13-20 3-30-10-14z"/>
+    <path d="M967 340l22-9 22 10 20-5 25 17-4 17-23 9-17 19-21-4-15-20-22-9-1-15z"/>
+    <path d="M1004 231l25-14 25 7 15 17 21 5 9 17-11 15-21-3-15 13-23-10-15 7-18-15 4-17-13-9z"/>
+    <path d="M1037 418l14-8 17 10-4 21-13 15-11-13z"/>
+  </g>
+  <!-- Route arcs are clipped to the globe, with traveling dash patterns. -->
+  <g fill="none" stroke-linecap="round" filter="url(#glow)">
+    <path d="M744 269Q821 165 920 252" stroke="url(#route)" stroke-width="2.5" class="route"/>
+    <path d="M920 252Q1005 203 1037 291" stroke="#65e5ff" stroke-opacity=".9" stroke-width="2.2" class="route route2"/>
+    <path d="M744 269Q815 390 866 374" stroke="#ff5b6c" stroke-width="2.4" class="route route2"/>
+    <path d="M866 374Q947 415 1037 291" stroke="url(#route)" stroke-width="2.1" class="route"/>
+    <path d="M920 252Q899 327 866 374" stroke="#86dff2" stroke-opacity=".82" stroke-width="1.8" class="route"/>
+  </g>
+  <g filter="url(#glow)">
+    <g><circle cx="744" cy="269" r="9" fill="#ff4f68" fill-opacity=".15" class="pulse"/><circle cx="744" cy="269" r="4.5" fill="#ff6779" stroke="#ffe0e5" stroke-width="1"/></g>
+    <g><circle cx="920" cy="252" r="10" fill="#64e4ff" fill-opacity=".14" class="pulse pulse2"/><circle cx="920" cy="252" r="4.5" fill="#76e7ff" stroke="#e4fbff" stroke-width="1"/></g>
+    <g><circle cx="866" cy="374" r="10" fill="#ff4f68" fill-opacity=".15" class="pulse pulse2"/><circle cx="866" cy="374" r="4.5" fill="#ff7181" stroke="#ffe0e5" stroke-width="1"/></g>
+    <g><circle cx="1037" cy="291" r="10" fill="#64e4ff" fill-opacity=".14" class="pulse"/><circle cx="1037" cy="291" r="4.5" fill="#76e7ff" stroke="#e4fbff" stroke-width="1"/></g>
+  </g>
+  <circle cx="780" cy="291" r="2.5" fill="#e7fbff" class="shine"/><circle cx="982" cy="330" r="2.5" fill="#ffd8de" class="shine"/>
+  <rect x="660" y="105" width="440" height="440" fill="url(#aura)" opacity=".4"/>
+</g>
+<!-- Foreground orbiting signal -->
+<g class="orbit">
+  <circle cx="880" cy="79" r="5" fill="#ff6377" filter="url(#glow)"/>
+  <path d="M880 84l0 20" stroke="#ff6377" stroke-opacity=".5" stroke-dasharray="2 4"/>
+</g>
+<g class="orbitReverse"><circle cx="880" cy="571" r="4" fill="#7deaff" filter="url(#glow)"/></g>
+<g transform="translate(1132 207)" class="float" font-family="Inter,Segoe UI,Arial,sans-serif">
+  <rect width="204" height="88" rx="16" fill="#151923" fill-opacity=".96" stroke="#3b4555"/>
+  <text x="18" y="25" fill="#929bac" font-size="10" font-weight="800" letter-spacing="1.4">ROUTE SIGNAL</text>
+  <circle cx="19" cy="51" r="4" fill="#ff5b70"/><text x="32" y="55" fill="#eef2f8" font-size="13" font-weight="700">Node A</text>
+  <path d="M94 51h28" stroke="#687487" stroke-width="1.5" stroke-dasharray="3 4"/><path d="M116 46l7 5-7 5" stroke="#687487" fill="none"/>
+  <circle cx="139" cy="51" r="4" fill="#73e4fa"/><text x="152" y="55" fill="#eef2f8" font-size="13" font-weight="700">Node B</text>
+  <text x="18" y="75" fill="#717b8d" font-size="10">Illustrative · animated</text>
+</g>
+<text x="1336" y="610" text-anchor="end" fill="#717b8d" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="10" letter-spacing="1.5">SPIDERPANEL · NETWORK VISUALIZATION</text>
+</svg>

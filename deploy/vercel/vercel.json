@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "functions": {
+    "api/index.js": {
+      "memory": 1024,
+      "maxDuration": 300
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/_spider-health",
+      "destination": "/api/index?health=1"
+    },
+    {
+      "source": "/ws/vl/:uuid",
+      "destination": "/api/index?ws=1&uuid=:uuid"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/api/index"
+    }
+  ],
+  "trailingSlash": false,
+  "outputDirectory": "public"
+}

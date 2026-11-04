@@ -1,0 +1,3845 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SPiDER PANEL</title>
+<meta name="theme-color" content="#eef4fb">
+<script>
+/* تم قبل از اولین رندر اعمال می‌شود: پیش‌فرض روشن، بدون فلش شب→روز هنگام رفرش */
+(function(){
+  try{
+    if (localStorage.getItem("spider-theme-v2") === "dark"){
+      document.documentElement.setAttribute("data-theme","dark");
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m) m.setAttribute("content","#01091a");
+    }
+  }catch(e){}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="dns-prefetch" href="https://fonts.gstatic.com">
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+/* =========================================================
+   THEME VARIABLES
+   ========================================================= */
+:root{
+  color-scheme: dark;
+  --bg:#01091a; --bg2:#02142f;
+  --card:#031a3d; --card2:#052a5e;
+  --border:#0b4a96; --text:#eaf6ff; --muted:#8cc4f2;
+  --bright:#0a96fd; --bright2:#2db0fd; --bright3:#6fcbff; --deep:#0059b3;
+  --success:#22c55e; --danger:#ef4444; --orange:#f59e0b;
+  --accent-rgb:10,150,253; --accent2-rgb:45,176,253;
+
+  --btn-white-bg:linear-gradient(180deg,#0f82e6 0%,#0a5cb5 100%);
+  --btn-white-text:#d8f0ff;
+  --btn-white-border:rgba(45,176,253,.55);
+  --btn-white-shadow:0 4px 16px -6px rgba(10,150,253,.55), 0 0 14px -4px rgba(10,150,253,.32), inset 0 1px 0 rgba(255,255,255,.12), inset 0 -1px 0 rgba(0,0,0,.14);
+  --btn-icon-color:#8fd3ff;
+  --btn-icon-hover:#ffffff;
+
+  --box-bg:linear-gradient(180deg,#0a78d8 0%,#064c96 100%);
+  --box-border:rgba(111,203,255,.5);
+  --box-shadow:0 4px 16px -6px rgba(10,150,253,.5), 0 0 14px -4px rgba(10,150,253,.26), inset 0 1px 0 rgba(255,255,255,.16);
+  --box-text:#e6f5ff;
+  --box-muted:rgba(214,238,255,.78);
+  --box-icon:#a8e0ff;
+  --box-hl-bg:linear-gradient(180deg,#1397f6 0%,#0a6bc6 100%);
+  --box-hl-border:rgba(143,215,255,.65);
+
+  --fluffy-bg:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(45,176,253,.20), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(10,150,253,.24), transparent 55%),
+    linear-gradient(180deg,#031a3d 0%,#01112e 100%);
+  --fluffy-border:rgba(10,150,253,.34);
+  --fluffy-shadow:0 14px 40px -10px rgba(10,150,253,.42), 0 0 26px -6px rgba(10,150,253,.26), inset 0 1px 0 rgba(255,255,255,.09);
+
+  --input-bg:linear-gradient(180deg,#01112e,#010a1c);
+  --input-border:rgba(10,150,253,.28);
+  --sub-card-bg:linear-gradient(180deg,rgba(10,150,253,.12),rgba(10,150,253,.04));
+  --sub-card-border:rgba(10,150,253,.34);
+  --nav-bg:linear-gradient(180deg,rgba(3,26,61,.98),rgba(1,9,26,.99));
+  --nav-border:rgba(10,150,253,.42);
+  --nav-inactive:#6a9bcc;
+  --modal-bg:linear-gradient(180deg,#031a3d,#01112e);
+  --web-color:rgba(111,203,255,.035);
+  --web-fade:rgba(3,26,61,.95);
+
+  --body-gradient:
+    radial-gradient(ellipse 80% 38% at 100% 100%, rgba(46,181,253,.55) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 38% at 0% 100%, rgba(4,150,253,.42) 0%, transparent 70%),
+    radial-gradient(ellipse 30% 28% at 0% 52%, rgba(0,89,179,.30) 0%, transparent 75%),
+    linear-gradient(180deg,#01091a 0%,#000e24 36%,#001534 56%,#012a60 74%,#0152a8 87%,#0a8cf2 96%,#18a6ff 100%);
+  --body-before:
+    radial-gradient(circle at 86% 16%, rgba(10,90,180,.30) 0%, transparent 42%),
+    radial-gradient(circle at 10% 5%, rgba(32,173,253,.16) 0%, transparent 38%);
+
+  --hero-bg:linear-gradient(180deg,rgba(10,150,253,.10),rgba(10,150,253,.03));
+  --hero-border:rgba(10,150,253,.34);
+  --hero-shadow:0 8px 32px -10px rgba(10,150,253,.42), inset 0 1px 0 rgba(255,255,255,.07);
+
+  --toast-bg:linear-gradient(180deg,#ffffff,#e6f4ff);
+  --toast-text:#064c96;
+  --toast-shadow:0 10px 32px -6px rgba(255,255,255,.7), 0 0 22px -2px rgba(111,203,255,.85);
+
+  --radius:20px;
+  --brand-grad:linear-gradient(100deg,#6fcbff 0%,#0a96fd 30%,#2db0fd 60%,#6fcbff 100%);
+  --brand-sub-color:#7fcbff;
+
+  --wave-1: rgba(111,203,255,.26);
+  --wave-2: rgba(45,176,253,.18);
+}
+:root:not([data-theme=dark]){
+  color-scheme: light;
+  --bg:#eef4fb; --bg2:#e2ecf8;
+  --card:#ffffff; --card2:#f4f8fd;
+  --border:#cfe0f2; --text:#1769c2; --muted:#5a7fa3;
+  --bright:#1e6fdb; --bright2:#2b7fff; --bright3:#4a9eff; --deep:#0047cc;
+  --success:#16a34a; --danger:#dc2626; --orange:#d97706;
+  --accent-rgb:30,111,219; --accent2-rgb:43,127,255;
+
+  --btn-white-bg:linear-gradient(180deg,#ffffff 0%,#f0f6ff 100%);
+  --btn-white-text:#0d3d99;
+  --btn-white-border:rgba(30,111,219,.35);
+  --btn-white-shadow:0 6px 20px -4px rgba(30,111,219,.35), 0 2px 8px -2px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.9);
+  --btn-icon-color:#2b7fff;
+  --btn-icon-hover:#0d3d99;
+
+  --box-bg:#ffffff;
+  --box-border:rgba(30,111,219,.15);
+  --box-shadow:0 4px 14px -4px rgba(30,111,219,.15), inset 0 1px 0 rgba(255,255,255,.9);
+  --box-text:#0d3d99;
+  --box-muted:#5a7fa3;
+  --box-icon:#1e6fdb;
+  --box-hl-bg:linear-gradient(180deg,#ffffff 0%,#eaf2ff 100%);
+  --box-hl-border:rgba(30,111,219,.35);
+
+  --fluffy-bg:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(147,197,253,.22), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(96,165,250,.12), transparent 55%),
+    linear-gradient(180deg,#dbeafe 0%,#cfe3f8 100%);
+  --fluffy-border:rgba(43,127,255,.35);
+  --fluffy-shadow:0 14px 40px -12px rgba(30,111,219,.42), 0 0 26px -10px rgba(43,127,255,.22), inset 0 1px 0 rgba(255,255,255,.14);
+
+  --input-bg:linear-gradient(180deg,#f4f8fd,#eef4fb);
+  --input-border:rgba(30,111,219,.22);
+  --sub-card-bg:linear-gradient(180deg,rgba(43,127,255,.08),rgba(43,127,255,.03));
+  --sub-card-border:rgba(30,111,219,.28);
+  --nav-bg:linear-gradient(180deg,rgba(255,255,255,.99),rgba(240,246,253,1));
+  --nav-border:rgba(30,111,219,.25);
+  --nav-inactive:#7ea3d1;
+  --modal-bg:linear-gradient(180deg,#ffffff,#f4f8fd);
+  --web-color:rgba(30,111,219,.05);
+  --web-fade:rgba(238,244,251,.95);
+
+  --body-gradient:
+    radial-gradient(circle at 50% 0%, rgba(43,127,255,.14) 0%, transparent 45%),
+    radial-gradient(circle at 15% 90%, rgba(30,111,219,.1) 0%, transparent 45%),
+    linear-gradient(180deg,#eef4fb 0%,#e2ecf8 100%);
+  --body-before:
+    radial-gradient(circle at 80% 20%, rgba(74,158,255,.14) 0%, transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(43,127,255,.1) 0%, transparent 45%);
+
+  --hero-bg:linear-gradient(180deg,rgba(43,127,255,.08),rgba(43,127,255,.02));
+  --hero-border:rgba(30,111,219,.22);
+  --hero-shadow:0 8px 32px -12px rgba(30,111,219,.3), inset 0 1px 0 rgba(255,255,255,.8);
+
+  --toast-bg:linear-gradient(180deg,#1e6fdb,#0047cc);
+  --toast-text:#ffffff;
+  --toast-shadow:0 10px 32px -6px rgba(30,111,219,.6), 0 0 22px -2px rgba(74,158,255,.5);
+
+  --brand-grad:linear-gradient(100deg,#0d3d99 0%,#1e6fdb 30%,#2b7fff 60%,#0d3d99 100%);
+  --brand-sub-color:#0d3d99;
+
+  --wave-1: rgba(43,127,255,.18);
+  --wave-2: rgba(74,158,255,.12);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:Vazirmatn,system-ui,sans-serif;min-height:100vh;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  padding-bottom:110px;
+  text-rendering:optimizeSpeed;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background-image:var(--body-before),var(--body-gradient);
+}
+
+.web-overlay{
+  position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.32;
+  background-image:
+    repeating-conic-gradient(from 0deg at 50% -8%, var(--web-color) 0deg .5deg, transparent .5deg 22.5deg),
+    repeating-radial-gradient(circle at 50% -8%, transparent 0 65px, var(--web-color) 65px 66px);
+  -webkit-mask-image:radial-gradient(ellipse 95% 60% at 50% 0%, #000 0%, transparent 82%);
+  mask-image:radial-gradient(ellipse 95% 60% at 50% 0%, #000 0%, transparent 82%);
+  contain:strict;
+}
+@media (max-width:768px){ .web-overlay{display:none} }
+
+.container{max-width:840px;margin:0 auto;padding:20px 16px 0;position:relative;z-index:2}
+
+.tab-content{display:none;animation:tabIn .3s cubic-bezier(.16,1,.3,1)}
+.tab-content.active{display:block}
+@keyframes tabIn{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
+
+body[data-tab="tab-configs"] .hero-bar,
+body[data-tab="tab-configs"] .badge-row,
+body[data-tab="tab-configs"] .social-section,
+body[data-tab="tab-configs"] .team-brand,
+body[data-tab="tab-configs"] .site-foot { display: none; }
+
+.hero-bar{
+  position:relative;margin:0 0 8px;padding:18px 16px 16px;border-radius:24px;
+  background:var(--hero-bg);
+  border:1px solid var(--hero-border);
+  box-shadow:var(--hero-shadow);
+  overflow:hidden;
+  contain:layout style;
+}
+.hero-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;position:relative;z-index:2}
+
+.ctrl-btn{
+  width:44px;height:44px;border-radius:14px;
+  border:1px solid var(--btn-white-border);
+  background:var(--btn-white-bg);color:var(--btn-icon-color);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--btn-white-shadow);
+  transition:transform .3s cubic-bezier(.16,1,.3,1), color .3s ease;
+  font-size:12px;font-weight:800;font-family:inherit;position:relative;overflow:hidden;
+}
+.ctrl-btn:hover{color:var(--btn-icon-hover);transform:scale(1.06)}
+.ctrl-btn:active{transform:scale(.94)}
+.ctrl-btn svg{width:19px;height:19px;transition:transform .4s cubic-bezier(.34,1.4,.64,1),opacity .3s}
+.ctrl-btn .sun{position:absolute;opacity:0;transform:rotate(-90deg) scale(.5)}
+[data-theme=dark] .ctrl-btn .moon{opacity:0;transform:rotate(100deg) scale(.45)}
+[data-theme=dark] .ctrl-btn .sun{opacity:1;transform:rotate(0) scale(1)}
+.lang-btn{width:72px;min-width:72px;max-width:72px;padding:0;gap:5px;letter-spacing:.3px;justify-content:center}
+.lang-btn .globe{width:14px;height:14px;flex-shrink:0;transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.lang-btn:hover .globe{transform:rotate(25deg)}
+.lang-btn .lang-text-wrap{position:relative;width:22px;height:16px;overflow:hidden;display:inline-block}
+.lang-btn .lang-text-wrap span{position:absolute;left:0;top:0;width:100%;text-align:center;transition:opacity .28s cubic-bezier(.4,0,.2,1),transform .28s cubic-bezier(.4,0,.2,1)}
+.lang-btn.switching .lang-text-wrap span{opacity:0;transform:translateY(8px) scale(.9)}
+
+.brand-center{text-align:center;position:relative;z-index:2;padding:8px 0 2px}
+.brand-title{
+  font-family:"Roboto","Vazirmatn",system-ui,sans-serif;
+  font-size:clamp(34px,9.5vw,48px);
+  font-weight:900;
+  letter-spacing:2px;
+  line-height:1;
+  background-image:var(--brand-grad);
+  background-size:300% auto;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+  animation:brandShimmer 12s ease-in-out infinite;
+  animation-delay:0.4s;
+  will-change:background-position;
+}
+@keyframes brandShimmer{
+  0%,100%{background-position:0% center}
+  50%{background-position:100% center}
+}
+
+@keyframes themePulse{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+.ctrl-btn.theme-pulse{animation:themePulse .45s cubic-bezier(.34,1.4,.64,1)}
+
+.brand-panel-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:4px}
+.brand-line{flex:0 0 40px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--bright),var(--bright3),transparent);opacity:.85}
+.brand-sub{
+  font-family:"Roboto","Vazirmatn",system-ui,sans-serif;
+  font-size:13px;font-weight:800;letter-spacing:9px;
+  color:var(--brand-sub-color);
+  text-shadow:0 0 12px rgba(var(--accent-rgb),.6);
+}
+.brand-pill{
+  display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:7px 16px;border-radius:99px;
+  font-size:12px;font-weight:700;color:var(--bright3);
+  background:linear-gradient(180deg,rgba(var(--accent-rgb),.14),rgba(var(--accent-rgb),.05));
+  border:1px solid rgba(var(--accent-rgb),.3);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+:root:not([data-theme=dark]) .brand-pill{color:var(--bright);background:linear-gradient(180deg,rgba(30,111,219,.1),rgba(30,111,219,.03))}
+.brand-pill svg{width:13px;height:13px;flex-shrink:0}
+
+.badge-row{display:flex;justify-content:center;gap:7px;margin-top:14px;flex-wrap:wrap}
+.status-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:99px;
+  font-size:13px;font-weight:800;letter-spacing:.3px;
+  background:linear-gradient(135deg,rgba(var(--accent-rgb),.16),rgba(var(--accent2-rgb),.10));
+  border:1px solid rgba(var(--accent-rgb),.4);
+  box-shadow:0 4px 20px -4px rgba(var(--accent-rgb),.5), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.status-pill span#statusPillText{
+  background-image:linear-gradient(105deg,var(--bright3),var(--bright),var(--bright2));
+  background-size:200% auto;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;font-weight:800;
+}
+.status-dot{
+  width:9px;height:9px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.25), 0 0 10px rgba(34,197,94,.7);
+  flex-shrink:0;
+  animation:dotPulse 2s ease-in-out infinite;
+  will-change:transform;
+}
+@keyframes dotPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.35)}
+}
+
+.card{
+  background:linear-gradient(180deg,var(--card),var(--card2));
+  border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;
+  box-shadow:0 8px 28px -10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04);
+  transition:transform .28s cubic-bezier(.34,1.4,.64,1);
+  position:relative;
+  contain:layout style;
+}
+:root:not([data-theme=dark]) .card{
+  box-shadow:0 4px 16px -6px rgba(30,111,219,.12), 0 1px 3px rgba(0,0,0,.04), inset 0 1px 0 rgba(255,255,255,.9);
+}
+.card:hover{transform:translateY(-2px)}
+
+.fluffy-status{
+  margin:18px 0 20px;border-radius:28px;padding:22px 20px 20px;position:relative;
+  background:var(--fluffy-bg);
+  border:1px solid var(--fluffy-border);
+  box-shadow:var(--fluffy-shadow);
+  contain:layout style;
+  transition:border-color .3s ease;
+  animation:fluffyFade .55s ease-out both;
+}
+@keyframes fluffyFade{0%{opacity:0}100%{opacity:1}}
+
+.fluffy-status::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(circle at 15% 15%, rgba(255,255,255,.06) 0%, transparent 32%);
+}
+
+.fluffy-top{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  align-items:center;
+  gap:16px;
+  position:relative;
+  z-index:2;
+  margin-bottom:18px;
+}
+.fluffy-ring-box{display:flex;align-items:center;justify-content:center}
+.fluffy-ring{
+  width:96px;height:96px;position:relative;flex-shrink:0;
+  animation:ringPulse 3.4s ease-in-out infinite;
+  animation-delay:1s;
+  will-change:transform;
+}
+@keyframes ringPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.03)}
+}
+.fluffy-ring > svg:not(.orbit-arc){width:100%;height:100%;transform:rotate(-90deg)}
+.fluffy-ring-bg{fill:none;stroke:rgba(255,255,255,.18);stroke-width:8}
+.fluffy-ring-fill{
+  fill:none;stroke:url(#fluffyGrad);stroke-width:8;stroke-linecap:round;
+  transition:stroke-dashoffset 1.2s cubic-bezier(.16,1,.3,1);
+}
+
+.orbit-arc{
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;
+  transform-box:fill-box;
+  transform-origin:50% 50%;
+  animation:dashSpinRotate 10s linear infinite;
+  animation-delay:.3s;
+  will-change:transform;
+  backface-visibility:hidden;
+}
+.orbit-arc-line{
+  fill:none;stroke:#ffffff;stroke-width:1.6;stroke-linecap:round;
+  stroke-dasharray:4 8;opacity:.85;
+}
+@keyframes dashSpinRotate{
+  from{transform:translateZ(0) rotate(0deg)}
+  to{transform:translateZ(0) rotate(360deg)}
+}
+
+.fluffy-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.fluffy-ring-pct{font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1;color:#fff;text-shadow:0 0 14px rgba(255,255,255,.7),0 2px 8px rgba(0,0,0,.3)}
+.fluffy-ring-lbl{font-size:10.5px;font-weight:600;color:rgba(255,255,255,.85);margin-top:3px}
+
+.fluffy-status-info{
+  min-width:0;
+  width:100%;
+  text-align:right;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+[dir=ltr] .fluffy-status-info{text-align:left}
+.fluffy-status-title{
+  font-size:22px;font-weight:900;color:#fff;
+  margin-bottom:4px;
+  line-height:1.25;
+  text-shadow:0 2px 12px rgba(0,0,0,.25),0 0 22px rgba(255,255,255,.3);
+  overflow-wrap:anywhere;
+}
+.fluffy-status-sub{
+  font-size:12.5px;color:rgba(255,255,255,.82);font-weight:500;
+  margin-bottom:12px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+
+.fluffy-quick-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 20px;border-radius:12px;
+  border:1px solid var(--btn-white-border);
+  font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;
+  color:var(--btn-white-text);
+  background:var(--btn-white-bg);
+  box-shadow:var(--btn-white-shadow);
+  transition:transform .28s cubic-bezier(.16,1,.3,1);
+  position:relative;overflow:hidden;
+  white-space:nowrap;
+}
+.fluffy-quick-btn:hover{transform:translateY(-2px) scale(1.02)}
+.fluffy-quick-btn:active{transform:scale(.96)}
+.fluffy-quick-btn svg{width:15px;height:15px;color:var(--btn-icon-color)}
+
+@media (max-width:520px){
+  .fluffy-top{
+    grid-template-columns:1fr;
+    justify-items:center;
+    text-align:center;
+    gap:14px;
+  }
+  .fluffy-ring-box{width:100%;}
+  .fluffy-status-info{text-align:center;}
+  [dir=ltr] .fluffy-status-info{text-align:center;}
+  .fluffy-status-title{font-size:19px;}
+  .fluffy-status-sub{font-size:12px;margin-bottom:10px;}
+  .fluffy-quick-btn{margin:0 auto;}
+}
+
+.fluffy-stats{
+  display:flex;flex-wrap:nowrap;gap:10px;
+  margin:0 -20px 12px;padding:4px 20px 14px;
+  overflow-x:auto;overflow-y:hidden;
+  position:relative;z-index:2;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;-ms-overflow-style:none;
+  contain:layout style;
+}
+.fluffy-stats::-webkit-scrollbar{display:none}
+.fluffy-stat{
+  flex:0 0 auto;min-width:120px;max-width:140px;
+  background:var(--box-bg);border:1px solid var(--box-border);
+  border-radius:16px;padding:12px 8px;text-align:center;
+  box-shadow:var(--box-shadow);
+  transition:transform .3s cubic-bezier(.16,1,.3,1);
+  scroll-snap-align:start;position:relative;overflow:hidden;
+  contain:layout style paint;
+}
+.fluffy-stat::after{
+  content:"";position:absolute;bottom:0;left:20%;right:20%;height:2px;border-radius:2px 2px 0 0;
+  background:linear-gradient(90deg,transparent,var(--bright2),var(--bright3),var(--bright2),transparent);
+  opacity:.5;
+  transition:opacity .3s ease, left .3s ease, right .3s ease;
+}
+.fluffy-stat:hover{transform:translateY(-3px);border-color:rgba(var(--accent2-rgb),.75)}
+.fluffy-stat:hover::after{opacity:1;left:10%;right:10%}
+
+.fluffy-stat-val{
+  font-size:clamp(13px,3.6vw,15px);
+  font-weight:900;
+  color:var(--box-text);
+  direction:ltr;
+  display:block;
+  white-space:nowrap;
+  overflow:visible;
+  letter-spacing:-.2px;
+}
+.fluffy-stat-lbl{
+  font-size:10.5px;color:var(--box-muted);font-weight:600;margin-top:3px;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  white-space:nowrap;
+}
+.fluffy-stat-lbl i{font-size:10px;opacity:.95;color:var(--box-icon)}
+.fluffy-stat.highlight{background:var(--box-hl-bg);border-color:var(--box-hl-border);box-shadow:var(--box-shadow)}
+.fluffy-stat.highlight .fluffy-stat-val{font-size:clamp(14px,3.9vw,17px);color:var(--box-text)}
+.fluffy-stat.highlight::after{opacity:.95;left:15%;right:15%;background:linear-gradient(90deg,transparent,var(--bright),var(--bright2),var(--bright),transparent)}
+
+.fluffy-stats::before,.fluffy-stats::after{
+  content:"";pointer-events:none;position:absolute;top:0;bottom:14px;width:24px;z-index:3;
+}
+.fluffy-stats::before{left:0;background:linear-gradient(90deg,var(--web-fade),transparent)}
+.fluffy-stats::after{right:0;background:linear-gradient(270deg,var(--web-fade),transparent)}
+
+.fluffy-bar-wrap{
+  position:relative;z-index:2;
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:14px;margin-top:4px;
+  contain:layout style;
+}
+:root:not([data-theme=dark]) .fluffy-bar-wrap{background:rgba(0,0,0,.18)}
+.fluffy-bar-track{flex:1;height:28px;border-radius:99px;overflow:hidden;position:relative;background:rgba(0,0,0,.4)}
+:root:not([data-theme=dark]) .fluffy-bar-track{background:rgba(0,0,0,.25)}
+.fluffy-bar-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--bright),var(--bright3),#ffffff);
+  box-shadow:0 0 20px rgba(var(--accent2-rgb),.7),0 0 40px rgba(var(--accent-rgb),.5);
+  display:flex;align-items:center;justify-content:center;
+  transition:width 1.2s cubic-bezier(.16,1,.3,1);min-width:48px;
+}
+.fluffy-bar-pct{font-size:12.5px;font-weight:900;color:#0d3d99;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.fluffy-bar-right{text-align:left;flex-shrink:0;direction:ltr}
+.fluffy-bar-right .remain-num{
+  font-size:17px;font-weight:900;color:#fff;display:inline-block;
+  text-shadow:0 0 14px rgba(255,255,255,.6);
+  animation:remainFade 2.6s ease-in-out infinite;
+  animation-delay:1.2s;
+}
+@keyframes remainFade{0%,100%{opacity:.85}50%{opacity:1}}
+.fluffy-bar-right .remain-lbl{font-size:10.5px;color:rgba(255,255,255,.8);font-weight:600}
+.fluffy-days{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.9);margin-top:10px;position:relative;z-index:2}
+.fluffy-days svg{width:13px;height:13px;opacity:.9}
+
+.sub-card{
+  margin:16px 0;border-radius:20px;padding:16px 18px;
+  background:var(--sub-card-bg);
+  border:1px solid var(--sub-card-border);
+  box-shadow:0 6px 28px -10px rgba(var(--accent-rgb),.3), inset 0 1px 0 rgba(255,255,255,.06);
+  transition:transform .3s cubic-bezier(.16,1,.3,1);
+  contain:layout style;
+}
+.sub-card:hover{border-color:rgba(var(--accent2-rgb),.5);transform:translateY(-2px)}
+.sub-label{font-size:12px;color:var(--bright3);font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:11px}
+:root:not([data-theme=dark]) .sub-label{color:var(--bright)}
+.sub-link-box{
+  display:flex;align-items:center;gap:8px;
+  background:var(--input-bg);
+  border:1px solid var(--input-border);
+  border-radius:13px;padding:9px 11px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+.sub-url{flex:1;font-size:12.5px;font-weight:600;color:var(--text);opacity:.9;direction:ltr;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.sub-copy-btn,.sub-qr-btn{
+  flex-shrink:0;border:1px solid var(--btn-white-border);border-radius:11px;
+  padding:10px 16px;font-family:inherit;font-size:12.5px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+  transition:transform .25s cubic-bezier(.16,1,.3,1);
+  color:var(--btn-white-text);
+  background:var(--btn-white-bg);
+  box-shadow:var(--btn-white-shadow);
+}
+.sub-qr-btn{padding:10px 13px}
+.sub-qr-btn:hover,.sub-copy-btn:hover{transform:translateY(-1px)}
+.sub-copy-btn:active,.sub-qr-btn:active{transform:scale(.95)}
+.sub-copy-btn svg,.sub-qr-btn svg{width:15px;height:15px;color:var(--btn-icon-color)}
+.sub-copy-btn.success{background:linear-gradient(180deg,#22c55e,#15803d)!important;color:#fff!important;border-color:rgba(34,197,94,.5)!important}
+.sub-copy-btn.success svg{color:#fff!important}
+
+.merged-block{
+  margin:18px 0 20px;
+  border-radius:28px;
+  background:var(--fluffy-bg);
+  border:1px solid var(--fluffy-border);
+  box-shadow:var(--fluffy-shadow);
+  overflow:hidden;
+  position:relative;
+  contain:layout paint style;
+  animation:fluffyFade .55s ease-out both;
+  isolation:isolate;
+}
+
+.merged-block .fluffy-status{
+  margin:0;
+  border:none;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  animation:none;
+  position:relative;
+  z-index:2;
+}
+
+.merged-block .card:hover,
+.merged-block .sub-card:hover,
+.merged-block .fluffy-status:hover{ transform:none; }
+
+.merged-block .sub-card{
+  margin:0;
+  border:none;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  transition:none;
+  padding:4px 20px 20px;
+  position:relative;
+  z-index:2;
+}
+
+.water-waves{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:62%;
+  pointer-events:none;
+  z-index:1;
+  overflow:hidden;
+  -webkit-mask-image:linear-gradient(to top, #000 0%, #000 62%, rgba(0,0,0,.6) 85%, transparent 100%);
+  mask-image:linear-gradient(to top, #000 0%, #000 62%, rgba(0,0,0,.6) 85%, transparent 100%);
+  opacity:.95;
+}
+.water-waves svg{
+  position:absolute;
+  bottom:-2px;
+  left:0;
+  width:200%;
+  height:100%;
+  display:block;
+  will-change:transform;
+  backface-visibility:hidden;
+  transform-origin:50% 100%;
+}
+.water-waves .wave-1{
+  animation:waveMove 18s linear infinite;
+  z-index:2;
+}
+.water-waves .wave-2{
+  animation:waveMove 26s linear infinite reverse;
+  animation-delay:-5s;
+  z-index:1;
+}
+.water-waves .wave-1 path{ fill:var(--wave-1); }
+.water-waves .wave-2 path{ fill:var(--wave-2); }
+
+@keyframes waveMove{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-50%); }
+}
+
+.merged-block .water-waves{
+  display:block!important;
+  height:68%!important;
+  opacity:1!important;
+  z-index:1!important;
+}
+.merged-block .water-waves svg{
+  min-width:100%;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .water-waves .wave-1,
+  .water-waves .wave-2{ animation:none; }
+}
+
+.account-card{margin:16px 0;contain:layout style}
+.account-title{
+  font-size:13px;font-weight:800;
+  background-image:linear-gradient(90deg,var(--bright3),var(--bright));
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  margin-bottom:12px;display:flex;align-items:center;gap:6px;
+}
+.account-list{display:flex;flex-direction:column;gap:10px}
+.account-row{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  background:var(--input-bg);
+  border:1px solid rgba(var(--accent-rgb),.15);
+  border-radius:14px;padding:13px 14px;
+  transition:transform .28s cubic-bezier(.16,1,.3,1);
+  contain:layout style;
+}
+.account-row:hover{transform:translateX(-3px);border-color:rgba(var(--accent-rgb),.4)}
+[dir=ltr] .account-row:hover{transform:translateX(3px)}
+.account-row .k{font-size:12px;color:var(--muted);flex-shrink:0}
+.account-row .v{
+  font-size:13.5px;font-weight:800;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  background-image:linear-gradient(90deg,var(--bright3),var(--bright));
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;direction:ltr;
+}
+.account-row .v-wrap{display:flex;align-items:center;gap:8px;min-width:0}
+.account-row button{
+  background:var(--btn-white-bg);border:1px solid var(--btn-white-border);
+  color:var(--btn-icon-color);cursor:pointer;
+  width:30px;height:30px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;transition:transform .2s, color .2s;
+  box-shadow:0 2px 10px -3px rgba(var(--accent-rgb),.4);
+}
+.account-row button:hover{color:var(--btn-icon-hover);transform:scale(1.08)}
+.account-row button svg{width:14px;height:14px}
+
+.expire-card{
+  text-align:center;padding:20px 18px 18px;margin:16px 0;
+  background:linear-gradient(180deg,rgba(var(--accent-rgb),.08),rgba(var(--accent-rgb),.02),transparent);
+  border-color:rgba(var(--accent-rgb),.3);
+  contain:layout style;
+}
+.expire-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.expire-label{font-size:12.5px;color:var(--muted);font-weight:600}
+.expire-main{margin:8px 0 16px}
+.expire-unlimited{
+  font-size:28px;font-weight:900;
+  background-image:linear-gradient(90deg,var(--bright3),var(--bright),var(--bright2));
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
+.expire-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+.expire-boxes{display:flex;justify-content:center;gap:10px;margin-bottom:16px}
+.expire-box{
+  background:var(--box-bg);
+  border:1px solid var(--box-border);
+  border-radius:12px;padding:10px 16px;min-width:70px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:transform .3s cubic-bezier(.16,1,.3,1);
+  box-shadow:var(--box-shadow);
+  contain:layout style;
+}
+.expire-box:hover{transform:translateY(-2px)}
+.expire-box .inf{
+  font-size:20px;font-weight:800;
+  background-image:linear-gradient(105deg,var(--bright3),var(--bright));
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
+.expire-box .lbl{font-size:11px;color:var(--box-muted)}
+
+
+.configs-box{
+  margin:18px 0;padding:16px 14px;border-radius:24px;
+  background:linear-gradient(180deg,var(--card),var(--card2));
+  border:1px solid var(--border);
+  box-shadow:0 12px 40px -12px rgba(0,0,0,.6), 0 0 40px -14px rgba(var(--accent-rgb),.35), inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;
+  contain:layout style paint;
+}
+:root:not([data-theme=dark]) .configs-box{
+  box-shadow:0 10px 32px -10px rgba(30,111,219,.28), 0 2px 8px -2px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.9);
+}
+.configs-box-header{
+  display:flex;align-items:center;gap:8px;margin:0 4px 14px;
+  font-size:13px;font-weight:800;color:var(--bright3);
+  position:relative;z-index:1;
+}
+:root:not([data-theme=dark]) .configs-box-header{color:var(--bright)}
+.configs-box-header svg{width:15px;height:15px;flex-shrink:0}
+.configs-box-header .count{
+  margin-right:auto;font-size:11px;font-weight:700;color:var(--muted);
+  background:rgba(var(--accent-rgb),.12);border:1px solid rgba(var(--accent-rgb),.25);
+  padding:3px 9px;border-radius:99px;line-height:1;
+}
+[dir=ltr] .configs-box-header .count{margin-right:0;margin-left:auto}
+
+.configs-list{display:flex;flex-direction:column;gap:9px;position:relative;z-index:1}
+.config-controls{position:relative;z-index:1;margin:0 0 14px}
+.config-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px}
+.config-action-btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px;
+  padding:11px 12px;border-radius:13px;border:1px solid var(--btn-white-border);
+  font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;
+  color:var(--btn-white-text);background:var(--btn-white-bg);box-shadow:var(--btn-white-shadow);
+  transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease,border-color .22s ease;
+}
+.config-action-btn:hover{transform:translateY(-2px)}
+.config-action-btn:active{transform:scale(.97)}
+.config-action-btn svg{width:16px;height:16px;flex-shrink:0;color:var(--btn-icon-color)}
+.config-action-btn.primary{
+  background:linear-gradient(100deg,var(--bright),var(--bright2),var(--bright3));
+  color:#07120e;border-color:transparent;
+  box-shadow:0 3px 10px -6px rgba(var(--accent-rgb),.24),inset 0 1px 0 rgba(255,255,255,.12);
+}
+.config-action-btn.primary svg{color:currentColor}
+.config-action-btn.success-state{
+  background:linear-gradient(180deg,#22c55e,#15803d)!important;
+  border-color:#22c55e!important;color:#fff!important;
+}
+.config-action-btn.success-state svg{color:#fff!important}
+.config-filter-bar{display:flex;align-items:center;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.config-search-box{
+  order:1;flex:1;min-width:190px;display:flex;align-items:center;gap:7px;
+  background:var(--input-bg);border:1px solid var(--input-border);
+  border-radius:12px;padding:9px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.config-search-box svg{width:15px;height:15px;color:var(--muted);flex-shrink:0}
+.config-search-box input{
+  background:none;border:none;outline:none;color:var(--text);
+  font-family:inherit;font-size:12.5px;width:100%;min-width:0;
+}
+.config-search-box input::placeholder{color:var(--muted)}
+.config-chip-row{order:2;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.config-chip{
+  font-size:11.5px;padding:7px 12px;border-radius:99px;border:1px solid var(--border);
+  background:var(--card);color:var(--muted);cursor:pointer;transition:.2s;
+  box-shadow:0 2px 6px -3px rgba(0,0,0,.14);white-space:nowrap;
+}
+.config-chip:hover{border-color:var(--bright);color:var(--bright2)}
+.config-chip.active{
+  background:linear-gradient(90deg,var(--bright),var(--bright2));
+  color:#07120e;border-color:transparent;font-weight:800;
+  box-shadow:0 2px 8px -4px rgba(var(--accent-rgb),.18);
+}
+@media(max-width:650px){
+  .config-filter-bar{flex-direction:column;align-items:stretch}
+  .config-search-box{order:1;width:100%}
+  .config-chip-row{order:2;justify-content:center}
+}
+@media(max-width:480px){.config-actions-grid{grid-template-columns:1fr}}
+
+
+.config-item{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--box-bg);
+  border:1px solid var(--box-border);
+  border-radius:14px;padding:13px;
+  box-shadow:var(--box-shadow);
+  transition:transform .3s cubic-bezier(.16,1,.3,1), border-color .3s;
+  position:relative;overflow:hidden;
+}
+.config-item::before{
+  content:"";position:absolute;top:50%;right:0;transform:translateY(-50%);
+  width:3px;height:0;border-radius:3px 0 0 3px;
+  background:linear-gradient(180deg,var(--bright3),var(--bright));
+  box-shadow:0 0 10px rgba(var(--accent-rgb),.9);
+  transition:height .35s cubic-bezier(.16,1,.3,1);z-index:2;
+}
+[dir=ltr] .config-item::before{right:auto;left:0;border-radius:0 3px 3px 0}
+.config-item:hover::before{height:65%}
+.config-item:hover{transform:translateY(-2px);border-color:rgba(var(--accent2-rgb),.6)}
+.config-item-body{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;position:relative;z-index:1}
+.config-item-name{font-size:13.5px;font-weight:700;color:var(--box-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.config-item-proto{font-size:10.5px;color:var(--box-icon);font-weight:700;letter-spacing:.3px}
+.config-item-actions{display:flex;gap:6px;flex-shrink:0;position:relative;z-index:1}
+.config-item .mini-btn{
+  width:36px;height:36px;border-radius:11px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .3s cubic-bezier(.16,1,.3,1), color .2s;
+  background:var(--btn-white-bg);
+  border:1px solid var(--btn-white-border);
+  color:var(--btn-icon-color);
+  box-shadow:var(--btn-white-shadow);
+}
+.config-item .mini-btn svg{width:14px;height:14px}
+.config-item .mini-btn:hover{color:var(--btn-icon-hover);transform:scale(1.08)}
+.config-item .mini-btn.copied{
+  background:linear-gradient(180deg,#22c55e,#15803d)!important;
+  border-color:#22c55e!important;color:#fff!important;
+}
+.config-item .mini-btn.qr-active{
+  background:linear-gradient(180deg,var(--bright2),var(--deep))!important;
+  border-color:var(--bright2)!important;color:#fff!important;
+}
+.empty-configs{
+  text-align:center;padding:36px 20px;color:var(--muted);font-size:13px;
+  background:var(--input-bg);border:1px dashed rgba(var(--accent-rgb),.35);border-radius:14px;
+}
+
+.configs-copy-all{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;margin-top:14px;padding:13px 18px;border-radius:13px;
+  border:1px solid var(--btn-white-border);cursor:pointer;
+  color:var(--btn-white-text);
+  background:var(--btn-white-bg);
+  box-shadow:var(--btn-white-shadow);
+  transition:transform .25s cubic-bezier(.16,1,.3,1);
+  position:relative;z-index:1;contain:layout style;
+  font-family:"Roboto","Vazirmatn",system-ui,sans-serif;
+  font-size:14px;font-weight:900;letter-spacing:1.5px;
+  text-transform:uppercase;
+}
+.configs-copy-all svg{width:16px;height:16px;color:var(--btn-icon-color);flex-shrink:0;stroke-width:2.4}
+.configs-copy-all:hover{transform:translateY(-2px)}
+.configs-copy-all:active{transform:scale(.97)}
+.configs-copy-all.success-state{
+  background:linear-gradient(180deg,#22c55e,#15803d)!important;
+  color:#fff!important;border-color:rgba(34,197,94,.6)!important;
+}
+.configs-copy-all.success-state svg{color:#fff!important}
+
+.social-section{margin:24px 0 12px;text-align:center;contain:layout style}
+.social-title{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:16px}
+.social-row{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.social-card{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  width:108px;height:100px;border-radius:20px;text-decoration:none;color:var(--text);
+  background:linear-gradient(180deg,var(--card),var(--card2));
+  border:1px solid rgba(var(--accent-rgb),.2);
+  box-shadow:0 6px 20px -8px rgba(var(--accent-rgb),.25), inset 0 1px 0 rgba(255,255,255,.04);
+  transition:transform .3s cubic-bezier(.16,1,.3,1);
+  position:relative;overflow:hidden;
+  contain:layout style paint;
+}
+:root:not([data-theme=dark]) .social-card{box-shadow:0 4px 16px -6px rgba(30,111,219,.15), inset 0 1px 0 rgba(255,255,255,.9)}
+.social-icon{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;transition:transform .4s cubic-bezier(.16,1,.3,1);position:relative;z-index:1}
+.social-icon svg{width:24px;height:24px}
+.social-name{font-size:12px;font-weight:800;position:relative;z-index:1}
+.social-tg .social-icon{background:linear-gradient(145deg,#2AABEE,#1a8bc7);color:#fff}
+.social-yt .social-icon{background:linear-gradient(145deg,#ff2b2b,#c40000);color:#fff}
+.social-gh .social-icon{background:linear-gradient(145deg,#3d444d,#24292f);color:#fff}
+:root:not([data-theme=dark]) .social-gh .social-icon{background:linear-gradient(145deg,#24292f,#0d1117)}
+.social-tg:hover{border-color:rgba(42,171,238,.6);transform:translateY(-5px)}
+.social-yt:hover{border-color:rgba(255,0,0,.5);transform:translateY(-5px)}
+.social-gh:hover{border-color:rgba(var(--accent-rgb),.5);transform:translateY(-5px)}
+.social-card:hover .social-icon{transform:scale(1.1) translateY(-2px)}
+
+.team-brand{text-align:center;margin:32px 0 14px;display:flex;flex-direction:column;align-items:center;gap:6px;contain:layout style}
+.team-brand::before{
+  content:"";width:64px;height:2px;border-radius:99px;
+  background:linear-gradient(90deg,transparent,var(--bright),var(--bright3),var(--bright),transparent);
+  opacity:.9;
+}
+.team-name{
+  font-family:"Roboto","Vazirmatn",system-ui,sans-serif;
+  font-size:clamp(26px,7vw,34px);font-weight:900;letter-spacing:6px;
+  background-image:linear-gradient(105deg,var(--bright3) 0%,var(--bright) 40%,var(--bright2) 70%,var(--bright3) 100%);
+  background-size:280% auto;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  line-height:1.1;
+  animation:brandShimmer 9s ease-in-out infinite;
+  animation-delay:.6s;
+  will-change:background-position;
+}
+.team-word{
+  font-size:13px;font-weight:800;letter-spacing:8px;text-transform:uppercase;
+  background-image:linear-gradient(90deg,var(--bright),var(--bright3),var(--bright2));
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;opacity:.9;
+}
+.team-brand::after{
+  content:"";width:40px;height:2px;border-radius:99px;
+  background:linear-gradient(90deg,transparent,var(--bright3),var(--bright),transparent);opacity:.6;
+}
+.site-foot{text-align:center;padding:8px 0 20px;color:var(--muted);font-size:11px;font-weight:600;opacity:.7}
+
+.bottom-nav{
+  position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%);
+  width:calc(100% - 2.5rem);max-width:380px;
+  background:var(--nav-bg);
+  border:1px solid var(--nav-border);
+  border-radius:1.85rem;
+  display:flex;justify-content:space-around;padding:.55rem .8rem;
+  z-index:60;
+  box-shadow:0 10px 40px -8px rgba(var(--accent-rgb),.4), inset 0 1px 0 rgba(255,255,255,.08);
+  contain:layout style;
+}
+:root:not([data-theme=dark]) .bottom-nav{box-shadow:0 8px 30px -8px rgba(30,111,219,.25), inset 0 1px 0 rgba(255,255,255,.9)}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:.25rem;
+  color:var(--nav-inactive);background:none;border:none;
+  font-family:inherit;cursor:pointer;flex:1;padding:.5rem .4rem;
+  transition:color .25s cubic-bezier(.16,1,.3,1);
+  border-radius:1rem;position:relative;
+}
+.nav-item i{font-size:1.2rem;transition:transform .25s cubic-bezier(.34,1.4,.64,1)}
+.nav-item span{font-size:.7rem;font-weight:800}
+.nav-item.active{color:var(--bright3)}
+:root:not([data-theme=dark]) .nav-item.active{color:var(--bright)}
+.nav-item.active i{transform:scale(1.12)}
+.nav-item.active::after{
+  content:"";position:absolute;bottom:-.1rem;left:50%;transform:translateX(-50%);
+  width:26px;height:3px;border-radius:3px;
+  background:linear-gradient(90deg,var(--bright3),var(--bright));
+  box-shadow:0 0 12px rgba(var(--accent-rgb),1);
+}
+
+.toast{
+  position:fixed;bottom:110px;left:50%;transform:translateX(-50%);
+  background:var(--toast-bg);color:var(--toast-text);
+  padding:13px 24px;border-radius:99px;
+  font-size:13.5px;font-weight:800;
+  display:flex;align-items:center;gap:8px;
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:var(--toast-shadow);
+  z-index:100;pointer-events:none;
+  animation:toastIn .4s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.toast.hide{animation:toastOut .3s ease forwards}
+.toast.error{background:linear-gradient(180deg,#ef4444,#991b1b);color:#fff}
+@keyframes toastIn{0%{opacity:0;transform:translateX(-50%) translateY(20px) scale(.92)}100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@keyframes toastOut{0%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(12px) scale(.95)}}
+
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(2,7,20,.88);
+  z-index:80;display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;visibility:hidden;transition:opacity .28s, visibility .28s;
+}
+:root:not([data-theme=dark]) .modal-overlay{background:rgba(10,37,64,.55)}
+.modal-overlay.show{opacity:1;visibility:visible}
+.modal-box{
+  background:var(--modal-bg);
+  border:1px solid rgba(var(--accent-rgb),.4);
+  border-radius:24px;padding:24px;text-align:center;max-width:300px;width:100%;
+  box-shadow:0 24px 70px -10px rgba(var(--accent-rgb),.6), inset 0 1px 0 rgba(255,255,255,.06);
+  transform:scale(.88) translateY(16px);transition:transform .32s cubic-bezier(.34,1.4,.64,1);
+}
+.modal-overlay.show .modal-box{transform:scale(1) translateY(0)}
+.modal-box .qr-placeholder{
+  width:200px;height:200px;margin:0 auto 14px;background:#eef1f6;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(var(--accent-rgb),.3);
+}
+.modal-box .qr-name{font-size:14px;font-weight:800;margin-bottom:4px;word-break:break-all;color:var(--text)}
+.modal-box .qr-hint{font-size:11.5px;color:var(--muted);margin-bottom:16px}
+.modal-box .close-btn{
+  width:100%;padding:12px;border-radius:12px;
+  border:1px solid var(--btn-white-border);
+  background:var(--btn-white-bg);
+  color:var(--btn-white-text);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;
+  box-shadow:var(--btn-white-shadow);
+  transition:transform .25s;
+}
+.modal-box .close-btn:hover{transform:translateY(-1px)}
+.qr-loader{width:40px;height:40px;border:3px solid rgba(var(--accent-rgb),.2);border-radius:50%;border-top-color:var(--bright2);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+
+/* =========================================================
+   QUICK CONNECT SHEET v2 (رنگ‌ها از تم خود صفحه ساب گرفته می‌شود)
+   ========================================================= */
+:root{ --qc-tile:rgba(255,255,255,.14); --qc-tile-border:rgba(255,255,255,.22); --qc-side:rgba(var(--accent-rgb),.10); --qc-ease:cubic-bezier(.16,1,.3,1); --qc-spring:cubic-bezier(.34,1.45,.64,1); }
+:root:not([data-theme=dark]){ --qc-tile:rgba(var(--accent-rgb),.10); --qc-tile-border:rgba(var(--accent-rgb),.22); --qc-side:rgba(var(--accent-rgb),.07); }
+
+#qcModal{
+  /* بدون backdrop-filter: بلور تمام‌صفحه روی گوشی علت اصلی سنگینی بود */
+  background:rgba(2,7,20,.8);
+  transition:opacity .28s ease, visibility .28s;
+}
+:root:not([data-theme=dark]) #qcModal{background:rgba(10,37,64,.55)}
+
+.qc-box{
+  display:flex;flex-direction:column;width:100%;max-width:440px;height:min(700px,90vh);overflow:hidden;position:relative;
+  background:var(--modal-bg);border:1px solid rgba(var(--accent-rgb),.4);border-radius:28px;
+  box-shadow:0 20px 50px -14px rgba(var(--accent-rgb),.6), inset 0 1px 0 rgba(255,255,255,.06);
+  opacity:0;transform:scale(.35) translate3d(0,24px,0);
+  transition:transform .3s cubic-bezier(.5,0,.75,0), opacity .22s ease;
+  isolation:isolate;contain:layout paint;backface-visibility:hidden;
+}
+.modal-overlay.show .qc-box{opacity:1;transform:none;transition:transform .65s var(--qc-ease), opacity .3s ease;will-change:transform,opacity}
+.qc-box::after{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;z-index:5;
+  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.2) 50%,transparent 65%);transform:translate3d(-120%,0,0);
+  will-change:transform;
+}
+.modal-overlay.show .qc-box::after{animation:qcSheen 1.1s .15s ease-out both}
+@keyframes qcSheen{to{transform:translate3d(120%,0,0)}}
+.qc-grab{display:none;width:42px;height:5px;border-radius:5px;background:rgba(var(--accent-rgb),.35);margin:9px auto 0;flex:none}
+
+/* هدر */
+.qc-head{display:flex;align-items:center;gap:12px;padding:18px 18px 14px;flex:none}
+.qc-head-ico{
+  width:44px;height:44px;flex:none;border-radius:15px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,var(--bright2),var(--deep));color:#fff;font-size:19px;
+  box-shadow:0 10px 22px -8px rgba(var(--accent-rgb),.8), inset 0 1px 0 rgba(255,255,255,.3);
+}
+.modal-overlay.show .qc-head-ico i{animation:qcBolt 2.4s 1s ease-in-out infinite;will-change:transform}
+@keyframes qcBolt{0%,70%,100%{transform:scale(1) rotate(0)}80%{transform:scale(1.22) rotate(-8deg)}90%{transform:scale(1.05) rotate(4deg)}}
+.qc-head-txt{flex:1;min-width:0}
+.qc-title{font-size:16.5px;font-weight:900;color:var(--text);line-height:1.5}
+.qc-sub{font-size:12px;color:var(--muted);font-weight:600;line-height:1.6;margin-top:1px}
+.modal-overlay.show .qc-title{animation:qcFadeUp .6s .18s var(--qc-ease) backwards}
+.modal-overlay.show .qc-sub{animation:qcFadeUp .6s .26s var(--qc-ease) backwards}
+.modal-overlay.show .qc-close{animation:qcSpin .7s .22s var(--qc-spring) backwards}
+@keyframes qcFadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes qcSpin{from{opacity:0;transform:rotate(-120deg) scale(.4)}to{opacity:1;transform:none}}
+.qc-close{
+  width:36px;height:36px;flex:none;border:0;border-radius:50%;background:rgba(var(--accent-rgb),.10);cursor:pointer;
+  color:var(--muted);font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s,transform .3s var(--qc-spring);
+}
+.qc-close:hover{background:rgba(var(--accent-rgb),.2);color:var(--text);transform:rotate(90deg)}
+
+/* تب‌های سیستم‌عامل (افقی) */
+.qc-seg{
+  position:relative;display:flex;direction:ltr;flex:none;margin:0 18px 14px;padding:5px;gap:2px;
+  background:var(--qc-side);border:1px solid rgba(var(--accent-rgb),.16);border-radius:18px;
+}
+.qc-pill{
+  position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:14px;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,var(--bright2),var(--deep));
+  box-shadow:0 10px 20px -8px rgba(var(--accent-rgb),.8), inset 0 1px 0 rgba(255,255,255,.25);
+  transition:transform .5s var(--qc-spring);will-change:transform;
+}
+.qc-pill.nt{transition:none}
+.qc-tab{
+  position:relative;z-index:1;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 6px;border:0;border-radius:14px;background:transparent;cursor:pointer;
+  color:var(--muted);font-family:'Roboto',inherit;font-size:13px;font-weight:800;transition:color .3s ease, transform .2s;
+}
+.qc-tab i{font-size:17px;line-height:1;transition:transform .5s var(--qc-spring)}
+.qc-tab:active{transform:scale(.95)}
+.qc-tab.on{color:#fff}
+.qc-tab.on i{transform:scale(1.15) rotate(-6deg)}
+.modal-overlay.show .qc-seg{animation:qcFadeUp .55s .12s var(--qc-ease) backwards}
+
+/* بدنه‌ی اسکرول‌شونده */
+.qc-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;transform:translateZ(0);padding:0 18px 20px;scrollbar-width:thin;scrollbar-color:rgba(var(--accent-rgb),.4) transparent}
+.qc-body::-webkit-scrollbar{width:5px}
+.qc-body::-webkit-scrollbar-thumb{background:rgba(var(--accent-rgb),.4);border-radius:5px}
+
+/* نوار مراحل */
+.qc-steps{display:flex;gap:4px;margin:2px 0 16px}
+.qc-step{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;padding:0 2px}
+.qc-step::after{
+  content:"";position:absolute;top:14px;height:2px;border-radius:2px;background:rgba(var(--accent-rgb),.2);
+  inset-inline-start:calc(50% + 22px);inset-inline-end:calc(-50% + 22px);
+}
+.qc-step:last-child::after{display:none}
+.qc-step.done::after{background:linear-gradient(90deg,var(--bright2),var(--bright3))}
+.qc-num{
+  position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:var(--muted);background:var(--qc-side);border:1.5px solid rgba(var(--accent-rgb),.28);
+  transition:all .45s var(--qc-spring);
+}
+.qc-step.on .qc-num{color:#fff;background:linear-gradient(180deg,var(--bright2),var(--deep));border-color:transparent;transform:scale(1.12);box-shadow:0 0 0 5px rgba(var(--accent-rgb),.18),0 8px 16px -6px rgba(var(--accent-rgb),.8)}
+.qc-step.done .qc-num{color:#fff;background:var(--bright);border-color:transparent}
+.qc-step-t{font-size:12px;font-weight:800;color:var(--text);line-height:1.45}
+.qc-step-d{font-size:10.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:-4px}
+.modal-overlay.show .qc-step{animation:qcFadeUp .55s var(--qc-ease) backwards}
+.modal-overlay.show .qc-step:nth-child(2){animation-delay:.08s}
+.modal-overlay.show .qc-step:nth-child(3){animation-delay:.16s}
+
+/* هشدار هوشمند (برنامه باز نشد / روش دستی) */
+.qc-hint{
+  display:none;gap:11px;align-items:flex-start;margin:0 0 14px;padding:13px 14px;border-radius:18px;
+  background:rgba(255,176,32,.13);border:1px solid rgba(255,176,32,.45);color:var(--text);
+}
+.qc-hint.show{display:flex;animation:qcIn .6s var(--qc-spring)}
+.qc-hint-ico{width:34px;height:34px;flex:none;border-radius:11px;background:rgba(255,176,32,.25);color:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:16px}
+.qc-hint-b{flex:1;min-width:0}
+.qc-hint-t{font-size:13.5px;font-weight:900;margin-bottom:3px}
+.qc-hint-p{font-size:12px;line-height:1.85;font-weight:600;opacity:.9}
+.qc-hint-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.qc-hbtn{
+  display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:12px;border:1px solid rgba(255,176,32,.55);
+  background:rgba(255,176,32,.18);color:var(--text);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;transition:transform .25s var(--qc-spring), background .2s;
+}
+.qc-hbtn:hover{background:rgba(255,176,32,.3);transform:translateY(-1px)}
+.qc-hbtn:active{transform:scale(.95)}
+
+/* لیست برنامه‌ها */
+.qc-grid{display:flex;flex-direction:column;gap:10px}
+.qc-card{
+  position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;padding:12px 14px;cursor:pointer;width:100%;
+  border-radius:22px;background:var(--box-bg);border:1px solid var(--box-border);box-shadow:var(--box-shadow);
+  color:var(--box-text);font-family:'Roboto',inherit;text-align:start;outline:none;
+  transition:transform .35s var(--qc-spring);
+  animation:qcIn .7s var(--qc-spring) backwards;
+  animation-delay:calc(var(--base,0ms) + var(--i,0) * 75ms);
+  backface-visibility:hidden;transform:translateZ(0);
+}
+@media (hover:hover){ .qc-card:hover{transform:translate3d(0,-2px,0) scale(1.015)} }
+.qc-card:focus-visible{transform:translate3d(0,-2px,0) scale(1.015)}
+.qc-card:active{transform:scale(.97)}
+.qc-card:focus-visible{border-color:rgba(var(--accent2-rgb),.9)}
+.qc-ico{
+  width:50px;height:50px;flex:none;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:21px;
+  background:linear-gradient(145deg,var(--g1,var(--bright2)),var(--g2,var(--deep)));
+  box-shadow:0 10px 18px -8px var(--g2,rgba(var(--accent-rgb),.7)), inset 0 1px 0 rgba(255,255,255,.35);
+  transition:transform .45s var(--qc-spring);
+}
+@media (hover:hover){ .qc-card:hover .qc-ico{transform:rotate(-6deg) scale(1.08)} }
+.qc-ico i{display:inline-block}
+.qc-card.done .qc-ico{animation:qcPop .55s var(--qc-spring)}
+.qc-card.done .qc-ico i{animation:qcCheck .5s var(--qc-spring) both}
+.qc-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.qc-name{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:15.5px;font-weight:900;line-height:1.3}
+.qc-rec{
+  font-style:normal;font-size:10px;font-weight:900;padding:2px 8px;border-radius:20px;color:#fff;letter-spacing:.2px;
+  background:linear-gradient(90deg,#10b981,#059669);box-shadow:0 4px 10px -4px rgba(16,185,129,.8);
+}
+.qc-desc{font-size:11.5px;font-weight:600;opacity:.75;line-height:1.55}
+.qc-dl{
+  width:38px;height:38px;flex:none;border-radius:13px;border:1px solid var(--qc-tile-border);background:var(--qc-tile);color:inherit;
+  display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:transform .3s var(--qc-spring), background .2s;
+}
+.qc-dl:hover{background:rgba(var(--accent2-rgb),.35);transform:translateY(-2px)}
+.qc-dl:active{transform:scale(.9)}
+.qc-go{flex:none;font-size:12px;opacity:.55;transition:transform .3s var(--qc-spring), opacity .2s}
+html[dir=rtl] .qc-go{transform:scaleX(-1)}
+.qc-card:hover .qc-go{opacity:1;transform:translateX(3px)}
+html[dir=rtl] .qc-card:hover .qc-go{transform:scaleX(-1) translateX(3px)}
+@keyframes qcIn{from{opacity:0;transform:translate3d(0,26px,0) scale(.8)}to{opacity:1;transform:translateZ(0)}}
+@keyframes qcPop{0%{transform:scale(1)}40%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes qcCheck{from{transform:scale(0) rotate(-90deg)}to{transform:scale(1) rotate(0)}}
+.qc-wave{
+  position:absolute;border-radius:50%;pointer-events:none;width:20px;height:20px;margin:-10px 0 0 -10px;
+  background:rgba(var(--accent2-rgb),.45);transform:scale(0);animation:qcWave .7s ease-out forwards;will-change:transform,opacity;
+}
+@keyframes qcWave{to{transform:scale(18);opacity:0}}
+
+/* دکمه‌های پایین لیست */
+.qc-actions{display:flex;gap:10px;margin:14px 0 22px}
+.qc-act{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 10px;border-radius:16px;cursor:pointer;
+  border:1px solid rgba(var(--accent-rgb),.35);background:var(--qc-side);color:var(--text);font-family:inherit;font-size:13px;font-weight:800;
+  transition:transform .3s var(--qc-spring), box-shadow .3s;
+}
+.qc-act.primary{flex:1.6;color:#fff;border-color:transparent;background:linear-gradient(100deg,var(--bright),var(--bright2),var(--bright3));box-shadow:0 10px 22px -10px rgba(var(--accent-rgb),.85), inset 0 1px 0 rgba(255,255,255,.25)}
+.qc-act:hover{transform:translateY(-2px)}
+.qc-act:active{transform:scale(.96)}
+
+/* راهنما */
+.qc-gtitle{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:900;color:var(--text);margin-bottom:11px}
+.qc-gtitle i{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:linear-gradient(145deg,var(--bright2),var(--deep))}
+.qc-guide{display:flex;flex-direction:column;gap:9px;content-visibility:auto;contain-intrinsic-size:auto 320px}
+.qc-g{border-radius:18px;background:var(--qc-side);border:1px solid rgba(var(--accent-rgb),.16);overflow:hidden;transition:border-color .25s}
+.qc-g[open]{border-color:rgba(var(--accent-rgb),.4)}
+.qc-g summary{
+  list-style:none;display:flex;align-items:center;gap:11px;padding:13px 14px;cursor:pointer;user-select:none;
+  font-size:13.5px;font-weight:800;color:var(--text);
+}
+.qc-g summary::-webkit-details-marker{display:none}
+.qc-g summary>i:first-child{width:30px;height:30px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(var(--accent-rgb),.18);color:var(--bright2)}
+.qc-g summary span{flex:1}
+.qc-g summary .qc-chev{font-size:11px;color:var(--muted);transition:transform .35s var(--qc-spring)}
+.qc-g[open] .qc-chev{transform:rotate(180deg)}
+.qc-gb{padding:0 14px 15px;color:var(--text);font-size:12.5px;font-weight:600;line-height:1.95;animation:qcFadeUp .4s var(--qc-ease)}
+.qc-gb p{margin:0 0 8px;opacity:.85}
+.qc-gb ol,.qc-gb ul{margin:0;padding:0;list-style:none;counter-reset:q}
+.qc-gb li{position:relative;padding-inline-start:32px;margin-bottom:9px}
+.qc-gb ol li{counter-increment:q}
+.qc-gb ol li::before{
+  content:counter(q);position:absolute;inset-inline-start:0;top:3px;width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;background:linear-gradient(180deg,var(--bright2),var(--deep));
+}
+html[dir=rtl] .qc-gb ol li::before{content:counter(q, persian)}
+.qc-gb ul li::before{content:"";position:absolute;inset-inline-start:7px;top:11px;width:8px;height:8px;border-radius:50%;background:var(--bright2);box-shadow:0 0 0 4px rgba(var(--accent-rgb),.18)}
+.qc-gb code{direction:ltr;unicode-bidi:isolate;display:inline-block;padding:0 7px;border-radius:7px;font-family:monospace;font-size:11.5px;background:rgba(var(--accent-rgb),.16)}
+.qc-gb b{font-weight:900;color:var(--bright2)}
+
+.fluffy-quick-btn.qc-hit{animation:qcBtn .6s var(--qc-spring)}
+@keyframes qcBtn{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(var(--accent2-rgb),.6)}35%{transform:scale(.93)}100%{transform:scale(1);box-shadow:0 0 0 18px rgba(var(--accent2-rgb),0)}}
+
+/* موبایل: شیت پایین صفحه */
+@media (max-width:560px){
+  #qcModal{padding:0;align-items:flex-end}
+  .qc-box{max-width:none;height:min(90vh,760px);border-radius:28px 28px 0 0;border-bottom:0;opacity:1;transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .modal-overlay.show .qc-box{transform:none}
+  .qc-grab{display:block}
+  .qc-head{padding-top:12px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  #qcModal{-webkit-backdrop-filter:none;backdrop-filter:none}
+  .qc-box,.qc-card,.qc-tab,.qc-title,.qc-sub,.qc-close,.qc-pill,.qc-seg,.qc-step,.qc-hint,.qc-gb,.qc-head-ico i,.qc-box::after,.fluffy-quick-btn.qc-hit{animation:none!important;transition:opacity .2s!important}
+  .qc-box{transform:none}
+}
+
+html[data-paused] *,
+html[data-paused]{ animation-play-state:paused !important; }
+
+/* وقتی شیت اتصال سریع بازه، انیمیشن‌های بی‌پایان پشت صفحه (موج، شیمر، پالس...) متوقف می‌شن */
+html.qc-open *, html.qc-open *::before, html.qc-open *::after{ animation-play-state:paused; }
+html.qc-open #qcModal, html.qc-open #qcModal *, html.qc-open #qcModal *::before, html.qc-open #qcModal *::after,
+html.qc-open .toast, html.qc-open .toast *{ animation-play-state:running; }
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+/* ===== LIGHT THEME: HIGH-CONTRAST TEXT ===== */
+:root:not([data-theme=dark]){
+  --text:#12365f;
+  --muted:#3f6287;
+  --box-text:#12365f;
+  --box-muted:#45698f;
+  --box-icon:#155fb5;
+  --nav-inactive:#52759a;
+  --btn-white-text:#0b3975;
+}
+:root:not([data-theme=dark]) body,
+:root:not([data-theme=dark]) .card,
+:root:not([data-theme=dark]) .social-card,
+:root:not([data-theme=dark]) .social-title,
+:root:not([data-theme=dark]) .site-foot{
+  color:var(--text);
+}
+:root:not([data-theme=dark]) .sub-url,
+:root:not([data-theme=dark]) .config-item-name,
+:root:not([data-theme=dark]) .fluffy-stat-val{
+  color:#12365f !important;
+  -webkit-text-fill-color:#12365f !important;
+  background-image:none !important;
+}
+:root:not([data-theme=dark]) .config-item-proto{
+  color:#155fb5 !important;
+}
+:root:not([data-theme=dark]) .account-row .k,
+:root:not([data-theme=dark]) .expire-label,
+:root:not([data-theme=dark]) .expire-sub,
+:root:not([data-theme=dark]) .fluffy-stat-lbl,
+:root:not([data-theme=dark]) .modal-box .qr-hint{
+  color:#45698f !important;
+}
+:root:not([data-theme=dark]) .config-chip{
+  color:#365d83 !important;
+}
+:root:not([data-theme=dark]) .config-chip.active{
+  color:#062d5f !important;
+}
+:root:not([data-theme=dark]) .social-name{
+  color:#12365f !important;
+}
+:root:not([data-theme=dark]) .fluffy-status-title{
+  color:#12365f !important;
+  text-shadow:none !important;
+}
+:root:not([data-theme=dark]) .fluffy-status-sub,
+:root:not([data-theme=dark]) .fluffy-days{
+  color:#365d83 !important;
+}
+
+</style>
+
+<style id="mobile-sub-layout-fix">
+.merged-block,
+.merged-block .sub-card,
+.merged-block .sub-link-box{
+  min-width:0;
+  width:100%;
+  max-width:100%;
+}
+.sub-link-box{overflow:hidden;}
+.sub-url{min-width:0;max-width:100%;flex:1 1 auto;}
+.sub-copy-btn,.sub-qr-btn{flex:0 0 auto;white-space:nowrap;}
+
+@media (max-width:840px){
+  .merged-block .sub-card{padding:4px 14px 18px;}
+  .merged-block .sub-link-box{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto;
+    align-items:center;
+    gap:7px;
+  }
+  .merged-block .sub-copy-btn{
+    min-width:0;
+    padding-left:11px;
+    padding-right:11px;
+  }
+  .merged-block .sub-qr-btn{
+    min-width:42px;
+    padding-left:10px;
+    padding-right:10px;
+  }
+}
+@media (max-width:420px){
+  .merged-block .sub-link-box{gap:6px;padding:8px;}
+  .merged-block .sub-copy-btn{padding-left:9px;padding-right:9px;}
+}
+</style>
+<style id="mobile-six-stats-fix">
+@media (max-width: 600px){
+  .fluffy-stats{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;overflow:visible;
+    margin:0 -20px 12px;padding:4px 20px 14px;
+    scroll-snap-type:none;
+  }
+  .fluffy-stat{ width:100%;min-width:0;max-width:none;flex:none;box-sizing:border-box; }
+  .fluffy-stat-val,.fluffy-stat-lbl{ min-width:0; }
+}
+
+:root:not([data-theme=dark]) .fluffy-ring-bg{
+  stroke:rgba(30,111,219,.28) !important;
+}
+:root:not([data-theme=dark]) .fluffy-ring-fill{
+  stroke:#1e6fdb !important;
+}
+:root:not([data-theme=dark]) .orbit-arc-line{
+  stroke:#1e6fdb !important;
+  opacity:.95 !important;
+}
+:root:not([data-theme=dark]) .fluffy-ring-pct{
+  color:#1557a6 !important;
+  text-shadow:none !important;
+}
+:root:not([data-theme=dark]) .fluffy-ring-lbl{
+  color:#3d6796 !important;
+}
+</style>
+
+
+<style id="sub-entry-animation">
+.merged-block .sub-card.sub-enter-ready{
+  opacity:0;
+  transform:translate3d(0,7px,0) scale(.998);
+  will-change:transform,opacity;
+}
+.merged-block .sub-card.sub-enter-ready.sub-enter-show{
+  animation:subSoftIn 850ms cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes subSoftIn{
+  0%{opacity:0;transform:translate3d(0,7px,0) scale(.998)}
+  65%{opacity:1;transform:translate3d(0,-.5px,0) scale(1.0005)}
+  100%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@media (prefers-reduced-motion:reduce){
+  .merged-block .sub-card.sub-enter-ready{opacity:1;transform:none;will-change:auto}
+  .merged-block .sub-card.sub-enter-ready.sub-enter-show{animation:none}
+}
+</style>
+
+<style id="ultra-smooth-performance">
+.merged-block,
+.merged-block .sub-card,
+.config-item{
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+}
+.merged-block{
+  contain:layout paint style;
+}
+.water-waves{
+  contain:layout paint;
+}
+.water-waves svg{
+  transform:translate3d(0,0,0);
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+}
+</style>
+
+<style id="global-glass-buttons">
+button,
+.btn,
+button[type="button"],
+button[type="submit"],
+button[type="reset"]{
+  background: rgba(255,255,255,.14) !important;
+  border: 1px solid rgba(255,255,255,.34) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.28) !important;
+  transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+button:hover,
+.btn:hover{
+  background: rgba(255,255,255,.22) !important;
+  border-color: rgba(255,255,255,.48) !important;
+  box-shadow: 0 10px 28px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.36) !important;
+}
+
+button:active,
+.btn:active{
+  transform: translateY(1px) scale(.985);
+}
+
+button,
+.btn{
+  text-shadow: 0 1px 2px rgba(0,0,0,.18);
+}
+</style>
+
+<style id="offscreen-animation-pause">
+.perf-paused,
+.perf-paused *,
+.perf-paused *::before,
+.perf-paused *::after{
+  animation-play-state: paused !important;
+}
+</style>
+
+<style id="page-enter-animation">
+/* =========================================================
+   ورود نرم صفحه — کوریوگرافی واحد از بالا به پایین + موج ریز داخل هر بلوک
+   فقط transform / opacity (کامپوزیت روی GPU) => هم‌سرعت با ریفرش‌ریت مانیتور
+   بدون JS و بدون تایمر: از اولین فریم شروع می‌شود، پرش و فلش ندارد
+   ========================================================= */
+:root{
+  --sx-ease-move:cubic-bezier(.16,1,.3,1);   /* فرود خیلی نرم (پشتیبان) */
+  --sx-ease-fade:cubic-bezier(.33,0,.2,1);   /* محو شدن ملایم */
+}
+/* فنر خیلی ملایم با ~۴٪ جا افتادن؛ مرورگرهای قدیمی همان فرود نرم بالا را می‌گیرند */
+@supports (animation-timing-function:linear(0,1)){
+  :root{--sx-ease-move:linear(0, 0.0103, 0.0383, 0.08, 0.1319, 0.1911, 0.255, 0.3214, 0.3884, 0.4547, 0.5191, 0.5806, 0.6385, 0.6925, 0.7422, 0.7875, 0.8282, 0.8645, 0.8965, 0.9244, 0.9484, 0.9688, 0.9859, 1, 1.0113, 1.0203, 1.0271, 1.0321, 1.0354, 1.0374, 1.0383, 1.0383, 1.0375, 1.0361, 1.0342, 1.0321, 1.0297, 1.0272, 1.0246, 1.022, 1.0195, 1.0171, 1.0148, 1.0127, 1.0107, 1.0089, 1.0073, 1.0058, 1.0045, 1.0034, 1.0024, 1.0015, 1.0008, 1.0002, 0.9997, 0.9994, 0.9991, 0.9988, 0.9987, 0.9986, 0.9985, 0.9985, 0.9985, 0.9986, 0.9987, 0.9987, 0.9988, 0.9989, 0.999, 0.9991, 0.9992, 0.9993, 0.9994, 0.9995, 0.9996, 0.9996, 0.9997, 0.9998, 0.9998, 0.9999, 1)}
+}
+@keyframes sxFade{from{opacity:0}}
+@keyframes sxMove{from{transform:var(--sx-from)}}
+@keyframes sxNav{from{translate:0 30px}}
+
+/* ---- بلوک‌های اصلی ---- */
+.hero-bar,.badge-row,.merged-block,.account-card,.expire-card,
+.social-section,.team-brand,.site-foot{
+  animation:
+    sxFade 950ms var(--sx-ease-fade) var(--sx-d,0ms) backwards,
+    sxMove 1500ms var(--sx-ease-move) var(--sx-d,0ms) backwards;
+}
+.hero-bar{--sx-from:translate3d(0,-18px,0) scale(.985);--sx-d:0ms}
+.badge-row{--sx-from:translate3d(0,14px,0) scale(.97);--sx-d:90ms}
+.merged-block{--sx-from:translate3d(0,34px,0) scale(.965);--sx-d:170ms}
+.account-card{--sx-from:translate3d(0,26px,0) scale(.975);--sx-d:370ms}
+.expire-card{--sx-from:translate3d(0,26px,0) scale(.975);--sx-d:440ms}
+.social-section{--sx-from:translate3d(0,16px,0);--sx-d:510ms}
+.team-brand{--sx-from:translate3d(0,16px,0);--sx-d:570ms}
+.site-foot{--sx-from:translate3d(0,12px,0);--sx-d:620ms;opacity:1} /* همان روشنیِ نهایی که قبلاً هم دیده می‌شد */
+
+/* ---- موج ریز داخل بلوک‌ها (بعد از ورود خود بلوک، یکی‌یکی) ---- */
+.hero-top,.brand-center,.badge-row>*,.fluffy-stat,.fluffy-bar-wrap,.fluffy-days,
+.account-row,.expire-box,.social-card,.nav-item{
+  animation:
+    sxFade 700ms var(--sx-ease-fade) var(--sx-d,0ms) backwards,
+    sxMove 1100ms var(--sx-ease-move) var(--sx-d,0ms) backwards;
+}
+.hero-top{--sx-from:translate3d(0,-10px,0);--sx-d:120ms}
+.brand-center{--sx-from:translate3d(0,14px,0) scale(.95);--sx-d:200ms}
+.badge-row>*{--sx-from:translate3d(0,10px,0) scale(.9);--sx-d:340ms}
+.badge-row>*:nth-child(1){--sx-d:200ms}
+.badge-row>*:nth-child(2){--sx-d:270ms}
+.fluffy-stat{--sx-from:translate3d(0,14px,0) scale(.93)}
+.fluffy-stat:nth-child(1){--sx-d:400ms}
+.fluffy-stat:nth-child(2){--sx-d:465ms}
+.fluffy-stat:nth-child(3){--sx-d:530ms}
+.fluffy-stat:nth-child(4){--sx-d:595ms}
+.fluffy-stat:nth-child(5){--sx-d:660ms}
+.fluffy-stat:nth-child(6){--sx-d:725ms}
+.fluffy-bar-wrap{--sx-from:translate3d(0,12px,0);--sx-d:780ms}
+.fluffy-days{--sx-from:translate3d(0,12px,0);--sx-d:840ms}
+.account-row{--sx-from:translate3d(0,10px,0)}
+.account-row:nth-child(1){--sx-d:580ms}
+.account-row:nth-child(2){--sx-d:645ms}
+.account-row:nth-child(3){--sx-d:710ms}
+.account-row:nth-child(4){--sx-d:775ms}
+.expire-box{--sx-from:translate3d(0,12px,0) scale(.9)}
+.expire-box:nth-child(1){--sx-d:660ms}
+.expire-box:nth-child(2){--sx-d:730ms}
+.expire-box:nth-child(3){--sx-d:800ms}
+.social-card{--sx-from:translate3d(0,14px,0) scale(.9)}
+.social-card:nth-child(1){--sx-d:700ms}
+.social-card:nth-child(2){--sx-d:770ms}
+.social-card:nth-child(3){--sx-d:840ms}
+.nav-item{--sx-from:translate3d(0,10px,0)}
+.nav-item:nth-child(1){--sx-d:560ms}
+.nav-item:nth-child(2){--sx-d:640ms}
+
+/* نوار پایین از property مستقل translate استفاده می‌کند تا translateX(-50%) خودش خراب نشود */
+.bottom-nav{
+  animation:
+    sxFade 900ms var(--sx-ease-fade) 420ms backwards,
+    sxNav 1350ms var(--sx-ease-move) 420ms backwards;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .hero-bar,.badge-row,.merged-block,.account-card,.expire-card,
+  .social-section,.team-brand,.site-foot,.bottom-nav,
+  .hero-top,.brand-center,.badge-row>*,.fluffy-stat,.fluffy-bar-wrap,.fluffy-days,
+  .account-row,.expire-box,.social-card,.nav-item{animation:none}
+}
+</style>
+
+<style id="night-blue-palette">
+/* رنگ SVGهای ثابت (حلقه مصرف و ساعت) فقط در حالت شب هم‌رنگ پالت جدید می‌شوند */
+:root[data-theme=dark] #fluffyGrad stop:nth-child(1){stop-color:#0a96fd}
+:root[data-theme=dark] #fluffyGrad stop:nth-child(2){stop-color:#6fcbff}
+:root[data-theme=dark] #clockGrad stop:nth-child(1){stop-color:#6fcbff}
+:root[data-theme=dark] #clockGrad stop:nth-child(2){stop-color:#0a96fd}
+:root[data-theme=dark] #clockGrad stop:nth-child(3){stop-color:#2db0fd}
+</style>
+
+<style id="light-theme-zero-lag">
+/* =========================================================
+   تِم سفید: صفر لگ — سنگینترین افکتها فقط در تم سفید خاموش
+   ========================================================= */
+
+:root:not([data-theme=dark]) .brand-title,
+:root:not([data-theme=dark]) .team-name{
+  animation: none !important;
+  background-position: 0% center !important;
+  will-change: auto !important;
+}
+
+:root:not([data-theme=dark]) .fluffy-ring,
+:root:not([data-theme=dark]) .status-dot,
+:root:not([data-theme=dark]) .remain-num,
+:root:not([data-theme=dark]) .ctrl-btn.theme-pulse{
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* The config-card orbit must keep rotating in light mode too. */
+:root:not([data-theme=dark]) .orbit-arc{
+  animation: dashSpinRotate 10s linear infinite !important;
+  animation-delay: .3s !important;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+:root:not([data-theme=dark]) .water-waves .wave-1{
+  animation-duration: 26s !important;
+}
+:root:not([data-theme=dark]) .water-waves .wave-2{
+  animation-duration: 36s !important;
+}
+
+:root:not([data-theme=dark]) .fluffy-status,
+:root:not([data-theme=dark]) .merged-block{
+  box-shadow: 0 8px 24px -12px rgba(30,111,219,.32),
+              inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+:root:not([data-theme=dark]) .fluffy-stat,
+:root:not([data-theme=dark]) .expire-box,
+:root:not([data-theme=dark]) .config-item,
+:root:not([data-theme=dark]) .social-card{
+  box-shadow: 0 3px 10px -5px rgba(30,111,219,.16),
+              inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+:root:not([data-theme=dark]) .card{
+  box-shadow: 0 4px 14px -6px rgba(30,111,219,.14),
+              inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+:root:not([data-theme=dark]) .bottom-nav{
+  box-shadow: 0 6px 22px -8px rgba(30,111,219,.22),
+              inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+:root:not([data-theme=dark]) .status-pill,
+:root:not([data-theme=dark]) .brand-pill{
+  box-shadow: 0 2px 10px -4px rgba(30,111,219,.22),
+              inset 0 1px 0 rgba(255,255,255,.6) !important;
+}
+
+:root:not([data-theme=dark]) .web-overlay{
+  display: none !important;
+}
+
+:root:not([data-theme=dark]) .fluffy-bar-fill{
+  box-shadow: 0 0 12px rgba(var(--accent2-rgb),.55) !important;
+}
+
+:root:not([data-theme=dark]) .configs-box{
+  box-shadow: 0 6px 20px -10px rgba(30,111,219,.2),
+              inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+:root:not([data-theme=dark]) .expire-card{
+  box-shadow: 0 4px 14px -6px rgba(30,111,219,.14),
+              inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+
+:root:not([data-theme=dark]) .merged-block,
+:root:not([data-theme=dark]) .water-waves svg,
+:root:not([data-theme=dark]) .water-waves,
+:root:not([data-theme=dark]) .config-item{
+  will-change: auto;
+}
+
+</style>
+
+<style id="smooth-theme-switch">
+/* =========================================================
+   سوییچ نرم بین تم سفید و تاریک
+   ========================================================= */
+
+/* View Transitions API — crossfade واقعی بین دو تم */
+::view-transition-old(root),
+::view-transition-new(root){
+  animation-duration: .42s;
+  animation-timing-function: cubic-bezier(.4,0,.2,1);
+  mix-blend-mode: normal;
+}
+
+:root:not([data-theme=dark])::view-transition-old(root),
+:root:not([data-theme=dark])::view-transition-new(root){
+  animation-duration: .38s;
+}
+
+/* Fallback: ترنزیشن روی رنگها و سایهها */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after{
+  transition:
+    background-color .42s cubic-bezier(.4,0,.2,1),
+    border-color .42s cubic-bezier(.4,0,.2,1),
+    color .42s cubic-bezier(.4,0,.2,1),
+    box-shadow .42s cubic-bezier(.4,0,.2,1),
+    fill .42s cubic-bezier(.4,0,.2,1),
+    stroke .42s cubic-bezier(.4,0,.2,1) !important;
+}
+
+:root:not([data-theme=dark]) .theme-transition,
+:root:not([data-theme=dark]) .theme-transition *,
+:root:not([data-theme=dark]) .theme-transition *::before,
+:root:not([data-theme=dark]) .theme-transition *::after{
+  transition-duration: .38s !important;
+}
+
+@media (prefers-reduced-motion: reduce){
+  ::view-transition-old(root),
+  ::view-transition-new(root){
+    animation-duration: .01ms;
+  }
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after{
+    transition: none !important;
+  }
+}
+</style>
+<style id="soft-theme-fade">
+/* تعویض شب/روز: تم جدید نرم روی قبلی ظاهر می‌شود (فقط opacity روی GPU).
+   قبلی ثابت و کامل زیرش می‌ماند، پس وسط تعویض هیچ لحظه‌ای تیره یا کم‌رنگ نمی‌شود. */
+::view-transition-old(root){
+  animation: none !important;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root){
+  animation: softThemeIn 520ms cubic-bezier(.4,0,.2,1) both !important;
+  mix-blend-mode: normal;
+}
+@keyframes softThemeIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){
+  ::view-transition-new(root){animation-duration:.01ms !important}
+}
+</style>
+
+<style id="nav-icons-fix">
+/* آیکون‌های نوار پایین: SVG داخل خود فایل (بدون وابستگی به فونت CDN)، هم‌اندازه و دقیقاً وسط‌چین */
+.nav-item i.nav-ico{display:inline-flex;align-items:center;justify-content:center;width:1.3rem;height:1.3rem;line-height:1;font-style:normal}
+.nav-item i.nav-ico svg{width:100%;height:100%;display:block;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-item.active i.nav-ico svg{fill:currentColor;fill-opacity:.16}
+</style>
+<style id="configs-enter-animation">
+/* ورود نرم بخش کانفیگ‌ها — همان کوریوگرافی، منحنی‌ها و زمان‌بندیِ بخش خانه (sxFade / sxMove)
+   فقط transform / opacity (GPU) و زمان‌محور؛ با نرخ تازه‌سازی نمایشگر هماهنگ است */
+.configs-box{
+  --sx-from:translate3d(0,26px,0) scale(.975);--sx-d:40ms;
+  animation:
+    sxFade 950ms var(--sx-ease-fade) var(--sx-d,0ms) backwards,
+    sxMove 1500ms var(--sx-ease-move) var(--sx-d,0ms) backwards;
+}
+.configs-box-header,.config-action-btn,.config-search-box,.config-chip{
+  animation:
+    sxFade 700ms var(--sx-ease-fade) var(--sx-d,0ms) backwards,
+    sxMove 1100ms var(--sx-ease-move) var(--sx-d,0ms) backwards;
+}
+.configs-box-header{--sx-from:translate3d(0,-10px,0);--sx-d:140ms}
+.config-action-btn{--sx-from:translate3d(0,12px,0) scale(.94)}
+.config-action-btn:nth-child(1){--sx-d:220ms}
+.config-action-btn:nth-child(2){--sx-d:290ms}
+.config-search-box{--sx-from:translate3d(0,12px,0);--sx-d:360ms}
+.config-chip{--sx-from:translate3d(0,10px,0) scale(.9)}
+.config-chip:nth-child(1){--sx-d:420ms}
+.config-chip:nth-child(2){--sx-d:470ms}
+.config-chip:nth-child(3){--sx-d:520ms}
+.config-chip:nth-child(4){--sx-d:570ms}
+.config-chip:nth-child(5){--sx-d:620ms}
+/* آیتم‌ها فقط هنگام ورود به تب (کلاس موقت) انیمیت می‌شوند تا فیلتر و جستجو انیمیشن تکراری نسازند */
+.cfg-enter .config-item{
+  --sx-from:translate3d(0,14px,0) scale(.96);--sx-d:480ms;
+  animation:
+    sxFade 700ms var(--sx-ease-fade) var(--sx-d,0ms) backwards,
+    sxMove 1100ms var(--sx-ease-move) var(--sx-d,0ms) backwards;
+}
+.cfg-enter .config-item:nth-child(1){--sx-d:480ms}
+.cfg-enter .config-item:nth-child(2){--sx-d:545ms}
+.cfg-enter .config-item:nth-child(3){--sx-d:610ms}
+.cfg-enter .config-item:nth-child(4){--sx-d:675ms}
+.cfg-enter .config-item:nth-child(5){--sx-d:740ms}
+.cfg-enter .config-item:nth-child(6){--sx-d:805ms}
+.cfg-enter .config-item:nth-child(7){--sx-d:870ms}
+.cfg-enter .config-item:nth-child(8){--sx-d:935ms}
+.cfg-enter .config-item:nth-child(n+9){animation:none}
+@media (prefers-reduced-motion: reduce){
+  .configs-box,.configs-box-header,.config-action-btn,.config-search-box,.config-chip,
+  .cfg-enter .config-item{animation:none}
+}
+</style>
+<style id="lang-picker">
+/* =========================================================
+   کارت انتخاب زبان (فارسی / English)
+   از روی دکمه زبان باز می‌شود؛ رنگ‌ها همان متغیرهای طراحی (تم شب و روز)
+   ورود و خروج فقط با transform / opacity (GPU)، زمان‌محور و هماهنگ با نرخ تازه‌سازی نمایشگر
+   ========================================================= */
+.lang-btn[aria-expanded="true"]{color:var(--btn-icon-hover)}
+.lang-btn[aria-expanded="true"] .globe{transform:rotate(25deg)}
+
+.lang-pop{
+  position:absolute;top:0;left:0;z-index:70;
+  width:176px;padding:8px;border-radius:20px;
+  background:linear-gradient(180deg,var(--card),var(--card2));
+  border:1px solid var(--fluffy-border);
+  box-shadow:0 14px 40px -10px rgba(var(--accent-rgb),.42),0 8px 24px -10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transform:translate3d(0,-10px,0) scale(.86);
+  transform-origin:50% 0;
+  transition:opacity .18s var(--sx-ease-fade),transform .22s var(--sx-ease-fade),visibility 0s linear .22s;
+}
+.lang-pop.open{
+  opacity:1;visibility:visible;pointer-events:auto;
+  transform:translate3d(0,0,0) scale(1);
+  transition:opacity .26s var(--sx-ease-fade),transform .6s var(--sx-ease-move),visibility 0s;
+}
+:root:not([data-theme=dark]) .lang-pop{
+  box-shadow:0 12px 32px -12px rgba(30,111,219,.38),0 2px 8px -3px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* گزینه‌ها: ردیف عادی مثل ردیف‌های اکانت، ردیف انتخاب‌شده مثل باکس‌های هایلایت */
+.lang-pop .lang-opt{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:9px 10px;border-radius:14px;cursor:pointer;
+  font-family:inherit;font-size:13.5px;font-weight:800;color:var(--text);
+  text-align:start;text-shadow:none;
+  -webkit-user-select:none;user-select:none;
+  border-width:1px;border-style:solid;
+  background:var(--input-bg) !important;
+  border-color:rgba(var(--accent-rgb),.15) !important;
+  box-shadow:none !important;
+  transition:border-color .22s ease,box-shadow .22s ease,transform .18s ease;
+}
+.lang-pop .lang-opt + .lang-opt{margin-top:6px}
+.lang-pop .lang-opt:hover{
+  border-color:rgba(var(--accent-rgb),.45) !important;
+  box-shadow:0 4px 14px -6px rgba(var(--accent-rgb),.45) !important;
+}
+.lang-pop .lang-opt[aria-checked="true"]{
+  background:var(--box-hl-bg) !important;
+  border-color:var(--box-hl-border) !important;
+  box-shadow:var(--box-shadow) !important;
+  color:var(--box-text);
+}
+.lang-pop .lang-opt:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 2px rgba(var(--accent2-rgb),.8) !important;
+}
+.lang-pop .lang-opt-code{
+  flex:0 0 auto;min-width:32px;height:24px;padding:0 6px;border-radius:9px;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:"Roboto","Vazirmatn",system-ui,sans-serif;font-size:10.5px;font-weight:900;letter-spacing:.8px;
+  color:var(--bright3);
+  background:rgba(var(--accent-rgb),.14);
+  border:1px solid rgba(var(--accent-rgb),.3);
+}
+:root:not([data-theme=dark]) .lang-pop .lang-opt-code{color:var(--bright)}
+:root[data-theme=dark] .lang-pop .lang-opt[aria-checked="true"] .lang-opt-code{
+  color:#fff;background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.34);
+}
+.lang-pop .lang-opt-name{flex:1 1 auto;min-width:0;white-space:nowrap}
+.lang-pop .lang-opt-check{
+  flex:0 0 auto;width:16px;height:16px;color:var(--box-icon);
+  opacity:0;transform:scale(.4);
+  transition:opacity .2s ease,transform .45s var(--sx-ease-move);
+}
+:root[data-theme=dark] .lang-pop .lang-opt-check{color:#fff}
+.lang-pop .lang-opt[aria-checked="true"] .lang-opt-check{opacity:1;transform:scale(1)}
+
+/* ورود پله‌ای گزینه‌ها بعد از باز شدن کارت (همان sxFade / sxMove صفحه) */
+.lang-pop.open .lang-opt{
+  --sx-from:translate3d(0,9px,0);
+  animation:
+    sxFade .34s var(--sx-ease-fade) calc(var(--i,0) * 55ms + 70ms) backwards,
+    sxMove .62s var(--sx-ease-move) calc(var(--i,0) * 55ms + 70ms) backwards;
+}
+.lang-pop.open .lang-opt[aria-checked="true"] .lang-opt-check{
+  animation:langCheckIn .55s var(--sx-ease-move) .26s backwards;
+}
+@keyframes langCheckIn{from{opacity:0;transform:scale(.4)}}
+</style>
+<style id="qr-ring-animation">
+/* =========================================================
+   انیمیشن QR مودال: حلقه رنگی چرخان + درخشش نرم + خط اسکن + ورود pop
+   (همان افکت فایل Xray Pilot) — فقط transform / opacity
+   ========================================================= */
+.modal-box .qr-ring{position:relative;width:200px;height:200px;margin:8px auto 22px}
+.modal-box .qr-ring .qr-placeholder{
+  position:relative;z-index:1;overflow:hidden;margin:0;border:0;
+  background:#fff;border-radius:14px;box-shadow:0 0 0 3px var(--card);
+}
+.qr-band,.qr-glow{
+  position:absolute;inset:-5px;border-radius:19px;overflow:hidden;pointer-events:none;
+  opacity:0;transition:opacity .8s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)) .1s;
+}
+.qr-glow{filter:blur(8px)}
+.qr-band::before,.qr-glow::before{
+  content:"";position:absolute;left:50%;top:50%;width:220%;height:220%;
+  transform:translate(-50%,-50%);
+  background:conic-gradient(from 0deg,transparent 0 200deg,#22c55e 280deg,#22d3ee 336deg,#fff 360deg);
+  animation:qrRingSpin 3s linear infinite paused;will-change:transform;
+}
+.modal-overlay.show .qr-band{opacity:1}
+.modal-overlay.show .qr-glow{opacity:.5;animation:qrBreathe 3.6s ease-in-out infinite}
+.modal-overlay.show .qr-band::before,
+.modal-overlay.show .qr-glow::before{animation-play-state:running}
+
+.modal-box .qr-ring .qr-placeholder::after{
+  content:"";position:absolute;left:12px;right:12px;top:10px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,#22c55e,transparent);
+  box-shadow:0 0 14px #22c55e;opacity:0;
+}
+.modal-overlay.show .qr-ring .qr-placeholder::after{animation:qrScan 1.5s cubic-bezier(.45,0,.2,1) .45s both}
+.modal-overlay.show .qr-ring{animation:qrPop 1.1s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)) .12s both}
+
+@keyframes qrRingSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes qrBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes qrScan{0%{opacity:0;transform:translate3d(0,0,0)}12%{opacity:1}88%{opacity:1}100%{opacity:0;transform:translate3d(0,178px,0)}}
+@keyframes qrPop{from{opacity:0;transform:scale(.8) rotate(-4deg)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  .qr-band::before,.qr-glow::before,.modal-overlay.show .qr-glow,
+  .modal-overlay.show .qr-ring,.modal-overlay.show .qr-ring .qr-placeholder::after{animation:none!important}
+  .modal-overlay.show .qr-band{opacity:1}
+  .modal-overlay.show .qr-glow{opacity:.5}
+}
+</style>
+<style id="theme-pop-style">
+/* =========================================================
+   کارت انتخاب تم (روز / شب) — دقیقاً همان انیمیشن و ظاهر کارت زبان
+   ========================================================= */
+#themeBtn[aria-expanded="true"]{color:var(--btn-icon-hover);box-shadow:var(--btn-white-shadow),0 0 0 3px rgba(var(--accent-rgb),.22)}
+.theme-pop .lang-opt-code{min-width:34px}
+.theme-pop .lang-opt-code svg{width:15px;height:15px;display:block;overflow:visible}
+/* آیکون‌های خورشید و ماه با ورود کارت می‌چرخند و جا می‌افتند */
+.theme-pop.open .lang-opt-code svg{
+  animation:themeIcoIn .75s var(--sx-ease-move) calc(var(--i,0) * 55ms + 150ms) backwards;
+}
+@keyframes themeIcoIn{from{opacity:0;transform:rotate(-140deg) scale(.3)}}
+/* خورشیدِ گزینه‌ی انتخاب‌شده با اشعه‌هایی که آرام می‌چرخند */
+.theme-pop .lang-opt[aria-checked="true"] .ico-sun{animation:themeSunSpin 14s linear infinite}
+.theme-pop.open .lang-opt[aria-checked="true"] .ico-sun{animation:themeIcoIn .75s var(--sx-ease-move) 150ms backwards, themeSunSpin 14s linear .9s infinite}
+@keyframes themeSunSpin{to{transform:rotate(360deg)}}
+.theme-pop .lang-opt[aria-checked="true"] .ico-moon{transform:rotate(-12deg)}
+.theme-pop .lang-opt:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){
+  .theme-pop .lang-opt-code svg,.theme-pop .lang-opt[aria-checked="true"] .ico-sun{animation:none!important}
+}
+</style>
+<style id="qr-smooth">
+/* =========================================================
+   QR مودال — نسخه‌ی نرم‌تر و روان‌تر
+   فقط transform / opacity (روی GPU، زمان‌محور → روی هر نرخ تازه‌سازی نمایشگر یکسان و روان)
+   ========================================================= */
+
+/* پس‌زمینه: تیرگی ملایم‌تر + بلور ثابت (محو شدنش با opacity خود لایه انجام می‌شود) */
+#qrModal{
+  background:rgba(2,7,20,.6);
+  -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);
+  transition:opacity .38s ease, visibility .38s;
+}
+:root:not([data-theme=dark]) #qrModal{background:rgba(10,37,64,.36)}
+
+/* جعبه: از محل لمس رشد می‌کند و با فنر نرم می‌نشیند؛ موقع بستن سریع و تمیز جمع می‌شود */
+#qrModal .modal-box{
+  opacity:0;
+  transform:scale(.78);
+  transform-origin:var(--qr-ox,50%) var(--qr-oy,50%);
+  transition:transform .3s cubic-bezier(.5,0,.75,0), opacity .22s ease;
+  will-change:transform,opacity;
+}
+#qrModal.show .modal-box{
+  opacity:1;transform:none;
+  transition:transform .85s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)), opacity .4s ease;
+}
+
+/* ورود پله‌ای محتوا */
+#qrModal.show .qr-ring{animation:qrPop2 1.15s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)) .1s backwards}
+#qrModal.show .qr-name{animation:qrUp .8s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)) .36s backwards}
+#qrModal.show .qr-hint{animation:qrUp .8s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)) .44s backwards}
+#qrModal.show .close-btn{animation:qrUp .8s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)) .52s backwards}
+@keyframes qrPop2{from{opacity:0;transform:scale(.62) rotate(-7deg)}to{opacity:1;transform:none}}
+@keyframes qrUp{from{opacity:0;transform:translate3d(0,16px,0)}to{opacity:1;transform:none}}
+
+/* خود QR بعد از نشستن کارت سفید، نرم «ظاهر» می‌شود */
+#qrModal.show .qr-reveal{animation:qrReveal .9s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)) .5s backwards}
+@keyframes qrReveal{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:none}}
+
+/* خط اسکن: همزمان با ظاهر شدن QR، نرم‌تر و کمی کندتر */
+#qrModal.show .qr-ring .qr-placeholder::after{animation:qrScan2 1.7s cubic-bezier(.65,0,.35,1) .55s both}
+@keyframes qrScan2{
+  0%{opacity:0;transform:translate3d(0,0,0)}
+  14%{opacity:1}
+  86%{opacity:1}
+  100%{opacity:0;transform:translate3d(0,180px,0)}
+}
+
+/* یک موج نرم که یک بار از دور QR پخش می‌شود (لحظه‌ی «آماده شد») */
+.modal-box .qr-ring::after{
+  content:"";position:absolute;inset:-5px;border-radius:19px;z-index:0;pointer-events:none;opacity:0;
+  border:2px solid rgba(34,211,238,.6);
+}
+#qrModal.show .qr-ring::after{animation:qrRipple 1.5s cubic-bezier(.2,.7,.2,1) .95s both}
+@keyframes qrRipple{
+  0%{opacity:.85;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.42)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  #qrModal .modal-box{transform:none;transition:opacity .2s}
+  #qrModal.show .qr-ring,#qrModal.show .qr-name,#qrModal.show .qr-hint,#qrModal.show .close-btn,
+  #qrModal.show .qr-reveal,#qrModal.show .qr-ring::after{animation:none!important}
+}
+</style>
+<style id="qr-smooth2">
+/* =========================================================
+   QR مودال — جلوه‌های قشنگ‌تر + بسته شدن خیلی نرم
+   ========================================================= */
+
+/* نور ملایم بالای کارت که موقع باز شدن «شکوفه» می‌کند و بعد آرام نفس می‌کشد */
+#qrModal .modal-box::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;opacity:0;
+  background:
+    radial-gradient(ellipse 85% 55% at 50% 0%, rgba(var(--accent2-rgb),.34), transparent 70%),
+    radial-gradient(ellipse 70% 40% at 50% 100%, rgba(34,211,238,.14), transparent 70%);
+}
+#qrModal.show .modal-box::before{
+  opacity:1;
+  animation:qrAuraIn 1.4s var(--sx-ease-fade,ease) .15s backwards, qrAuraBreathe 5s ease-in-out 1.55s infinite alternate;
+}
+@keyframes qrAuraIn{from{opacity:0}}
+@keyframes qrAuraBreathe{from{opacity:1}to{opacity:.55}}
+#qrModal .modal-box > *{position:relative;z-index:1}
+
+/* برق نورانی یک‌باره که از روی کارت QR رد می‌شود */
+.modal-box .qr-ring .qr-placeholder::before{
+  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(110deg,transparent 38%,rgba(45,212,191,.38) 50%,transparent 62%);
+  transform:translate3d(-130%,0,0);
+}
+#qrModal.show .qr-ring .qr-placeholder::before{animation:qrGloss 1.3s cubic-bezier(.45,0,.2,1) 1.25s both}
+@keyframes qrGloss{to{transform:translate3d(130%,0,0)}}
+
+/* نام کانفیگ: یک سایه‌ی رنگی نرم که با ورود روشن می‌شود */
+#qrModal.show .qr-name{text-shadow:0 0 16px rgba(var(--accent2-rgb),.35)}
+
+/* ---------- بسته شدن: محو شدن خیلی نرم و روان ---------- */
+#qrModal.show.closing{
+  opacity:0;
+  transition:opacity .62s cubic-bezier(.33,0,.2,1), visibility 0s;
+}
+#qrModal.show.closing .modal-box{
+  opacity:0;
+  transform:scale(.93) translate3d(0,10px,0);
+  transition:transform .62s cubic-bezier(.33,0,.2,1), opacity .5s cubic-bezier(.33,0,.2,1);
+}
+#qrModal.show.closing .qr-ring{
+  transform:scale(.95);
+  transition:transform .62s cubic-bezier(.33,0,.2,1);
+}
+#qrModal.show.closing .modal-box::before{animation:none;opacity:0;transition:opacity .4s ease}
+
+@media (prefers-reduced-motion:reduce){
+  #qrModal.show .modal-box::before,#qrModal.show .qr-ring .qr-placeholder::before{animation:none!important}
+  #qrModal.show.closing,#qrModal.show.closing .modal-box,#qrModal.show.closing .qr-ring{transition:opacity .2s!important;transform:none}
+}
+</style>
+<style id="qr-link-card">
+/* کارت لینک زیر QR: متن لینک + دکمه کپی کنارش */
+.modal-box .qr-link{
+  display:flex;align-items:center;gap:8px;margin:0 0 14px;padding:9px 10px 9px 12px;
+  background:var(--input-bg);border:1px solid var(--input-border);border-radius:14px;
+  text-align:left;
+}
+.modal-box .qr-link-url{
+  flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted);
+}
+.modal-box .qr-link-copy{
+  position:relative;flex:0 0 auto;width:30px;height:30px;padding:0;border:0;border-radius:9px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;color:var(--muted);transition:background .2s,color .2s,transform .2s;
+}
+.modal-box .qr-link-copy:hover{background:rgba(var(--accent-rgb),.14);color:var(--text)}
+.modal-box .qr-link-copy:active{transform:scale(.9)}
+.modal-box .qr-link-copy svg{position:absolute;width:16px;height:16px;transition:transform .35s cubic-bezier(.34,1.4,.64,1),opacity .2s}
+.modal-box .qr-link-copy .ic-ok{opacity:0;transform:scale(.4);color:var(--success)}
+.modal-box .qr-link-copy.ok .ic-copy{opacity:0;transform:scale(.4)}
+.modal-box .qr-link-copy.ok .ic-ok{opacity:1;transform:scale(1)}
+#qrModal.show .qr-link{animation:qrUp .8s var(--sx-ease-move,cubic-bezier(.16,1,.3,1)) .48s backwards}
+@media (prefers-reduced-motion:reduce){#qrModal.show .qr-link{animation:none!important}}
+</style>
+<style id="qr-smooth3">
+/* =========================================================
+   QR مودال — نسخه‌ی روان و سبک + بسته شدن «توری»
+   همه‌ی حرکت‌ها فقط transform / opacity ؛ فیلتر بلور و backdrop-filter حذف شد (علت اصلی لَگ روی گوشی)
+   ========================================================= */
+
+/* پس‌زمینه: بدون بلور، فقط محو شدن ساده و نرم */
+#qrModal{
+  background:rgba(2,7,20,.68);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  transition:opacity .5s cubic-bezier(.22,1,.36,1), visibility .5s;
+}
+:root:not([data-theme=dark]) #qrModal{background:rgba(10,37,64,.42)}
+
+/* جعبه: بدون overshoot (متن تار نمی‌شود)، نشستن نرم */
+#qrModal .modal-box{position:relative;transform:scale(.88) translate3d(0,14px,0)}
+#qrModal.show .modal-box{
+  transform:none;
+  transition:transform .8s cubic-bezier(.22,1,.36,1), opacity .45s ease;
+}
+
+/* QR: ورود ساده‌تر و تمیزتر */
+@keyframes qrPop2{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:none}}
+#qrModal.show .qr-ring{animation:qrPop2 1.1s cubic-bezier(.22,1,.36,1) .12s backwards}
+
+/* درخشش دور QR: به‌جای بلورِ سنگین، سایه‌ی رنگی نرم */
+.qr-glow{filter:none;background:transparent;box-shadow:0 0 24px 3px rgba(34,211,238,.34),0 0 46px 10px rgba(34,197,94,.14)}
+.qr-glow::before{display:none}
+#qrModal.show .qr-glow{opacity:.8}
+
+/* ---------- پرده‌ی توری: یک شبکه‌ی ظریف که موقع ورود باز می‌شود و موقع خروج روی کارت می‌نشیند ---------- */
+#qrModal .modal-box::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:6;opacity:0;
+  background:
+    repeating-linear-gradient(45deg,rgba(var(--accent2-rgb),.26) 0 1px,transparent 1px 6px),
+    repeating-linear-gradient(-45deg,rgba(var(--accent2-rgb),.26) 0 1px,transparent 1px 6px),
+    linear-gradient(180deg,rgba(var(--accent2-rgb),.18),rgba(255,255,255,.06) 50%,rgba(var(--accent2-rgb),.16));
+}
+@keyframes qrVeilIn{from{opacity:.9}to{opacity:0}}
+#qrModal.show .modal-box::after{animation:qrVeilIn 1s cubic-bezier(.22,1,.36,1) backwards}
+
+/* ---------- بسته شدن: توری + محو شدن پله‌ای و روان ---------- */
+#qrModal.show.closing{
+  opacity:0;
+  transition:opacity .72s cubic-bezier(.4,0,.2,1), visibility 0s;
+}
+#qrModal.show.closing .modal-box{
+  opacity:0;
+  transform:scale(.97) translate3d(0,-10px,0);
+  transition:transform .72s cubic-bezier(.4,0,.2,1), opacity .5s cubic-bezier(.4,0,.2,1) .2s;
+}
+@keyframes qrVeilOut{0%{opacity:0}40%{opacity:.9}100%{opacity:.9}}
+#qrModal.show.closing .modal-box::after{animation:qrVeilOut .72s cubic-bezier(.4,0,.2,1) forwards}
+/* محتوا مثل پارچه‌ی توری آرام بالا می‌رود و محو می‌شود (از بالا به پایین پله‌ای) */
+@keyframes qrTulleOut{to{opacity:0;transform:translate3d(0,-12px,0) scale(.985)}}
+#qrModal.show.closing .qr-ring,
+#qrModal.show.closing .qr-name,
+#qrModal.show.closing .qr-hint,
+#qrModal.show.closing .qr-link,
+#qrModal.show.closing .close-btn{
+  transition:none;
+  animation:qrTulleOut .5s cubic-bezier(.4,0,.2,1) forwards;
+}
+#qrModal.show.closing .qr-ring{transform:none;animation-delay:0s}
+#qrModal.show.closing .qr-name{animation-delay:.05s}
+#qrModal.show.closing .qr-hint{animation-delay:.09s}
+#qrModal.show.closing .qr-link{animation-delay:.13s}
+#qrModal.show.closing .close-btn{animation-delay:.17s}
+
+@media (prefers-reduced-motion:reduce){
+  #qrModal.show .modal-box::after,#qrModal.show.closing .modal-box::after,
+  #qrModal.show.closing .qr-ring,#qrModal.show.closing .qr-name,#qrModal.show.closing .qr-hint,
+  #qrModal.show.closing .qr-link,#qrModal.show.closing .close-btn{animation:none!important}
+}
+</style>
+<style id="qr-smooth4">
+/* کارت دور QR (مثل عکس مرجع) */
+.modal-box .qr-card{
+  margin:0 0 14px;padding:16px 0;border-radius:20px;overflow:hidden;
+  background:var(--input-bg);border:1px solid var(--input-border);
+}
+.modal-box .qr-card .qr-ring{margin:0 auto}
+#qrModal.show .qr-card{animation:qrUp .8s cubic-bezier(.22,1,.36,1) .06s backwards}
+/* درخشش دور QR داخل کارت می‌ماند، ظریف‌تر */
+.qr-glow{box-shadow:0 0 18px 2px rgba(34,211,238,.30),0 0 30px 6px rgba(34,197,94,.12)}
+
+/* ---------- محو شدن نرم‌تر: یک منحنی ملایم برای همه‌چیز، بدون پرش ---------- */
+#qrModal .modal-box::after{
+  background:
+    repeating-linear-gradient(45deg,rgba(var(--accent2-rgb),.18) 0 1px,transparent 1px 7px),
+    repeating-linear-gradient(-45deg,rgba(var(--accent2-rgb),.18) 0 1px,transparent 1px 7px),
+    linear-gradient(180deg,rgba(var(--accent2-rgb),.12),rgba(255,255,255,.04) 50%,rgba(var(--accent2-rgb),.10));
+}
+@keyframes qrVeilIn{from{opacity:.7}to{opacity:0}}
+@keyframes qrVeilOut{0%{opacity:0}55%{opacity:.55}100%{opacity:.55}}
+@keyframes qrTulleOut{to{opacity:0;transform:translate3d(0,-7px,0)}}
+
+#qrModal.show.closing{
+  opacity:0;
+  transition:opacity .85s cubic-bezier(.45,.05,.55,.95), visibility 0s;
+}
+#qrModal.show.closing .modal-box{
+  opacity:0;
+  transform:scale(.985) translate3d(0,-6px,0);
+  transition:transform .85s cubic-bezier(.45,.05,.55,.95), opacity .62s cubic-bezier(.45,.05,.55,.95) .12s;
+}
+#qrModal.show.closing .modal-box::after{animation:qrVeilOut .85s cubic-bezier(.45,.05,.55,.95) forwards}
+#qrModal.show.closing .qr-card,
+#qrModal.show.closing .qr-name,
+#qrModal.show.closing .qr-hint,
+#qrModal.show.closing .qr-link,
+#qrModal.show.closing .close-btn{
+  transition:none;
+  animation:qrTulleOut .6s cubic-bezier(.45,.05,.55,.95) forwards;
+}
+#qrModal.show.closing .qr-card{animation-delay:0s}
+#qrModal.show.closing .qr-name{animation-delay:.05s}
+#qrModal.show.closing .qr-hint{animation-delay:.09s}
+#qrModal.show.closing .qr-link{animation-delay:.13s}
+#qrModal.show.closing .close-btn{animation-delay:.17s}
+#qrModal.show.closing .qr-ring{animation:none}
+
+@media (prefers-reduced-motion:reduce){
+  #qrModal.show .qr-card,#qrModal.show.closing .qr-card{animation:none!important}
+}
+</style>
+<style id="copy-link-anim">
+/* دکمه‌ی «کپی لینک»: انیمیشن خیلی ریز و خیلی نرم
+   سبز شدن با محو شدن یک لایه (نه پرش رنگ) + آیکون کپی که نرم به تیک تبدیل می‌شود + یک حلقه‌ی بسیار ظریف */
+.sub-copy-btn{
+  position:relative;isolation:isolate;
+  transition:transform .25s cubic-bezier(.16,1,.3,1), color .55s ease, border-color .55s ease;
+}
+.sub-copy-btn::before{
+  content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,#22c55e,#15803d);
+  opacity:0;transition:opacity .55s cubic-bezier(.22,1,.36,1);
+}
+.sub-copy-btn::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  border:1.5px solid rgba(34,197,94,.55);opacity:0;
+}
+/* رنگ سبز حالا از لایه‌ی ::before می‌آید تا نرم محو شود */
+.sub-copy-btn.success{
+  background:var(--btn-white-bg)!important;color:#fff!important;border-color:rgba(34,197,94,.5)!important;
+}
+.sub-copy-btn.success::before{opacity:1}
+.sub-copy-btn.success::after{animation:cpRing 1s cubic-bezier(.22,1,.36,1)}
+@keyframes cpRing{from{opacity:.55;transform:scale(1)}to{opacity:0;transform:scale(1.16)}}
+
+.sub-copy-btn .cp-ico{position:relative;display:inline-block;width:15px;height:15px;flex:0 0 auto}
+.sub-copy-btn .cp-ico svg{
+  position:absolute;inset:0;width:15px;height:15px;
+  transition:transform .55s cubic-bezier(.22,1,.36,1), opacity .4s ease;
+}
+.sub-copy-btn .ic-ok{opacity:0;transform:scale(.6)}
+.sub-copy-btn.success .ic-copy{opacity:0;transform:scale(.6)}
+.sub-copy-btn.success .ic-ok{opacity:1;transform:scale(1)}
+
+@media (prefers-reduced-motion:reduce){
+  .sub-copy-btn,.sub-copy-btn::before,.sub-copy-btn .cp-ico svg{transition:none!important}
+  .sub-copy-btn.success::after{animation:none!important}
+}
+</style>
+</head>
+<body data-tab="tab-home">
+
+<div class="web-overlay"></div>
+
+<div class="container">
+
+  <div class="hero-bar">
+    <div class="hero-top">
+      <button class="ctrl-btn" id="themeBtn" type="button" aria-label="Theme" aria-haspopup="menu" aria-expanded="false" aria-controls="themePop">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+      <button class="ctrl-btn lang-btn" id="langBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="langPop">
+        <svg class="globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        <span class="lang-text-wrap"><span id="langLabel">FA</span></span>
+      </button>
+    </div>
+    <div class="brand-center">
+      <div class="brand-title">SPiDER</div>
+      <div class="brand-panel-row">
+        <span class="brand-line"></span>
+        <div class="brand-sub">PANEL</div>
+        <span class="brand-line"></span>
+      </div>
+      <div class="brand-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span data-i18n="title">ایستگاه فضایی اشتراک</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="badge-row">
+    <span class="status-pill" id="statusPill">
+      <span class="status-dot"></span>
+      <span id="statusPillText" data-i18n="statusOnline">آنلاین</span>
+    </span>
+  </div>
+
+  <div class="tab-content active" id="tab-home">
+
+    <div class="merged-block">
+
+      <div class="water-waves" aria-hidden="true">
+        <svg class="wave-2" viewBox="0 0 200 120" preserveAspectRatio="none">
+          <path d="M0,48 C 33,28 66,68 100,48 S 166,28 200,48 L200,120 L0,120 Z"/>
+        </svg>
+        <svg class="wave-1" viewBox="0 0 200 120" preserveAspectRatio="none">
+          <path d="M0,74 C 30,52 70,96 100,74 S 170,52 200,74 L200,120 L0,120 Z"/>
+        </svg>
+      </div>
+
+      <div class="fluffy-status card">
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+          <defs>
+            <linearGradient id="fluffyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#2b7fff"/>
+              <stop offset="50%" stop-color="#6db8ff"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <div class="fluffy-top">
+          <div class="fluffy-ring-box">
+            <div class="fluffy-ring">
+              <svg class="orbit-arc" viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="orbit-arc-line" cx="50" cy="50" r="48" fill="none"/>
+              </svg>
+              <svg viewBox="0 0 100 100">
+                <circle class="fluffy-ring-bg" cx="50" cy="50" r="42"/>
+                <circle class="fluffy-ring-fill" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+              </svg>
+              <div class="fluffy-ring-center">
+                <span class="fluffy-ring-pct" id="ringPct">0٪</span>
+                <span class="fluffy-ring-lbl" data-i18n="usage">مصرف شده</span>
+              </div>
+            </div>
+          </div>
+          <div class="fluffy-status-info">
+            <div class="fluffy-status-title" id="statusTitle" data-i18n="connectedActive">متصل و فعال</div>
+            <div class="fluffy-status-sub" data-i18n="secureReady">اتصال امن شما آماده استفاده است</div>
+            <button class="fluffy-quick-btn" type="button" id="fluffyQuickBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span data-i18n="quickConnect">اتصال سریع</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="fluffy-stats">
+          <div class="fluffy-stat highlight">
+            <span class="fluffy-stat-val" id="statRemain">0 GB</span>
+            <span class="fluffy-stat-lbl"><i class="fa-solid fa-battery-three-quarters"></i> <span data-i18n="remain">حجم باقی‌مانده</span></span>
+          </div>
+          <div class="fluffy-stat">
+            <span class="fluffy-stat-val" id="statUsed">0 GB</span>
+            <span class="fluffy-stat-lbl"><i class="fa-solid fa-chart-simple"></i> <span data-i18n="used">حجم مصرفی</span></span>
+          </div>
+          <div class="fluffy-stat">
+            <span class="fluffy-stat-val" id="statTotal">0 GB</span>
+            <span class="fluffy-stat-lbl"><i class="fa-solid fa-database"></i> <span data-i18n="totalLimit">حجم سرویس</span></span>
+          </div>
+          <div class="fluffy-stat">
+            <span class="fluffy-stat-val" id="avgVal">0 GB</span>
+            <span class="fluffy-stat-lbl"><i class="fa-solid fa-calendar-day"></i> <span data-i18n="dailyAvg">میانگین روزانه</span></span>
+          </div>
+          <div class="fluffy-stat">
+            <span class="fluffy-stat-val" id="connLimitVal2">∞</span>
+            <span class="fluffy-stat-lbl"><i class="fa-solid fa-users"></i> <span data-i18n="connLimit">اتصال مجاز</span></span>
+          </div>
+        </div>
+
+        <div class="fluffy-bar-wrap">
+          <div class="fluffy-bar-track">
+            <div class="fluffy-bar-fill" id="barFill" style="width:0%">
+              <span class="fluffy-bar-pct" id="barPct"></span>
+            </div>
+          </div>
+          <div class="fluffy-bar-right">
+            <div class="remain-num" id="remainNum">0 GB</div>
+            <div class="remain-lbl" data-i18n="remain">حجم باقی‌مانده</div>
+          </div>
+        </div>
+
+        <div class="fluffy-days" id="daysRow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span id="daysRowText" data-i18n="unlimited">∞ نامحدود</span>
+        </div>
+      </div>
+
+      <div class="sub-card">
+        <div class="sub-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          <span data-i18n="subLabel">لینک سابسکریپشن</span>
+        </div>
+        <div class="sub-link-box">
+          <span class="sub-url" id="subUrl">...</span>
+          <button class="sub-qr-btn" id="qrSubBtn" type="button" title="QR">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3z"/></svg>
+          </button>
+          <button class="sub-copy-btn" id="copySubBtn" type="button">
+            <span class="cp-ico"><svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg><svg class="ic-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+            <span data-i18n="copyLink">کپی لینک</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card account-card">
+      <div class="account-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span data-i18n="accountTitle">اطلاعات اکانت</span>
+      </div>
+      <div class="account-list">
+        <div class="account-row"><span class="k" data-i18n="sId">شناسه اشتراک</span><div class="v-wrap"><span class="v" dir="ltr" id="subId">...</span><button type="button" class="copy-id"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button></div></div>
+        <div class="account-row"><span class="k" data-i18n="usernameLbl">نام کاربری</span><span class="v" dir="ltr" id="usernameVal">—</span></div>
+        <div class="account-row"><span class="k" data-i18n="connLimit">اتصال مجاز</span><span class="v" dir="ltr" id="connLimitVal">—</span></div>
+        <div class="account-row"><span class="k" data-i18n="connActive">اتصال فعلی</span><span class="v" dir="ltr" id="connActiveVal">—</span></div>
+      </div>
+    </div>
+
+    <div class="card expire-card">
+      <div class="expire-header">
+        <span class="expire-label" data-i18n="expireLabel">⏱ انقضا</span>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="clockGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6db8ff"/><stop offset="50%" stop-color="#2b7fff"/><stop offset="100%" stop-color="#4a9eff"/></linearGradient></defs><circle cx="12" cy="12" r="9" stroke="url(#clockGrad)" stroke-width="2"/><path d="M12 7v5l3 2" stroke="url(#clockGrad)" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="expire-main">
+        <div class="expire-unlimited" id="expireMain" data-i18n="unlimited">∞ نامحدود</div>
+        <div class="expire-sub" id="expireSub" data-i18n="noExpire">بدون تاریخ انقضا</div>
+      </div>
+      <div class="expire-boxes">
+        <div class="expire-box"><span class="inf" id="expDay">∞</span><span class="lbl" data-i18n="day">روز</span></div>
+        <div class="expire-box"><span class="inf" id="expHour">∞</span><span class="lbl" data-i18n="hour">ساعت</span></div>
+        <div class="expire-box"><span class="inf" id="expMin">∞</span><span class="lbl" data-i18n="min">دقیقه</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tab-content" id="tab-configs">
+    <div class="configs-box" id="configsBox">
+      <div class="configs-box-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span data-i18n="yourConfigs">کانفیگ‌های شما</span>
+        <span class="count" id="cfgCount">0</span>
+      </div>
+
+      <div class="config-controls">
+        <div class="config-actions-grid">
+          <button class="config-action-btn primary" id="copyAllConfigsBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            <span data-i18n="copyAllShort">کپی همه کانفیگ‌ها</span>
+          </button>
+          <button class="config-action-btn" id="copySubTextBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+            <span data-i18n="copySubText">کپی متن ساب</span>
+          </button>
+        </div>
+
+        <div class="config-filter-bar">
+          <div class="config-search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="search" id="searchInput" data-i18n-placeholder="search" placeholder="جستجو در کانفیگ‌ها...">
+          </div>
+          <div class="config-chip-row">
+            <span class="config-chip active" data-filter="all" data-i18n="all">همه</span>
+            <span class="config-chip" data-filter="proxy">Proxy</span>
+            <span class="config-chip" data-filter="tls">TLS</span>
+            <span class="config-chip" data-filter="reality">Reality</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="configs-list" id="configList"></div>
+    </div>
+  </div>
+
+  <div class="social-section">
+    <div class="social-title" data-i18n="followUs">ما را دنبال کنید</div>
+    <div class="social-row">
+      <a class="social-card social-tg" href="https://t.me/SPiDER_VPN1" target="_blank" rel="noopener noreferrer" title="Telegram">
+        <span class="social-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg></span>
+        <span class="social-name">Telegram</span>
+      </a>
+      <a class="social-card social-yt" href="https://www.youtube.com/@SPiDER_VPN1" target="_blank" rel="noopener noreferrer" title="YouTube">
+        <span class="social-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2 31.5 31.5 0 000 12a31.5 31.5 0 00.5 5.8 3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1A31.5 31.5 0 0024 12a31.5 31.5 0 00-.5-5.8zM9.75 15.5v-7l6.5 3.5-6.5 3.5z"/></svg></span>
+        <span class="social-name">YouTube</span>
+      </a>
+      <a class="social-card social-gh" href="https://github.com/amirh00sain/SpiderPanel" target="_blank" rel="noopener noreferrer" title="GitHub">
+        <span class="social-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.52 2.87 8.35 6.84 9.71.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0112 6.8c.85 0 1.71.12 2.51.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.03 10.03 0 0022 12.26C22 6.58 17.52 2 12 2z"/></svg></span>
+        <span class="social-name">GitHub</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="team-brand">
+    <span class="team-name">SPiDER</span>
+    <span class="team-word">Team</span>
+  </div>
+  <footer class="site-foot">SPiDER PANEL • Premium</footer>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-item active" data-target="tab-home">
+    <i class="nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 10.8 12 3.4l8.5 7.4"/><path d="M5.5 9.6V19a1.5 1.5 0 0 0 1.5 1.5h3.2v-5.2a.8.8 0 0 1 .8-.8h2a.8.8 0 0 1 .8.8v5.2H17a1.5 1.5 0 0 0 1.5-1.5V9.6"/></svg></i>
+    <span data-i18n="navHome">داشبورد</span>
+  </button>
+  <button class="nav-item" data-target="tab-configs">
+    <i class="nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="4.6"/><path d="M11.25 12.25 20.5 3M15.5 8l2.2 2.2M18.2 5.3 19.9 7"/></svg></i>
+    <span data-i18n="navConfigs">کانفیگ‌ها</span>
+  </button>
+</nav>
+
+<div class="modal-overlay" id="qrModal">
+  <div class="modal-box">
+    <div class="qr-card">
+    <div class="qr-ring"><i class="qr-glow"></i><i class="qr-band"></i>
+      <div class="qr-placeholder" id="qrContainer">
+        <div class="qr-loader"></div>
+      </div>
+    </div>
+    </div>
+    <div class="qr-name" id="qrName">config</div>
+    <div class="qr-hint" data-i18n="qrHint">اسکن کنید تا کانفیگ اضافه شود</div>
+    <div class="qr-link" id="qrLink" dir="ltr">
+      <span class="qr-link-url" id="qrLinkUrl"></span>
+      <button type="button" class="qr-link-copy" id="qrLinkCopy" aria-label="copy">
+        <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        <svg class="ic-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </button>
+    </div>
+    <button class="close-btn" id="closeModal" data-i18n="close">بستن</button>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="qcModal">
+  <div class="qc-box" role="dialog" aria-modal="true" aria-labelledby="qcTitle">
+    <div class="qc-grab"></div>
+    <div class="qc-head">
+      <div class="qc-head-ico"><i class="fa-solid fa-bolt"></i></div>
+      <div class="qc-head-txt">
+        <div class="qc-title" id="qcTitle" data-i18n="qcTitle">اتصال سریع با یک کلیک</div>
+        <div class="qc-sub" data-qc="sub"></div>
+      </div>
+      <button type="button" class="qc-close" id="qcClose" aria-label="close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="qc-seg" id="qcSide" role="tablist">
+      <i class="qc-pill nt" id="qcPill"></i>
+      <button type="button" class="qc-tab" role="tab" data-p="android"><i class="fa-brands fa-android"></i><span>Android</span></button>
+      <button type="button" class="qc-tab" role="tab" data-p="ios"><i class="fa-brands fa-apple"></i><span>iOS</span></button>
+      <button type="button" class="qc-tab" role="tab" data-p="windows"><i class="fa-brands fa-windows"></i><span>Windows</span></button>
+    </div>
+    <div class="qc-body" id="qcBody">
+      <div class="qc-steps" id="qcSteps"></div>
+      <div class="qc-hint" id="qcHint" role="status" aria-live="polite"></div>
+      <div class="qc-grid" id="qcGrid"></div>
+      <div class="qc-actions">
+        <button type="button" class="qc-act primary" data-act="copy"><i class="fa-solid fa-copy"></i><span data-qc="copy"></span></button>
+        <button type="button" class="qc-act" data-act="qr"><i class="fa-solid fa-qrcode"></i><span data-qc="qr"></span></button>
+      </div>
+      <div class="qc-gtitle"><i class="fa-solid fa-book-open"></i><span data-qc="guideTitle"></span></div>
+      <div class="qc-guide" id="qcGuide"></div>
+    </div>
+  </div>
+</div>
+
+<div class="lang-pop theme-pop" id="themePop" role="menu" aria-label="تم">
+  <button type="button" class="lang-opt" role="menuitemradio" aria-checked="true" data-theme-opt="light" style="--i:0">
+    <span class="lang-opt-code"><svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span>
+    <span class="lang-opt-name" data-i18n="themeLight">روز</span>
+    <svg class="lang-opt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+  </button>
+  <button type="button" class="lang-opt" role="menuitemradio" aria-checked="false" data-theme-opt="dark" style="--i:1">
+    <span class="lang-opt-code"><svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
+    <span class="lang-opt-name" data-i18n="themeDark">شب</span>
+    <svg class="lang-opt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+  </button>
+</div>
+
+<div class="lang-pop" id="langPop" role="menu" aria-label="زبان">
+  <button type="button" class="lang-opt" role="menuitemradio" aria-checked="true" data-lang="fa" style="--i:0">
+    <span class="lang-opt-code">FA</span>
+    <span class="lang-opt-name">فارسی</span>
+    <svg class="lang-opt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+  </button>
+  <button type="button" class="lang-opt" role="menuitemradio" aria-checked="false" data-lang="en" style="--i:1">
+    <span class="lang-opt-code">EN</span>
+    <span class="lang-opt-name">English</span>
+    <svg class="lang-opt-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+  </button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var uname = window.location.pathname.split('/').filter(Boolean).pop();
+  var apiUrl = '/api/sub/' + encodeURIComponent(uname);
+
+  var CONFIG_LINKS = [], CONFIG_NAMES = [], CONFIG_PROTOS = [];
+  var SUB_URL = '', SUB_ID = '', IS_ACTIVE = false;
+  var TOTAL_BYTES = 0, USED_BYTES = 0, CREATED_AT_TS = null;
+  var EXPIRE_TS = null, EXPIRE_DAYS = null;
+  var countdownInterval = null;
+
+  var BYTES_IN_GB = 1024*1024*1024;
+
+  var i18n = {
+    fa: {
+      title:"ایستگاه فضایی اشتراک", statusOnline:"آنلاین", followUs:"ما را دنبال کنید",
+      subLabel:"لینک سابسکریپشن", copyLink:"کپی لینک", accountTitle:"اطلاعات اکانت",
+      sId:"شناسه اشتراک", totalLimit:"حجم سرویس",
+      usernameLbl:"نام کاربری", connLimit:"اتصال مجاز", connActive:"اتصال فعلی",
+      usage:"مصرف شده", remain:"حجم باقی‌مانده", used:"حجم مصرفی", unlimited:"∞ نامحدود",
+      noExpire:"بدون تاریخ انقضا", min:"دقیقه", hour:"ساعت", day:"روز",
+      yourConfigs:"کانفیگ‌های شما", copyAllShort:"کپی همه کانفیگ‌ها", copySubText:"کپی متن ساب", all:"همه", search:"جستجو در کانفیگ‌ها...",
+      qrHint:"اسکن کنید تا کانفیگ اضافه شود", close:"بستن",
+      toastSub:"لینک ساب کپی شد", toastAll:"همه کانفیگ‌ها کپی شدند", toastSubText:"متن ساب کپی شد",
+      toastCfg:"کانفیگ کپی شد", toastId:"شناسه کپی شد",
+      toastErr:"خطا در کپی", connectedActive:"متصل و فعال",
+      secureReady:"اتصال امن شما آماده استفاده است", quickConnect:"اتصال سریع",
+      qcTitle:"اتصال سریع با یک کلیک", themeLight:"روز", themeDark:"شب", usageChart:"نمودار مصرف",
+      noConfig:"کانفیگی موجود نیست", gb:"گیگابایت", dailyAvg:"میانگین روزانه",
+      navHome:"داشبورد", navConfigs:"کانفیگ‌ها"
+    },
+    en: {
+      title:"Space Subscription Station", statusOnline:"Online", followUs:"Follow us",
+      subLabel:"Subscription Link", copyLink:"Copy Link", accountTitle:"Account Info",
+      sId:"Subscription ID", totalLimit:"Service Limit",
+      usernameLbl:"Username", connLimit:"Allowed Connections", connActive:"Active Connections",
+      usage:"Used", remain:"Remaining", used:"Used", unlimited:"∞ Unlimited",
+      noExpire:"No expiration date", min:"Min", hour:"Hour", day:"Day",
+      yourConfigs:"Your Configs", copyAllShort:"Copy All Configs", copySubText:"Copy Sub Text", all:"All", search:"Search configs...",
+      qrHint:"Scan to add the config", close:"Close",
+      toastSub:"Subscription link copied", toastAll:"All configs copied", toastSubText:"Sub text copied",
+      toastCfg:"Config copied", toastId:"ID copied",
+      toastErr:"Copy failed", connectedActive:"Connected & Active",
+      secureReady:"Your secure connection is ready", quickConnect:"Quick Connect",
+      qcTitle:"One-Tap Quick Connect", themeLight:"Light", themeDark:"Dark", usageChart:"Usage Chart",
+      noConfig:"No configs", gb:"GB", dailyAvg:"Daily Avg",
+      navHome:"Home", navConfigs:"Configs"
+    }
+  };
+
+  var lang = localStorage.getItem("spider-lang") || "fa";
+  var root = document.documentElement;
+
+  function tr(k){ return (i18n[lang] && i18n[lang][k]) || k; }
+  function isFa(){ return lang === "fa"; }
+  function faDigits(s){ return isFa() ? String(s).replace(/\d/g, function(d){ return '۰۱۲۳۴۵۶۷۸۹'[d]; }) : String(s); }
+  function fmtBytes(b){
+    if (!b || b < 1) return isFa() ? '۰ B' : '0 B';
+    var u = ['B','KB','MB','GB','TB'], i = 0;
+    while (b >= 1024 && i < u.length-1){ b /= 1024; i++; }
+    var num = b.toFixed(i ? 2 : 0);
+    return faDigits(num) + ' ' + u[i];
+  }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function pad2(v){ return String(v).padStart(2,'0'); }
+  function gregorianToJalali(gy, gm, gd){
+    var gDm = [0,31,59,90,120,151,181,212,243,273,304,334];
+    var jy = gy <= 1600 ? 0 : 979; gy -= gy <= 1600 ? 621 : 1600;
+    var gy2 = gm > 2 ? gy + 1 : gy;
+    var days = 365*gy + Math.floor((gy2+3)/4) - Math.floor((gy2+99)/100) + Math.floor((gy2+399)/400) - 80 + gd + gDm[gm-1];
+    jy += 33*Math.floor(days/12053); days %= 12053;
+    jy += 4*Math.floor(days/1461); days %= 1461;
+    if (days > 365){ jy += Math.floor((days-1)/365); days = (days-1)%365; }
+    var jm = days < 186 ? 1 + Math.floor(days/31) : 7 + Math.floor((days-186)/30);
+    var jd = 1 + (days < 186 ? days%31 : (days-186)%30);
+    return [jy,jm,jd];
+  }
+  function formatDateOnly(d){
+    if (!d || isNaN(d.getTime())) return '';
+    if (isFa()){
+      var j = gregorianToJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
+      return faDigits(j[0] + '/' + pad2(j[1]) + '/' + pad2(j[2]));
+    }
+    return d.getFullYear() + '/' + pad2(d.getMonth()+1) + '/' + pad2(d.getDate());
+  }
+
+  function applyLang(l){
+    lang = l;
+    localStorage.setItem("spider-lang", l);
+    var t = i18n[l] || i18n.fa;
+    document.documentElement.lang = l;
+    document.documentElement.dir = l === "fa" ? "rtl" : "ltr";
+    var lab = document.getElementById("langLabel");
+    if (lab) lab.textContent = l === "fa" ? "FA" : "EN";
+    updateLangMenu();
+    updateThemeMenu();
+    document.querySelectorAll("[data-i18n]").forEach(function(el){
+      var k = el.getAttribute("data-i18n");
+      if (t[k]) el.textContent = t[k];
+    });
+    renderConfigs();
+    if (typeof qcRefresh === "function") qcRefresh();
+    if (TOTAL_BYTES || USED_BYTES) applyTraffic();
+    if (EXPIRE_TS !== null) renderCountdown();
+  }
+
+  var savedTheme = localStorage.getItem("spider-theme-v2");
+  if (savedTheme === "dark"){ if (root.getAttribute("data-theme") !== "dark") root.setAttribute("data-theme","dark"); }
+  else if (root.hasAttribute("data-theme")){ root.removeAttribute("data-theme"); }
+
+  var themeSwitchTimer = null;
+
+  function applyThemeChange(){
+    if (root.getAttribute("data-theme") === "dark"){
+      root.removeAttribute("data-theme");
+      localStorage.setItem("spider-theme-v2","light");
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.content = "#eef4fb";
+    } else {
+      root.setAttribute("data-theme","dark");
+      localStorage.setItem("spider-theme-v2","dark");
+      var meta2 = document.querySelector('meta[name="theme-color"]');
+      if (meta2) meta2.content = "#01091a";
+    }
+  }
+
+  function toggleTheme(){
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced){
+      applyThemeChange();
+      return;
+    }
+
+    // روش ۱: View Transitions API — crossfade واقعی
+    if (typeof document.startViewTransition === "function"){
+      try {
+        document.startViewTransition(function(){ applyThemeChange(); });
+        return;
+      } catch(e){ /* ادامه به روش ۲ */ }
+    }
+
+    // روش ۲: fallback با کلاس موقت
+    root.classList.add("theme-transition");
+    applyThemeChange();
+    clearTimeout(themeSwitchTimer);
+    themeSwitchTimer = setTimeout(function(){
+      root.classList.remove("theme-transition");
+    }, 460);
+  }
+
+  var toastTimer;
+  function showToast(msg, err){
+    var old = document.querySelector(".toast"); if (old) old.remove();
+    var t = document.createElement("div");
+    t.className = "toast" + (err ? " error" : "");
+    t.textContent = msg;
+    document.body.appendChild(t);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){
+      t.classList.add("hide");
+      setTimeout(function(){ t.remove(); }, 300);
+    }, 2200);
+  }
+
+  function legacyCopy(text){
+    var ok = false, ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:0;opacity:0;font-size:16px;";
+    document.body.appendChild(ta);
+    try {
+      ta.focus({ preventScroll: true });
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      ok = document.execCommand("copy");
+    } catch(e){ ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  /* کپی مطمئن: اول روش همزمان (روی http و وب‌ویو هم کار می‌کند)، بعد Clipboard API، آخر هم نمایش لینک برای کپی دستی */
+  function copyText(text){
+    text = String(text == null ? "" : text);
+    if (!text) return Promise.reject(new Error("empty"));
+    if (legacyCopy(text)) return Promise.resolve();
+    function manual(){
+      try { window.prompt(isFa() ? "لینک را کپی کنید:" : "Copy the link:", text); } catch(e){}
+      return Promise.resolve();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).catch(manual);
+    }
+    return manual();
+  }
+  function getSubUrl(){
+    return SUB_URL || (window.location.origin + "/link/" + (SUB_ID || uname));
+  }
+
+  function protoOf(link){
+    var m = String(link||'').match(/^[a-z0-9]+:\/\//i);
+    var proto = m ? m[0].replace('://','').toUpperCase() : 'CONFIG';
+    var type = (String(link).match(/type=([a-z0-9-]+)/i) || [])[1] || '';
+    var sec = (String(link).match(/security=([a-z0-9-]+)/i) || [])[1] || '';
+    var out = proto;
+    if (sec) out += ' • ' + sec.toUpperCase();
+    else if (type) out += ' • ' + type.toUpperCase();
+    return out;
+  }
+
+  function dataProtoKey(link){
+    var l = String(link || '').toLowerCase();
+    var tags = [];
+    if (/^(vless|vmess|trojan|ss|socks|hysteria2|tuic):\/\//.test(l)) tags.push('proxy');
+    if (l.indexOf('wireguard://') === 0 || l.indexOf('wg://') === 0 || (l.indexOf('peer.') === 0 && l.indexOf('amnezia') >= 0)) tags.push('wireguard');
+    if (l.indexOf('security=reality') >= 0) tags.push('reality');
+    else if (l.indexOf('security=tls') >= 0 || l.indexOf('&tls=1') >= 0) tags.push('tls');
+    return tags.join(' ') || 'other';
+  }
+
+  var ACTIVE_FILTER = "all";
+  function applyFilters(){
+    var input = document.getElementById("searchInput");
+    var q = (input ? input.value : "").trim().toLowerCase();
+    document.querySelectorAll(".config-item").forEach(function(item){
+      var index = parseInt(item.getAttribute("data-index"), 10);
+      var tags = (item.getAttribute("data-tags") || "").toLowerCase();
+      var name = ((item.querySelector(".config-item-name") || {}).textContent || "").toLowerCase();
+      var proto = ((item.querySelector(".config-item-proto") || {}).textContent || "").toLowerCase();
+      var link = (CONFIG_LINKS[index] || "").toLowerCase();
+      var okFilter = ACTIVE_FILTER === "all" || tags.indexOf(ACTIVE_FILTER) >= 0;
+      var okSearch = !q || name.indexOf(q) >= 0 || proto.indexOf(q) >= 0 || link.indexOf(q) >= 0;
+      item.style.display = (okFilter && okSearch) ? "" : "none";
+    });
+  }
+
+  var cfgEnterTimer = null;
+  function switchTab(target){
+    closeLangMenu(false);
+    document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+    var btn = document.querySelector('.nav-item[data-target="' + target + '"]');
+    if (btn) btn.classList.add('active');
+    var tab = document.getElementById(target);
+    if (tab) tab.classList.add('active');
+    document.body.setAttribute('data-tab', target);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (target === 'tab-configs' && tab && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      tab.classList.remove('cfg-enter');
+      void tab.offsetWidth;
+      tab.classList.add('cfg-enter');
+      clearTimeout(cfgEnterTimer);
+      cfgEnterTimer = setTimeout(function(){ tab.classList.remove('cfg-enter'); }, 2400);
+    }
+    if (target === 'tab-home') {
+      var subCard = document.querySelector('.merged-block .sub-card');
+      if (subCard && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        subCard.classList.remove('sub-enter-show');
+        subCard.classList.add('sub-enter-ready');
+        void subCard.offsetWidth;
+        requestAnimationFrame(function(){ subCard.classList.add('sub-enter-show'); });
+      }
+    }
+  }
+
+  function renderConfigs(){
+    var list = document.getElementById("configList");
+    var cnt = document.getElementById("cfgCount");
+    if (!list) return;
+    if (!CONFIG_LINKS.length){
+      list.innerHTML = '<div class="empty-configs">' + esc(tr('noConfig')) + '</div>';
+      if (cnt) cnt.textContent = '0';
+      return;
+    }
+    list.innerHTML = '';
+    CONFIG_LINKS.forEach(function(link, i){
+      var item = document.createElement('div');
+      item.className = 'config-item';
+      item.setAttribute('data-index', i);
+      item.setAttribute('data-tags', dataProtoKey(link));
+      var name = CONFIG_NAMES[i] || ('Config ' + (i+1));
+      var proto = CONFIG_PROTOS[i] || protoOf(link);
+      item.innerHTML =
+        '<div class="config-item-body">' +
+          '<span class="config-item-name">' + esc(name) + '</span>' +
+          '<span class="config-item-proto">' + esc(proto) + '</span>' +
+        '</div>' +
+        '<div class="config-item-actions">' +
+          '<button class="mini-btn copy-cfg" type="button" data-index="' + i + '" title="Copy">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>' +
+          '</button>' +
+          '<button class="mini-btn qr-btn" type="button" data-index="' + i + '" title="QR">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M20 20v.01"/></svg>' +
+          '</button>' +
+        '</div>';
+      list.appendChild(item);
+    });
+    if (cnt) cnt.textContent = faDigits(CONFIG_LINKS.length);
+    bindConfigButtons();
+    applyFilters();
+  }
+
+  function bindConfigButtons(){
+    document.querySelectorAll(".copy-cfg").forEach(function(btn){
+      if (btn._bound) return; btn._bound = true;
+      btn.addEventListener("click", function(){
+        var i = parseInt(btn.getAttribute("data-index"), 10);
+        var link = CONFIG_LINKS[i];
+        if (!link) return;
+        copyText(link).then(function(){
+          btn.classList.add("copied");
+          var name = (CONFIG_NAMES[i] || "").substring(0, 28);
+          showToast(tr("toastCfg") + (name ? ": " + name : ""));
+          setTimeout(function(){ btn.classList.remove("copied"); }, 1400);
+        }).catch(function(){ showToast(tr("toastErr"), true); });
+      });
+    });
+    document.querySelectorAll(".qr-btn").forEach(function(btn){
+      if (btn._bound) return; btn._bound = true;
+      btn.addEventListener("click", function(){
+        var i = parseInt(btn.getAttribute("data-index"), 10);
+        showQR(CONFIG_LINKS[i], CONFIG_NAMES[i] || "config");
+        btn.classList.add("qr-active");
+        setTimeout(function(){ btn.classList.remove("qr-active"); }, 600);
+      });
+    });
+  }
+
+  function initVisibilityPause(){
+    if (!("IntersectionObserver" in window)) return;
+    var targets = document.querySelectorAll(".merged-block, .hero-bar, .configs-box, .team-name");
+    if (!targets.length) return;
+    var io = new IntersectionObserver(function(entries){
+      for (var i = 0; i < entries.length; i++){
+        var en = entries[i];
+        if (en.isIntersecting) en.target.classList.remove("perf-paused");
+        else en.target.classList.add("perf-paused");
+      }
+    }, { rootMargin: "150px 0px" });
+    targets.forEach(function(el){ io.observe(el); });
+  }
+
+  function initPageEnter(){
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var plan = [
+      { sel: ".hero-bar",       delay: 40  },
+      { sel: ".badge-row",      delay: 140 },
+      { sel: ".merged-block",   delay: 220 },
+      { sel: ".account-card",   delay: 380 },
+      { sel: ".expire-card",    delay: 540 },
+      { sel: ".social-section", delay: 620 },
+      { sel: ".team-brand",     delay: 700 },
+      { sel: ".site-foot",      delay: 760 }
+    ];
+
+    var maxEnd = 0;
+    plan.forEach(function(p){
+      var el = document.querySelector(p.sel);
+      if (!el) return;
+      el.classList.add("page-enter");
+
+      var startAt = p.delay;
+      maxEnd = Math.max(maxEnd, startAt + 950);
+
+      setTimeout(function(){
+        if (!el.isConnected) return;
+        requestAnimationFrame(function(){
+          el.classList.add("page-enter-show");
+        });
+      }, startAt);
+    });
+
+    setTimeout(function(){
+      document.querySelectorAll(".page-enter").forEach(function(el){
+        el.classList.add("page-enter-done");
+      });
+    }, maxEnd);
+  }
+
+  /* آخرین نقطه‌ی لمس/کلیک: QR مودال از همان‌جا رشد می‌کند */
+  var lastPtr = null, qrCurrent = null;
+  document.addEventListener("pointerdown", function(e){ lastPtr = { x: e.clientX, y: e.clientY }; }, true);
+  function setQrOrigin(){
+    var modal = document.getElementById("qrModal");
+    var box = modal && modal.querySelector(".modal-box");
+    if (!box) return;
+    var w = box.offsetWidth, h = box.offsetHeight;
+    var left = (window.innerWidth - w) / 2, top = (window.innerHeight - h) / 2;
+    var ox = w / 2, oy = h / 2;
+    if (lastPtr){
+      ox = Math.max(-120, Math.min(w + 120, lastPtr.x - left));
+      oy = Math.max(-120, Math.min(h + 120, lastPtr.y - top));
+    }
+    box.style.setProperty("--qr-ox", Math.round(ox) + "px");
+    box.style.setProperty("--qr-oy", Math.round(oy) + "px");
+  }
+  function showQR(data, title){
+    if (!data) return showToast(tr("toastErr"), true);
+    clearTimeout(qrCloseTimer);
+    document.getElementById("qrModal").classList.remove("closing");
+    setQrOrigin();
+    qrCurrent = { data: data, title: title };
+    document.getElementById("qrLinkUrl").textContent = data;
+    document.getElementById("qrName").textContent = title || "config";
+    var box = document.getElementById("qrContainer");
+    box.innerHTML = '<div class="qr-loader"></div>';
+    if (typeof QRCode !== "undefined"){
+      try {
+        QRCode.toCanvas(data, { width: 180, margin: 1 }, function(err, canvas){
+          if (!err && canvas){ box.innerHTML = ''; canvas.classList.add('qr-reveal'); box.appendChild(canvas); return; }
+          showServerQr(box, data);
+        });
+      } catch(e){ showServerQr(box, data); }
+    } else {
+      showServerQr(box, data);
+    }
+    document.getElementById("qrModal").classList.add("show");
+  }
+  function showServerQr(box, data){
+    box.innerHTML = '';
+    var img = document.createElement('img');
+    img.alt = 'QR';
+    img.className = 'qr-reveal';
+    img.style.cssText = 'width:180px;height:180px;background:#fff;border-radius:8px;padding:6px';
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=1&data=' + encodeURIComponent(data);
+    img.onerror = function(){ box.innerHTML = '<div style="color:#888;padding:20px;font-size:12px">QR Error</div>'; };
+    box.appendChild(img);
+  }
+  var qrCloseTimer = null;
+  function closeQR(){
+    var m = document.getElementById("qrModal");
+    if (!m || !m.classList.contains("show") || m.classList.contains("closing")) return;
+    var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced){ m.classList.remove("show"); return; }
+    /* اول محو شدن نرم، بعد مخفی کردن کامل */
+    m.classList.add("closing");
+    clearTimeout(qrCloseTimer);
+    qrCloseTimer = setTimeout(function(){ m.classList.remove("show", "closing"); }, 880);
+  }
+
+  /* ---------- Quick Connect ---------- */
+  var QC_NAME = "SPiDER";
+  function qcPlay(q){ return "https://play.google.com/store/search?c=apps&q=" + encodeURIComponent(q); }
+  function qcIos(q){ return "itms-apps://search.itunes.apple.com/WebObjects/MZSearch.woa/wa/search?media=software&term=" + encodeURIComponent(q); }
+  var uV2rayng  = function(s,n){ return "v2rayng://install-sub?url=" + encodeURIComponent(s) + "&name=" + encodeURIComponent(n); };
+  var uHapp     = function(s){ return "happ://add/" + s; };
+  var uHiddify  = function(s,n){ return "hiddify://import/" + s + "#" + encodeURIComponent(n); };
+  var uV2box    = function(s,n){ return "v2box://install-sub?url=" + encodeURIComponent(s) + "&name=" + encodeURIComponent(n); };
+  var uStreis   = function(s,n){ return "streisand://import/" + s + "#" + encodeURIComponent(n); };
+  var uShadow   = function(s){ return "sub://" + btoa(s); };
+
+  /* i: آیکن، g: گرادیان رنگ، u: دیپ‌لینک، dl: لینک دانلود (در صورت نیاز لینک دقیق استور را جایگزین کنید) */
+  var QC_APPS = {
+    android: [
+      { n:"v2rayNG", i:"fa-shield-halved",        g:["#3b82f6","#1d4ed8"], u:uV2rayng, dl:"https://play.google.com/store/apps/details?id=com.v2ray.ang" },
+      { n:"Happ",    i:"fa-bolt",                 g:["#a855f7","#6d28d9"], u:uHapp,    dl:"https://play.google.com/store/apps/details?id=com.happproxy" },
+      { n:"Hiddify", i:"fa-wand-magic-sparkles",  g:["#f59e0b","#d97706"], u:uHiddify, dl:"https://play.google.com/store/apps/details?id=app.hiddify.com" },
+      { n:"V2Box",   i:"fa-cube",                 g:["#14b8a6","#0f766e"], u:uV2box,   dl:"https://play.google.com/store/apps/details?id=dev.hexasoftware.v2box" }
+    ],
+    ios: [
+      { n:"Streisand",    i:"fa-wind",   g:["#38bdf8","#0369a1"], u:uStreis, dl:"https://apps.apple.com/app/id6450534064" },
+      { n:"Happ",         i:"fa-bolt",   g:["#a855f7","#6d28d9"], u:uHapp,   dl:"https://apps.apple.com/app/id6504287215" },
+      { n:"V2Box",        i:"fa-cube",   g:["#14b8a6","#0f766e"], u:uV2box,  dl:"https://apps.apple.com/app/id6446814690" },
+      { n:"Shadowrocket", i:"fa-rocket", g:["#fb7185","#be123c"], u:uShadow, dl:"https://apps.apple.com/app/id932747118" }
+    ],
+    windows: [
+      { n:"Hiddify", i:"fa-wand-magic-sparkles", g:["#f59e0b","#d97706"], u:uHiddify, dl:"https://github.com/hiddify/hiddify-app/releases/latest" },
+      { n:"Happ",    i:"fa-bolt",                g:["#a855f7","#6d28d9"], u:uHapp,    dl:"https://www.happ.su/main" },
+      { n:"v2rayN",  i:"fa-paper-plane",         g:["#22c55e","#15803d"], u:null,     dl:"https://github.com/2dust/v2rayN/releases/latest" }
+    ]
+  };
+
+  var QC_T = {
+    fa: {
+      sub:"برنامه‌ات رو انتخاب کن؛ اشتراک خودکار اضافه می‌شه",
+      steps:[["نصب برنامه","اگه داری، رد شو"],["روی برنامه بزن","ساب خودکار اضافه می‌شه"],["وصل شو","یه کانفیگ بزن و اتصال"]],
+      rec:"پیشنهادی", copy:"کپی لینک اشتراک", qr:"کد QR", guideTitle:"راهنمای کامل", dlAria:"دانلود برنامه",
+      desc:{ v2rayNG:"محبوب‌ترین و پایدار", Happ:"ساده، سریع و خوش‌دست", Hiddify:"هوشمند؛ بهترین کانفیگ رو خودش انتخاب می‌کنه",
+             V2Box:"سبک و روان", Streisand:"رایگان و سریع", Shadowrocket:"پولی ولی حرفه‌ای", v2rayN:"نسخه‌ی دسکتاپ؛ افزودن دستی" },
+      missT:"برنامه باز نشد؟",
+      missP:"احتمالاً {app} نصب نیست. اول نصبش کن و بعد دوباره روی کارتش بزن. لینک اشتراکت هم کپی شده و آماده‌ی استفاده‌ست.",
+      manT:"لینک کپی شد، حالا داخل برنامه اضافه کن",
+      manP:"{app} افزودن خودکار نداره. برنامه رو باز کن، بخش اشتراک (Subscription) رو بزن و لینک رو Paste کن. مراحل دقیقش پایین توی راهنما هست.",
+      hDl:"نصب {app}", hCopy:"کپی دوباره‌ی لینک", hGuide:"روش دستی",
+      g:{
+        s1:"اتصال در ۴ قدم",
+        s1l:["سیستم‌عاملت رو از بالا انتخاب کن (خودکار تشخیص داده می‌شه).",
+             "برنامه رو نداری؟ روی آیکن <b>دانلود</b> کنار اسمش بزن و نصبش کن.",
+             "روی <b>کارت برنامه</b> بزن. لینک اشتراک کپی می‌شه و برنامه با ساب تو باز می‌شه.",
+             "اگه برنامه پرسید «افزودن اشتراک؟» تأیید کن، یه کانفیگ انتخاب کن و دکمه‌ی <b>اتصال</b> رو بزن."],
+        s2:"برنامه باز نشد؟",
+        s2l:["مطمئن شو برنامه نصب شده و حداقل یک بار بازش کردی.",
+             "اگه این صفحه رو داخل تلگرام یا اینستاگرام باز کردی، از منوی بالا <b>باز کردن در مرورگر</b> (Open in Browser) رو بزن و دوباره امتحان کن.",
+             "برنامه‌ی دیگه‌ای از لیست رو امتحان کن؛ همه‌شون همین یک ساب رو می‌خونن.",
+             "اگه باز هم نشد، از روش دستی پایین استفاده کن."],
+        s3:"روش دستی (کپی لینک)",
+        s3p:"اول دکمه‌ی «کپی لینک اشتراک» رو بزن، بعد:",
+        man:{
+          android:["برنامه رو باز کن و روی <b>+</b> بزن.","گزینه‌ی <b>Subscription</b> یا <b>Import from clipboard</b> رو انتخاب کن.","لینک کپی‌شده رو Paste کن و تأیید بزن.","اشتراک رو <b>Update</b> کن و یه کانفیگ رو برای اتصال انتخاب کن."],
+          ios:["برنامه رو باز کن و روی <b>+</b> بالای صفحه بزن.","گزینه‌ی <b>Add from clipboard</b> یا <b>Subscribe</b> رو بزن (توی Shadowrocket: نوع رو روی Subscribe بذار و لینک رو Paste کن).","ذخیره کن و اشتراک رو به‌روزرسانی کن.","یه کانفیگ انتخاب کن و سوییچ اتصال رو روشن کن. بار اول iOS اجازه‌ی افزودن VPN می‌خواد؛ <b>Allow</b> رو بزن."],
+          windows:["برنامه رو باز کن. توی v2rayN منوی <b>Subscription ← Subscription settings</b>، توی Hiddify هم <b>Add profile</b>.","روی <b>Add</b> بزن و لینک کپی‌شده رو با <code>Ctrl+V</code> بذار.","تأیید کن و <b>Update subscription</b> رو بزن.","یه کانفیگ انتخاب کن و حالت <b>System Proxy</b> یا <b>TUN</b> رو روشن کن."]
+        },
+        s4:"بعد از اتصال",
+        s4l:["اگه کانفیگ‌ها قدیمی شدن، توی برنامه گزینه‌ی <b>Update subscription</b> (به‌روزرسانی ساب) رو بزن.",
+             "اگه کند بود یا وصل نشد، یه کانفیگ دیگه انتخاب کن.",
+             "قبل از اتصال VPN یا پروکسی‌های دیگه رو خاموش کن.",
+             "ساعت و تاریخ دستگاه باید روی حالت خودکار باشه."]
+      }
+    },
+    en: {
+      sub:"Pick your app. Your subscription is added automatically",
+      steps:[["Install the app","Skip if you have it"],["Tap your app","Sub is added for you"],["Connect","Pick a config & go"]],
+      rec:"Recommended", copy:"Copy subscription link", qr:"QR code", guideTitle:"Full guide", dlAria:"Download app",
+      desc:{ v2rayNG:"Most popular and stable", Happ:"Clean, simple and fast", Hiddify:"Smart: auto-picks the best config",
+             V2Box:"Light and smooth", Streisand:"Free and fast", Shadowrocket:"Paid, advanced", v2rayN:"Desktop client, manual import" },
+      missT:"App didn't open?",
+      missP:"{app} is probably not installed. Install it first, then tap its card again. Your subscription link is already copied.",
+      manT:"Link copied. Now add it inside the app",
+      manP:"{app} has no one-tap import. Open it, go to Subscription and paste the link. Exact steps are in the guide below.",
+      hDl:"Install {app}", hCopy:"Copy link again", hGuide:"Manual steps",
+      g:{
+        s1:"Connect in 4 steps",
+        s1l:["Choose your platform at the top (detected automatically).",
+             "Don't have the app? Tap the <b>download</b> icon next to its name.",
+             "Tap the <b>app card</b>. The link is copied and the app opens with your sub.",
+             "If the app asks to add a subscription, confirm, pick a config and press <b>Connect</b>."],
+        s2:"App didn't open?",
+        s2l:["Make sure the app is installed and opened at least once.",
+             "If this page is inside Telegram or Instagram, use <b>Open in Browser</b> from the top menu and try again.",
+             "Try another app from the list. They all read the same sub.",
+             "Still nothing? Use the manual method below."],
+        s3:"Manual method (copy link)",
+        s3p:"First tap “Copy subscription link”, then:",
+        man:{
+          android:["Open the app and tap <b>+</b>.","Choose <b>Subscription</b> or <b>Import from clipboard</b>.","Paste the copied link and confirm.","<b>Update</b> the subscription and pick a config to connect."],
+          ios:["Open the app and tap <b>+</b> at the top.","Choose <b>Add from clipboard</b> or <b>Subscribe</b> (in Shadowrocket set Type to Subscribe and paste the link).","Save, then update the subscription.","Pick a config and switch the connection on. On first use iOS asks to add a VPN; tap <b>Allow</b>."],
+          windows:["Open the app. In v2rayN use <b>Subscription → Subscription settings</b>, in Hiddify use <b>Add profile</b>.","Click <b>Add</b> and paste the link with <code>Ctrl+V</code>.","Confirm and click <b>Update subscription</b>.","Pick a config and enable <b>System Proxy</b> or <b>TUN</b> mode."]
+        },
+        s4:"After connecting",
+        s4l:["If configs look outdated, hit <b>Update subscription</b> in the app.",
+             "If it's slow or won't connect, try another config.",
+             "Turn off other VPNs or proxies first.",
+             "Keep the device date and time on automatic."]
+      }
+    }
+  };
+  function qcT(){ return QC_T[lang] || QC_T.fa; }
+
+  var qcPlatform = null, qcHintApp = -1, qcHintTimer = null, qcStepNo = 1, qcGuideTimer = null;
+  function qcDetect(){
+    var ua = navigator.userAgent || "";
+    if (/iPhone|iPad|iPod/i.test(ua)) return "ios";
+    if (/Windows/i.test(ua)) return "windows";
+    return "android";
+  }
+  function movePill(instant){
+    var pill = document.getElementById("qcPill");
+    var on = document.querySelector("#qcSide .qc-tab.on");
+    if (!pill || !on) return;
+    if (instant) pill.classList.add("nt");
+    pill.style.width = on.offsetWidth + "px";
+    pill.style.transform = "translateX(" + on.offsetLeft + "px)";
+    if (instant){ void pill.offsetWidth; pill.classList.remove("nt"); }
+  }
+  function qcFillText(){
+    var t = qcT();
+    document.querySelectorAll("#qcModal [data-qc]").forEach(function(el){
+      var k = el.getAttribute("data-qc");
+      if (t[k]) el.textContent = t[k];
+    });
+  }
+  function qcRenderSteps(){
+    var box = document.getElementById("qcSteps");
+    if (!box) return;
+    box.innerHTML = qcT().steps.map(function(s, i){
+      var n = i + 1, cls = n < qcStepNo ? "done" : (n === qcStepNo ? "on" : "");
+      var num = n < qcStepNo ? '<i class="fa-solid fa-check"></i>' : faDigits(n);
+      return '<div class="qc-step ' + cls + '"><span class="qc-num">' + num + '</span>' +
+             '<span class="qc-step-t">' + esc(s[0]) + '</span><span class="qc-step-d">' + esc(s[1]) + '</span></div>';
+    }).join("");
+  }
+  function qcSetStep(n){ qcStepNo = n; qcRenderSteps(); }
+  function qcRenderGuide(p){
+    var g = qcT().g;
+    function ul(tag, arr){ return "<" + tag + ">" + arr.map(function(x){ return "<li>" + x + "</li>"; }).join("") + "</" + tag + ">"; }
+    var secs = [
+      { i:"fa-list-ol",             t:g.s1, h:ul("ol", g.s1l), open:true },
+      { i:"fa-triangle-exclamation", t:g.s2, h:ul("ul", g.s2l) },
+      { i:"fa-hand-pointer",         t:g.s3, h:"<p>" + g.s3p + "</p>" + ul("ol", g.man[p] || g.man.android), id:"man" },
+      { i:"fa-circle-check",         t:g.s4, h:ul("ul", g.s4l) }
+    ];
+    var box = document.getElementById("qcGuide");
+    if (!box) return;
+    var wasMan = box.querySelector('details[data-id="man"]');
+    var keepMan = wasMan && wasMan.open;
+    box.innerHTML = secs.map(function(s){
+      return '<details class="qc-g"' + (s.open ? " open" : "") + (s.id ? ' data-id="' + s.id + '"' : "") + '>' +
+        '<summary><i class="fa-solid ' + s.i + '"></i><span>' + esc(s.t) + '</span><i class="fa-solid fa-chevron-down qc-chev"></i></summary>' +
+        '<div class="qc-gb">' + s.h + '</div></details>';
+    }).join("");
+    if (keepMan){ var m = box.querySelector('details[data-id="man"]'); if (m) m.open = true; }
+  }
+  function qcHideHint(){
+    var h = document.getElementById("qcHint");
+    if (h){ h.classList.remove("show"); h.innerHTML = ""; }
+    qcHintApp = -1;
+    clearTimeout(qcHintTimer);
+  }
+  function qcShowHint(idx, kind){
+    var a = (QC_APPS[qcPlatform] || [])[idx], h = document.getElementById("qcHint");
+    if (!a || !h) return;
+    var t = qcT(), miss = kind === "miss";
+    qcHintApp = idx;
+    h.innerHTML =
+      '<span class="qc-hint-ico"><i class="fa-solid ' + (miss ? "fa-circle-question" : "fa-hand-pointer") + '"></i></span>' +
+      '<div class="qc-hint-b"><div class="qc-hint-t">' + esc(miss ? t.missT : t.manT) + '</div>' +
+      '<div class="qc-hint-p">' + esc((miss ? t.missP : t.manP).replace("{app}", a.n)) + '</div>' +
+      '<div class="qc-hint-btns">' +
+        (a.dl ? '<button type="button" class="qc-hbtn" data-act="hint-dl"><i class="fa-solid fa-download"></i>' + esc(t.hDl.replace("{app}", a.n)) + '</button>' : '') +
+        '<button type="button" class="qc-hbtn" data-act="copy"><i class="fa-solid fa-copy"></i>' + esc(t.hCopy) + '</button>' +
+        (miss ? '' : '<button type="button" class="qc-hbtn" data-act="goto-man"><i class="fa-solid fa-book-open"></i>' + esc(t.hGuide) + '</button>') +
+      '</div></div>';
+    h.classList.remove("show"); void h.offsetWidth; h.classList.add("show");
+    var body = document.getElementById("qcBody");
+    if (body) body.scrollTo({ top:0, behavior:"smooth" });
+    if (!miss) qcSetStep(3);
+  }
+  function renderQC(p, first){
+    qcPlatform = p;
+    document.querySelectorAll("#qcSide .qc-tab").forEach(function(b){
+      var on = b.getAttribute("data-p") === p;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    movePill(!!first);
+    qcHideHint();
+    qcStepNo = 1; qcRenderSteps();
+    qcFillText();
+    var t = qcT();
+    var grid = document.getElementById("qcGrid");
+    grid.style.setProperty("--base", first ? "260ms" : "40ms");
+    grid.innerHTML = (QC_APPS[p] || []).map(function(a, idx){
+      return '<div class="qc-card" role="button" tabindex="0" data-i="' + idx + '" style="--i:' + idx + ';--g1:' + a.g[0] + ';--g2:' + a.g[1] + '">' +
+        '<span class="qc-ico"><i class="fa-solid ' + a.i + '"></i></span>' +
+        '<span class="qc-info"><span class="qc-name">' + esc(a.n) + (idx === 0 ? '<em class="qc-rec">' + esc(t.rec) + '</em>' : '') + '</span>' +
+        '<span class="qc-desc">' + esc(t.desc[a.n] || "") + '</span></span>' +
+        (a.dl ? '<button type="button" class="qc-dl" data-i="' + idx + '" aria-label="' + esc(t.dlAria + " " + a.n) + '"><i class="fa-solid fa-download"></i></button>' : '') +
+        '<i class="fa-solid fa-chevron-right qc-go"></i></div>';
+    }).join("");
+    clearTimeout(qcGuideTimer);
+    if (first){
+      /* راهنمای پایین صفحه بعد از تمام شدن انیمیشن باز شدن ساخته می‌شود */
+      var gbox = document.getElementById("qcGuide"); if (gbox) gbox.innerHTML = "";
+      qcGuideTimer = setTimeout(function(){ qcRenderGuide(p); }, 450);
+    } else {
+      qcRenderGuide(p);
+    }
+    var body = document.getElementById("qcBody");
+    if (body && !first) body.scrollTo({ top:0, behavior:"auto" });
+  }
+  function qcRefresh(){
+    var m = document.getElementById("qcModal");
+    if (m && m.classList.contains("show") && qcPlatform){ renderQC(qcPlatform, false); setTimeout(function(){ movePill(true); }, 30); }
+  }
+  function openQC(){
+    var modal = document.getElementById("qcModal");
+    var box = modal.querySelector(".qc-box");
+    var btn = document.getElementById("fluffyQuickBtn");
+    /* انیمیشن از مرکز دکمه شروع می‌شود (در موبایل شیت از پایین بالا می‌آید) */
+    if (btn && box){
+      var r = btn.getBoundingClientRect();
+      var bw = box.offsetWidth, bh = box.offsetHeight;
+      var left = (window.innerWidth - bw) / 2, top = (window.innerHeight - bh) / 2;
+      box.style.transformOrigin = Math.round(r.left + r.width/2 - left) + "px " + Math.round(r.top + r.height/2 - top) + "px";
+      btn.classList.remove("qc-hit"); void btn.offsetWidth; btn.classList.add("qc-hit");
+      setTimeout(function(){ btn.classList.remove("qc-hit"); }, 650);
+    }
+    renderQC(qcPlatform || qcDetect(), true);
+    document.documentElement.classList.add("qc-open");
+    /* ساخت DOM تمام شد؛ انیمیشن را فریم بعد شروع می‌کنیم تا شروعش گیر نکند */
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        modal.classList.add("show");
+        movePill(true);
+      });
+    });
+  }
+  function closeQC(){
+    document.getElementById("qcModal").classList.remove("show");
+    qcHideHint();
+    clearTimeout(qcGuideTimer);
+    /* انیمیشن‌های پس‌زمینه بعد از بسته شدن شیت دوباره ادامه پیدا می‌کنند */
+    setTimeout(function(){
+      var m = document.getElementById("qcModal");
+      if (m && !m.classList.contains("show")) document.documentElement.classList.remove("qc-open");
+    }, 320);
+  }
+  function qcWave(card, e){
+    var r = card.getBoundingClientRect();
+    var w = document.createElement("i");
+    w.className = "qc-wave";
+    w.style.left = ((e && e.clientX ? e.clientX : r.left + r.width/2) - r.left) + "px";
+    w.style.top  = ((e && e.clientY ? e.clientY : r.top + r.height/2) - r.top) + "px";
+    card.appendChild(w);
+    setTimeout(function(){ w.remove(); }, 750);
+  }
+  function qcDone(card){
+    var ic = card.querySelector(".qc-ico i");
+    if (!ic || card._busy) return;
+    card._busy = true;
+    var old = ic.className;
+    card.classList.remove("done"); void card.offsetWidth;
+    ic.className = "fa-solid fa-check";
+    card.classList.add("done");
+    setTimeout(function(){
+      ic.className = old; card.classList.remove("done"); card._busy = false;
+    }, 1500);
+  }
+  function qcOpenDl(idx){
+    var a = (QC_APPS[qcPlatform] || [])[idx];
+    if (!a || !a.dl) return;
+    var link = document.createElement("a");
+    link.href = a.dl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(function(){ if (link.parentNode) link.parentNode.removeChild(link); }, 0);
+  }
+  /* اگر بعد از چند ثانیه صفحه هنوز جلوی چشم بود یعنی برنامه باز نشده */
+  function qcArmHint(idx){
+    clearTimeout(qcHintTimer);
+    var left = false;
+    function mark(){ left = true; }
+    function cleanup(){
+      document.removeEventListener("visibilitychange", mark);
+      window.removeEventListener("pagehide", mark);
+      window.removeEventListener("blur", mark);
+    }
+    document.addEventListener("visibilitychange", mark);
+    window.addEventListener("pagehide", mark);
+    window.addEventListener("blur", mark);
+    qcHintTimer = setTimeout(function(){
+      cleanup();
+      if (!left && !document.hidden) qcShowHint(idx, "miss");
+    }, 2000);
+  }
+  function qcOpenApp(a, idx){
+    var url = getSubUrl();
+    copyText(url).then(function(){ showToast(tr("toastSub")); }).catch(function(){});
+    qcHideHint();
+    if (a.u){
+      qcSetStep(3);
+      qcArmHint(idx);
+      try { window.location.href = a.u(url, QC_NAME); } catch(e){}
+    } else {
+      qcShowHint(idx, "manual");
+    }
+  }
+  function qcAction(act){
+    if (act === "copy"){
+      copyText(getSubUrl()).then(function(){ showToast(tr("toastSub")); }).catch(function(){ showToast(tr("toastErr"), true); });
+    } else if (act === "qr"){
+      closeQC();
+      setTimeout(function(){ showQR(getSubUrl(), "Subscription"); }, 260);
+    } else if (act === "hint-dl"){
+      qcOpenDl(qcHintApp);
+    } else if (act === "goto-man"){
+      var m = document.querySelector('#qcGuide details[data-id="man"]');
+      if (m){ m.open = true; setTimeout(function(){ m.scrollIntoView({ behavior:"smooth", block:"center" }); }, 60); }
+    }
+  }
+
+  function renderCountdown(){
+    if (countdownInterval) clearInterval(countdownInterval);
+    if (EXPIRE_TS === null){
+      ['expDay','expHour','expMin'].forEach(function(id){
+        document.getElementById(id).textContent = '∞';
+      });
+      return;
+    }
+    function tick(){
+      var diff = Math.max(0, EXPIRE_TS - Date.now());
+      var d = Math.floor(diff / 86400000);
+      var h = Math.floor((diff % 86400000) / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      document.getElementById("expDay").textContent = faDigits(d);
+      document.getElementById("expHour").textContent = faDigits(h);
+      document.getElementById("expMin").textContent = faDigits(m);
+      if (diff <= 0) clearInterval(countdownInterval);
+    }
+    tick();
+    countdownInterval = setInterval(tick, 1000);
+  }
+
+  function applyTraffic(){
+    var remain = TOTAL_BYTES > 0 ? Math.max(0, TOTAL_BYTES - USED_BYTES) : 0;
+    var pct = TOTAL_BYTES > 0 ? Math.min(100, USED_BYTES / TOTAL_BYTES * 100) : 0;
+    var unlimited = TOTAL_BYTES <= 0;
+
+    document.getElementById("statUsed").textContent = fmtBytes(USED_BYTES);
+    document.getElementById("statTotal").textContent = unlimited ? '∞' : fmtBytes(TOTAL_BYTES);
+    document.getElementById("statRemain").textContent = unlimited ? '∞' : fmtBytes(remain);
+
+    // Real daily average: used bytes ÷ days actually elapsed since the
+    // account was created (from the panel's own created_at), not a guess.
+    var elapsedMs = CREATED_AT_TS ? (Date.now() - CREATED_AT_TS) : 0;
+    var dayCount = Math.max(1, Math.ceil(elapsedMs / 86400000));
+    var avg = USED_BYTES / dayCount;
+    document.getElementById("avgVal").textContent = fmtBytes(avg);
+
+    document.getElementById("remainNum").textContent = unlimited ? '∞' : fmtBytes(remain);
+    document.getElementById("ringPct").textContent = unlimited ? '∞' : faDigits(Math.round(pct)) + '٪';
+    document.getElementById("barFill").style.width = (unlimited ? 100 : pct).toFixed(1) + '%';
+    document.getElementById("barPct").textContent = unlimited ? '∞' : faDigits(Math.round(pct)) + '٪';
+
+    var ringFill = document.querySelector(".fluffy-ring-fill");
+    if (ringFill) ringFill.setAttribute("stroke-dashoffset", String(263.9 * (1 - (unlimited ? 1 : pct / 100))));
+  }
+
+  /* ---------- کارت انتخاب زبان ---------- */
+  var langPop = document.getElementById("langPop");
+  var langMenuOpen = false;
+
+  function updateLangMenu(){
+    if (!langPop) return;
+    langPop.setAttribute("aria-label", lang === "fa" ? "زبان" : "Language");
+    langPop.querySelectorAll(".lang-opt").forEach(function(o){
+      o.setAttribute("aria-checked", o.getAttribute("data-lang") === lang ? "true" : "false");
+    });
+  }
+
+  function positionPop(pop, btn){
+    if (!btn || !pop) return;
+    var r = btn.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth || window.innerWidth;
+    var w = pop.offsetWidth, edge = 12, gap = 10;
+    var cx = r.left + r.width / 2;
+    /* لبه‌ی کارت با لبه‌ی بیرونی دکمه هم‌تراز می‌شود (چپ یا راست، بسته به جای دکمه) */
+    var left = cx < vw / 2 ? r.left : r.right - w;
+    left = Math.max(edge, Math.min(left, vw - w - edge));
+    pop.style.left = (left + (window.pageXOffset || 0)) + "px";
+    pop.style.top = (r.bottom + (window.pageYOffset || 0) + gap) + "px";
+    /* کارت از وسط دکمه «رشد» می‌کند */
+    pop.style.transformOrigin = Math.round(cx - left) + "px 0px";
+  }
+  function positionLangMenu(){ positionPop(langPop, document.getElementById("langBtn")); }
+
+  function openLangMenu(viaKeyboard){
+    if (!langPop || langMenuOpen) return;
+    var btn = document.getElementById("langBtn");
+    closeThemeMenu(false);
+    positionLangMenu();
+    langMenuOpen = true;
+    langPop.classList.add("open");
+    if (btn) btn.setAttribute("aria-expanded", "true");
+    if (viaKeyboard){
+      requestAnimationFrame(function(){
+        var cur = langPop.querySelector('.lang-opt[aria-checked="true"]') || langPop.querySelector(".lang-opt");
+        if (cur) cur.focus({ preventScroll: true });
+      });
+    }
+  }
+
+  function closeLangMenu(refocus){
+    if (!langPop || !langMenuOpen) return;
+    langMenuOpen = false;
+    langPop.classList.remove("open");
+    var btn = document.getElementById("langBtn");
+    if (btn){
+      btn.setAttribute("aria-expanded", "false");
+      if (refocus) btn.focus({ preventScroll: true });
+    }
+  }
+
+  /* ---------- کارت انتخاب تم (روز / شب) ---------- */
+  var themePop = document.getElementById("themePop");
+  var themeMenuOpen = false;
+
+  function currentTheme(){ return root.getAttribute("data-theme") === "dark" ? "dark" : "light"; }
+
+  function updateThemeMenu(){
+    if (!themePop) return;
+    var cur = currentTheme();
+    themePop.setAttribute("aria-label", lang === "fa" ? "تم" : "Theme");
+    themePop.querySelectorAll(".lang-opt").forEach(function(o){
+      o.setAttribute("aria-checked", o.getAttribute("data-theme-opt") === cur ? "true" : "false");
+    });
+  }
+
+  function openThemeMenu(viaKeyboard){
+    if (!themePop || themeMenuOpen) return;
+    var btn = document.getElementById("themeBtn");
+    closeLangMenu(false);
+    updateThemeMenu();
+    positionPop(themePop, btn);
+    themeMenuOpen = true;
+    themePop.classList.add("open");
+    if (btn) btn.setAttribute("aria-expanded", "true");
+    if (viaKeyboard){
+      requestAnimationFrame(function(){
+        var cur = themePop.querySelector('.lang-opt[aria-checked="true"]') || themePop.querySelector(".lang-opt");
+        if (cur) cur.focus({ preventScroll: true });
+      });
+    }
+  }
+
+  function closeThemeMenu(refocus){
+    if (!themePop || !themeMenuOpen) return;
+    themeMenuOpen = false;
+    themePop.classList.remove("open");
+    var btn = document.getElementById("themeBtn");
+    if (btn){
+      btn.setAttribute("aria-expanded", "false");
+      if (refocus) btn.focus({ preventScroll: true });
+    }
+  }
+
+  function pickTheme(next){
+    var btn = document.getElementById("themeBtn");
+    closeThemeMenu(themePop && themePop.contains(document.activeElement));
+    if (!next || next === currentTheme()) return;
+    /* اول کارت جمع می‌شود، بعد تم نرم عوض می‌شود (مثل انتخاب زبان) */
+    setTimeout(function(){
+      if (btn){
+        btn.classList.add("theme-pulse");
+        setTimeout(function(){ btn.classList.remove("theme-pulse"); }, 450);
+      }
+      toggleTheme();
+      updateThemeMenu();
+    }, 180);
+  }
+
+  function pickLang(next){
+    var btn = document.getElementById("langBtn");
+    closeLangMenu(langPop && langPop.contains(document.activeElement));
+    if (!next || next === lang) return;
+    if (btn) btn.classList.add("switching");
+    setTimeout(function(){
+      applyLang(next);
+      if (btn) btn.classList.remove("switching");
+    }, 180);
+  }
+
+  function bind(){
+    document.querySelectorAll('.nav-item').forEach(function(btn){
+      if (btn._bound) return; btn._bound = true;
+      btn.addEventListener('click', function(){
+        switchTab(btn.getAttribute('data-target'));
+      });
+    });
+
+    var themeBtn = document.getElementById("themeBtn");
+    if (themeBtn && !themeBtn._bound){
+      themeBtn._bound = true;
+      themeBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        if (themeMenuOpen) closeThemeMenu(false);
+        else openThemeMenu(e.detail === 0);
+      });
+    }
+    if (themePop && !themePop._bound){
+      themePop._bound = true;
+      themePop.addEventListener("click", function(e){
+        var opt = e.target.closest ? e.target.closest(".lang-opt") : null;
+        if (opt) pickTheme(opt.getAttribute("data-theme-opt"));
+      });
+      themePop.addEventListener("keydown", function(e){
+        var opts = Array.prototype.slice.call(themePop.querySelectorAll(".lang-opt"));
+        var i = opts.indexOf(document.activeElement);
+        var k = e.key;
+        if (k === "ArrowDown" || k === "ArrowUp"){
+          e.preventDefault();
+          var n = k === "ArrowDown" ? (i + 1) % opts.length : (i <= 0 ? opts.length - 1 : i - 1);
+          opts[n].focus();
+        } else if (k === "Home"){
+          e.preventDefault(); opts[0].focus();
+        } else if (k === "End"){
+          e.preventDefault(); opts[opts.length - 1].focus();
+        } else if (k === "Tab"){
+          closeThemeMenu(false);
+        }
+      });
+      document.addEventListener("keydown", function(e){
+        if (e.key === "Escape" && themeMenuOpen) closeThemeMenu(true);
+      });
+      document.addEventListener("pointerdown", function(e){
+        if (!themeMenuOpen) return;
+        var t = e.target;
+        if (themePop.contains(t) || (themeBtn && themeBtn.contains(t))) return;
+        closeThemeMenu(false);
+      });
+      window.addEventListener("resize", function(){ closeThemeMenu(false); });
+    }
+    var langBtn = document.getElementById("langBtn");
+    if (langBtn && !langBtn._bound){
+      langBtn._bound = true;
+      langBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        if (langMenuOpen) closeLangMenu(false);
+        else openLangMenu(e.detail === 0);
+      });
+    }
+    if (langPop && !langPop._bound){
+      langPop._bound = true;
+      langPop.addEventListener("click", function(e){
+        var opt = e.target.closest ? e.target.closest(".lang-opt") : null;
+        if (opt) pickLang(opt.getAttribute("data-lang"));
+      });
+      langPop.addEventListener("keydown", function(e){
+        var opts = Array.prototype.slice.call(langPop.querySelectorAll(".lang-opt"));
+        var i = opts.indexOf(document.activeElement);
+        var k = e.key;
+        if (k === "ArrowDown" || k === "ArrowUp"){
+          e.preventDefault();
+          var n = k === "ArrowDown" ? (i + 1) % opts.length : (i <= 0 ? opts.length - 1 : i - 1);
+          opts[n].focus();
+        } else if (k === "Home"){
+          e.preventDefault(); opts[0].focus();
+        } else if (k === "End"){
+          e.preventDefault(); opts[opts.length - 1].focus();
+        } else if (k === "Tab"){
+          closeLangMenu(false);
+        }
+      });
+      document.addEventListener("keydown", function(e){
+        if (e.key === "Escape" && langMenuOpen) closeLangMenu(true);
+      });
+      document.addEventListener("pointerdown", function(e){
+        if (!langMenuOpen) return;
+        var t = e.target;
+        if (langPop.contains(t) || (langBtn && langBtn.contains(t))) return;
+        closeLangMenu(false);
+      });
+      window.addEventListener("resize", function(){ closeLangMenu(false); });
+    }
+    var fluffyQuick = document.getElementById("fluffyQuickBtn");
+    if (fluffyQuick && !fluffyQuick._bound){
+      fluffyQuick._bound = true;
+      fluffyQuick.addEventListener("click", openQC);
+    }
+    var qcModal = document.getElementById("qcModal");
+    if (qcModal && !qcModal._bound){
+      qcModal._bound = true;
+      qcModal.addEventListener("click", function(e){
+        if (e.target === qcModal) return closeQC();
+        var t = e.target;
+        var tab = t.closest(".qc-tab");
+        if (tab) return renderQC(tab.getAttribute("data-p"), false);
+        var act = t.closest("[data-act]");
+        if (act) return qcAction(act.getAttribute("data-act"));
+        var dl = t.closest(".qc-dl");
+        if (dl){ e.preventDefault(); e.stopPropagation(); return qcOpenDl(+dl.getAttribute("data-i")); }
+        var card = t.closest(".qc-card");
+        if (card){
+          var idx = +card.getAttribute("data-i");
+          var a = (QC_APPS[qcPlatform] || [])[idx];
+          if (a){ qcWave(card, e); qcDone(card); qcOpenApp(a, idx); }
+        }
+      });
+      qcModal.addEventListener("keydown", function(e){
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var card = e.target.closest && e.target.closest(".qc-card");
+        if (!card || e.target.closest(".qc-dl")) return;
+        e.preventDefault();
+        var idx = +card.getAttribute("data-i");
+        var a = (QC_APPS[qcPlatform] || [])[idx];
+        if (a){ qcDone(card); qcOpenApp(a, idx); }
+      });
+      document.getElementById("qcClose").addEventListener("click", closeQC);
+      window.addEventListener("resize", function(){ movePill(true); });
+      document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeQC(); });
+    }
+    var copySub = document.getElementById("copySubBtn");
+    if (copySub && !copySub._bound){
+      copySub._bound = true;
+      copySub.addEventListener("click", function(){
+        copyText(getSubUrl()).then(function(){
+          copySub.classList.add("success");
+          showToast(tr("toastSub"));
+          clearTimeout(copySub._t);
+          copySub._t = setTimeout(function(){ copySub.classList.remove("success"); }, 1800);
+        }).catch(function(){ showToast(tr("toastErr"), true); });
+      });
+    }
+    var qrSub = document.getElementById("qrSubBtn");
+    if (qrSub && !qrSub._bound){
+      qrSub._bound = true;
+      qrSub.addEventListener("click", function(){
+        showQR(getSubUrl(), "Subscription");
+      });
+    }
+    var copyAllBtn = document.getElementById("copyAllConfigsBtn");
+    if (copyAllBtn && !copyAllBtn._bound){
+      copyAllBtn._bound = true;
+      copyAllBtn.addEventListener("click", function(){
+        if (!CONFIG_LINKS.length) return showToast(tr("noConfig"), true);
+        copyText(CONFIG_LINKS.join("\n")).then(function(){
+          copyAllBtn.classList.add("success-state");
+          showToast(tr("toastAll") + " (" + CONFIG_LINKS.length + ")");
+          setTimeout(function(){ copyAllBtn.classList.remove("success-state"); }, 1800);
+        }).catch(function(){ showToast(tr("toastErr"), true); });
+      });
+    }
+    var copySubText = document.getElementById("copySubTextBtn");
+    if (copySubText && !copySubText._bound){
+      copySubText._bound = true;
+      copySubText.addEventListener("click", function(){
+        if (!CONFIG_LINKS.length) return showToast(tr("noConfig"), true);
+        copyText(CONFIG_LINKS.join("\n")).then(function(){
+          copySubText.classList.add("success-state");
+          showToast(tr("toastSubText"));
+          setTimeout(function(){ copySubText.classList.remove("success-state"); }, 1600);
+        }).catch(function(){ showToast(tr("toastErr"), true); });
+      });
+    }
+
+    var searchInput = document.getElementById("searchInput");
+    if (searchInput && !searchInput._bound){
+      searchInput._bound = true;
+      searchInput.addEventListener("input", applyFilters);
+    }
+
+    document.querySelectorAll(".config-chip").forEach(function(chip){
+      if (chip._bound) return;
+      chip._bound = true;
+      chip.addEventListener("click", function(){
+        document.querySelectorAll(".config-chip").forEach(function(c){ c.classList.remove("active"); });
+        chip.classList.add("active");
+        ACTIVE_FILTER = chip.getAttribute("data-filter") || "all";
+        applyFilters();
+      });
+    });
+
+    var closeBtn = document.getElementById("closeModal");
+    if (closeBtn && !closeBtn._bound){
+      closeBtn._bound = true;
+      closeBtn.addEventListener("click", closeQR);
+    }
+    var modal = document.getElementById("qrModal");
+    if (modal && !modal._bound){
+      modal._bound = true;
+      modal.addEventListener("click", function(e){ if (e.target === modal) closeQR(); });
+      document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeQR(); });
+      var qrCopyBtn = document.getElementById("qrLinkCopy");
+      if (qrCopyBtn) qrCopyBtn.addEventListener("click", function(){
+        if (!qrCurrent) return;
+        copyText(qrCurrent.data).then(function(){
+          showToast(tr(qrCurrent.title === "Subscription" ? "toastSub" : "toastCfg"));
+          qrCopyBtn.classList.add("ok");
+          setTimeout(function(){ qrCopyBtn.classList.remove("ok"); }, 1400);
+        }).catch(function(){ showToast(tr("toastErr"), true); });
+      });
+    }
+    document.querySelectorAll(".copy-id").forEach(function(btn){
+      if (btn._bound) return; btn._bound = true;
+      btn.addEventListener("click", function(){
+        copyText(SUB_ID).then(function(){ showToast(tr("toastId")); });
+      });
+    });
+  }
+
+  async function load(){
+    try {
+      var r = await fetch(apiUrl, { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status === 404 ? (isFa() ? 'کاربر پیدا نشد' : 'User not found') : (isFa() ? 'خطا در سرور' : 'Server error'));
+      var d = await r.json();
+      applyData(d);
+    } catch (e){
+      var list = document.getElementById('configList');
+      if (list) list.innerHTML = '<div class="empty-configs">' + esc(e.message) + '</div>';
+      document.getElementById("statusTitle").textContent = isFa() ? 'خطا در دریافت اطلاعات' : 'Failed to load';
+      console.warn('load failed:', e);
+    }
+  }
+
+  function setText(id, val){
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function applyData(d){
+    var cfgs = [];
+    if (Array.isArray(d.configs) && d.configs.length){
+      cfgs = d.configs.filter(function(c){ return c && c.indexOf('%F0%9F%93%8A') === -1; });
+    }
+    if (!cfgs.length && Array.isArray(d.worker_configs) && d.worker_configs.length) cfgs = d.worker_configs.slice();
+    if (!cfgs.length && d.config) cfgs = [d.config];
+    CONFIG_LINKS = cfgs;
+    CONFIG_NAMES = cfgs.map(function(c){
+      var h = c.split('#');
+      try { return decodeURIComponent((h[1] || '').replace(/\+/g, ' ')) || 'Config'; }
+      catch(e){ return 'Config'; }
+    });
+    CONFIG_PROTOS = cfgs.map(protoOf);
+
+    SUB_ID = d.config_uuid || uname;
+    SUB_URL = window.location.origin + '/link/' + SUB_ID;
+    setText('subUrl', SUB_URL);
+    setText('subId', SUB_ID);
+
+    IS_ACTIVE = d.is_active !== false && d.status === 'active';
+    var pill = document.getElementById('statusPill');
+    var dot = pill ? pill.querySelector('.status-dot') : null;
+    setText('statusPillText', IS_ACTIVE ? tr('statusOnline') : (isFa() ? 'غیرفعال' : 'Inactive'));
+    if (pill) pill.style.opacity = IS_ACTIVE ? '' : '.55';
+    if (dot) dot.style.background = IS_ACTIVE ? '#22c55e' : '#fb7185';
+    setText('statusTitle', IS_ACTIVE ? tr('connectedActive') : (isFa() ? 'اتصال غیرفعال' : 'Connection inactive'));
+
+    USED_BYTES = d.traffic_used_bytes || 0;
+    TOTAL_BYTES = d.traffic_limit_bytes || 0;
+    CREATED_AT_TS = d.created_at_ts ? d.created_at_ts * 1000 : null;
+
+    var days = d.expire_days;
+    EXPIRE_DAYS = (days !== null && days !== undefined) ? days : null;
+    applyTraffic();
+
+    setText('usernameVal', d.username || uname);
+    var maxConn = parseInt(d.max_ip_per_user, 10);
+    if (isNaN(maxConn) || maxConn < 1) maxConn = 0;
+    setText('connLimitVal', maxConn > 0 ? faDigits(maxConn) : '∞');
+    setText('connLimitVal2', maxConn > 0 ? faDigits(maxConn) : '∞');
+    var usedIps = parseInt(d.used_ips, 10);
+    if (isNaN(usedIps)) usedIps = 0;
+    var connEl = document.getElementById('connActiveVal');
+    if (connEl){
+      connEl.textContent = faDigits(usedIps);
+      connEl.style.color = (maxConn > 0 && usedIps >= maxConn) ? '#fbbf24' : '#22c55e';
+    }
+
+    if (EXPIRE_DAYS !== null){
+      EXPIRE_TS = d.expire_at_ts ? d.expire_at_ts * 1000 : Date.now() + EXPIRE_DAYS * 86400000;
+      setText('expireMain', faDigits(EXPIRE_DAYS) + ' ' + tr('day'));
+      setText('expireSub', new Date(EXPIRE_TS).toLocaleDateString(isFa() ? 'fa-IR' : 'en-US'));
+      setText('daysRowText', faDigits(EXPIRE_DAYS) + ' ' + tr('day') + ' ' + (isFa() ? 'باقی‌مانده' : 'left'));
+    } else {
+      EXPIRE_TS = null;
+      setText('expireMain', tr('unlimited'));
+      setText('expireSub', tr('noExpire'));
+      setText('daysRowText', tr('unlimited'));
+    }
+    renderCountdown();
+
+    document.title = 'Subscription | ' + (d.username || uname);
+
+    renderConfigs();
+  }
+
+  document.addEventListener("visibilitychange", function(){
+    if (document.hidden) root.setAttribute("data-paused","");
+    else root.removeAttribute("data-paused");
+  });
+
+  applyLang(lang);
+  bind();
+  switchTab('tab-home');
+  initVisibilityPause();
+  initPageEnter();
+  var bootDone = true;
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      if (bootDone) return; /* اجرای اول انجام شده؛ تکرار باعث ری‌استارت انیمیشن ورود می‌شد */
+      bind(); switchTab('tab-home'); initVisibilityPause(); initPageEnter();
+    });
+  }
+
+  load();
+
+})();
+</script>
+</body>
+</html>
