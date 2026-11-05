@@ -3345,13 +3345,10 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
 
     # ── REALITY (served by Xray core) ──
     if proto == "reality" or sec == "reality":
-        # Not configured yet (admin must fill domain + port) → no config.
         if not inbound:
             return ""
         ext_domain = str(inbound.get("external_domain") or "").strip()
         ext_port = str(inbound.get("external_port") or "").strip()
-        if not ext_domain or not ext_port:
-            return ""
         rs = inbound.get("reality_settings") or SETTINGS.get("reality") or {}
         gs = SETTINGS.get("reality") or {}
         # Use the private key from inbound, derive public key from it (this is the ONLY
@@ -3380,8 +3377,8 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             rpath = "/" + rpath
         if "#" in rpath or "?" in rpath or rpath == "":
             rpath = "/"
-        host = addr_ip or ext_domain
-        port = addr_port or ext_port
+        host = addr_ip or ext_domain or _safe_host(SETTINGS.get("domain"), get_host())
+        port = addr_port or ext_port or str(inbound.get("port") or 443)
         # xhttp (default for reality inbound) or tcp
         if (inbound.get("network") or "xhttp") == "tcp":
             params = (f"encryption=none&security=reality&type=tcp"
@@ -5999,7 +5996,8 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         external_port = int(body.get("external_port") or 443)
     else:
         port = int(body.get("port") or 443)
-        external_port = int(body.get("external_port") or 443)
+        _external_port = str(body.get("external_port") or "").strip()
+        external_port = int(_external_port) if _external_port else ""
 
     fingerprint = str(body.get("fingerprint") or "chrome").strip()
     spoof_ip = str(body.get("spoof_ip") or "").strip()
@@ -6026,7 +6024,7 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
             raise HTTPException(status_code=400, detail="Telegram External Port must be between 1 and 65535")
     elif protocol == "reality" or security == "reality":
         _validate_listener_port(port)
-        if not 1 <= external_port <= 65535:
+        if external_port and not 1 <= external_port <= 65535:
             raise HTTPException(status_code=400, detail="External Port must be between 1 and 65535")
 
     # Auto-generate Reality keys (x25519 pbk/priv + short_id + mldsa65 seed)
@@ -6050,16 +6048,14 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         reality_settings.setdefault("spiderx", "/")
         reality_settings.setdefault("mldsa65_seed", fresh["mldsa65_seed"])
         reality_settings.setdefault("mldsa65_verify", fresh["mldsa65_verify"])
-        # SNI from frontend is used as dest, server_names, and sni
+        # Keep the client SNI independent from the Reality destination.
         if not reality_settings.get("dest"):
-            reality_settings["dest"] = (sni or "is1-ssl.mzstatic.com") + ":443"
+            reality_settings["dest"] = (destination or sni or "is1-ssl.mzstatic.com") + ":443"
         if not reality_settings.get("server_names"):
             reality_settings["server_names"] = [sni or "is1-ssl.mzstatic.com"]
         if not reality_settings.get("sni"):
             reality_settings["sni"] = sni or "is1-ssl.mzstatic.com"
         security = "reality"
-        if not external_domain:
-            external_domain = domain or CONFIG.get("host", "")
         if network not in ("tcp", "xhttp", "grpc"):
             network = "tcp"
     else:
@@ -6198,6 +6194,10 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib["external_domain"] = str(body["external_domain"]).strip()
         if "sni" in body:
             ib["sni"] = str(body["sni"]).strip()
+        if "destination" in body:
+            ib["destination"] = str(body["destination"]).strip()
+        if "server_name" in body:
+            ib["server_name"] = str(body["server_name"]).strip()
         if "spoof_ip" in body:
             ib["spoof_ip"] = str(body["spoof_ip"]).strip()
         if "external_port" in body:
@@ -6252,8 +6252,9 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             rs.setdefault("spiderx", "/")
             _sni_final = str(ib.get("sni") or rs.get("sni") or "is1-ssl.mzstatic.com").strip() or "is1-ssl.mzstatic.com"
             rs["sni"] = _sni_final
-            if not str(rs.get("dest") or "").strip() or "sni" in body:
-                rs["dest"] = _sni_final + ":443"
+            _destination_final = str(ib.get("destination") or "").strip()
+            if not str(rs.get("dest") or "").strip() or "sni" in body or "destination" in body:
+                rs["dest"] = (_destination_final or _sni_final) + ":443"
             if not rs.get("server_names") or "sni" in body:
                 rs["server_names"] = [_sni_final]
             if (ib.get("network") or "").lower() == "xhttp":
@@ -6296,10 +6297,6 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib["port"] = tg["internal_port"]
             ib["external_port"] = tg["external_port"]
             ib["external_domain"] = tg["external_domain"]
-        if "destination" in body:
-            ib["destination"] = str(body["destination"]).strip()
-        if "server_name" in body:
-            ib["server_name"] = str(body["server_name"]).strip()
         if (ib.get("protocol") or "").lower() == "telegram":
             ib.pop("sni", None)
             ib.pop("destination", None)
@@ -6312,6 +6309,9 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         _validate_listener_port(int(ib.get("port") or 0), exclude_id=inbound_id)
     elif (ib.get("protocol") or "").lower() == "reality" or (ib.get("security") or "").lower() == "reality":
         _validate_listener_port(int(ib.get("port") or 0), exclude_id=inbound_id)
+        _external_port = str(ib.get("external_port") or "").strip()
+        if _external_port and not 1 <= int(_external_port) <= 65535:
+            raise HTTPException(status_code=400, detail="External Port must be between 1 and 65535")
 
     await save_state()
     log_activity("inbound", f"اینباند «{ib.get('name', inbound_id)}» ویرایش شد", "info")

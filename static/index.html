@@ -2736,10 +2736,13 @@ IMPLEMENTATION RULES
     </select></div>
     <div style="font-size:10px;color:var(--txt2);margin-bottom:10px">پروتکل اینباند VLESS است؛ تنها امنیت را انتخاب کنید (TLS یا Reality).</div>
 
-    <!-- Reality-only external address -->
+    <!-- Reality-only optional external address -->
     <div id="ib-external-address-fields" class="hidden">
-      <div class="f-g"><label data-i18n="extDomain">دامنه خارجی (در آدرس کانفیگ)</label><input type="text" id="ib-extdomain" dir="ltr" data-i18n-placeholder="extDomainPlace" placeholder="مثال: tokaido.proxy.rlwy.net"></div>
-      <div class="f-g"><label data-i18n="extPortCfg">پورت خارجی (در آدرس کانفیگ)</label><input type="number" id="ib-extport" value="443" dir="ltr" placeholder="443"></div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><input type="checkbox" id="ib-ext-enabled" onchange="onExternalAddressChange()" style="width:auto"><span data-i18n="externalAddressToggle">آدرس خارجی (اختیاری)</span></label>
+      <div id="ib-external-address-accordion" class="hidden">
+        <div class="f-g"><label data-i18n="extDomain">دامنه خارجی (در آدرس کانفیگ)</label><input type="text" id="ib-extdomain" dir="ltr" data-i18n-placeholder="extDomainPlace" placeholder="مثال: tokaido.proxy.rlwy.net"></div>
+        <div class="f-g"><label data-i18n="extPortCfg">پورت خارجی (در آدرس کانفیگ)</label><input type="number" id="ib-extport" dir="ltr" data-i18n-placeholder="extPortPlace" placeholder="خالی = پورت داخلی"></div>
+      </div>
     </div>
     </div>
 
@@ -2747,7 +2750,7 @@ IMPLEMENTATION RULES
     <div id="ib-reality-fields" class="hidden">
       <div class="divider"></div>
       <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px" data-i18n="realitySettings">تنظیمات Reality</div>
-      <div class="f-g"><label>SNI (Server Name / Destination)</label>
+      <div class="f-g"><label>SNI (Server Name)</label>
         <div style="display:flex;gap:6px;align-items:flex-end">
           <input type="text" id="ib-sni" value="" dir="ltr" placeholder="مثلاً www.google.com" style="flex:1">
           <button type="button" class="btn btn-sm btn-b" onclick="snPickFastest()" title="سریع‌ترین SNI از sni_reality.txt" style="border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -2755,6 +2758,7 @@ IMPLEMENTATION RULES
           </button>
         </div>
       </div>
+      <div class="f-g"><label data-i18n="dest">Destination</label><input type="text" id="ib-destination" dir="ltr" placeholder="خالی = SNI:443"></div>
       <div class="f-r">
         <div class="f-g"><label>Private Key (x25519)</label><input type="text" id="ib-privkey" dir="ltr" data-i18n-placeholder="autoGen" placeholder="تولید خودکار"></div>
         <div class="f-g"><label>Public Key</label><input type="text" id="ib-pubkey" dir="ltr" data-i18n-placeholder="autoGen" placeholder="تولید خودکار" readonly></div>
@@ -2952,7 +2956,7 @@ var I18N = {
     'inboundName': 'نام اینباند', 'proto': 'پروتکل', 'port': 'پورت', 'extPort': 'پورت خارجی', 'optional': 'اختیاری', 'sniFixed': 'SNI هدف ثابت',
     'securityType': 'نوع امنیت', 'realitySettings': 'تنظیمات Reality', 'autoGen': 'تولید خودکار', 'genRealityKey': 'تولید کلید Reality (x25519)',
     'dest': 'مقصد', 'serverNames': 'نام سرورها (SNI)', 'shortIds': 'شناسه‌های کوتاه', 'hex8': 'هگز ۸ رقمی — خالی = تصادفی', 'generate': '+ تولید', 'spiderx': 'SpiderX',
-    'extDomain': 'دامنه خارجی', 'extPortCfg': 'پورت خارجی', 'extDomainPlace': 'دامنه خارجی برای کانفیگ کلاینت', 'commaSep': 'با کاما جدا کنید',
+    'extDomain': 'دامنه خارجی', 'extPortCfg': 'پورت خارجی', 'extDomainPlace': 'دامنه خارجی برای کانفیگ کلاینت', 'extPortPlace': 'خالی = پورت داخلی', 'externalAddressToggle': 'آدرس خارجی (اختیاری)', 'commaSep': 'با کاما جدا کنید',
     'intPort': 'پورت اصلی (پورتی که سرور روی آن گوش میدهد)', 'extPortCfg2': 'پورت خارجی (کانفیگ)', 'portHint': 'پورت داخلی = پورتی که Xray روی آن گوش میدهد. پورت خارجی = پورتی که در کانفیگ ظاهر میشود (آدرس کانفیگ: domain:external_port).',
     'network': 'شبکه', 'serviceName': 'نام سرویس', 'createInbound': 'ایجاد اینباند', 'editInbound': 'ویرایش اینباند',
     'config': 'کانفیگ', 'copy': 'کپی', 'close': 'بستن', 'copied': 'کانفیگ کپی شد', 'noCfg': 'کانفیگی موجود نیست', 'errCopy': 'خطا در کپی', 'notFound': 'یافت نشد', 'delete': 'حذف', 'edit': 'ویرایش', 'unlimited': 'نامحدود', 'expired': 'منقضی', 'daysUnit': ' روز', 'default': 'پیش‌فرض', 'usersCount': 'کاربران', 'secNetwork': 'شبکه', 'security': 'امنیت', 'action': 'عملیات', 'expiry': 'انقضا', 'connTh': 'اتصال',
@@ -3021,7 +3025,7 @@ var I18N = {
     'inboundName': 'Inbound Name', 'proto': 'Protocol', 'port': 'Port', 'extPort': 'External Port', 'optional': 'optional', 'sniFixed': 'Fixed target SNI',
     'securityType': 'Security Type', 'realitySettings': 'Reality Settings', 'autoGen': 'Auto-generated', 'genRealityKey': 'Generate Reality Keys (x25519)',
     'dest': 'Destination', 'serverNames': 'Server Names (SNI)', 'shortIds': 'Short IDs', 'hex8': '8-digit hex — empty = random', 'generate': '+ Generate', 'spiderx': 'SpiderX',
-    'extDomain': 'External Domain', 'extPortCfg': 'External Port', 'extDomainPlace': 'External domain shown in the client config', 'commaSep': 'Separate with commas',
+    'extDomain': 'External Domain', 'extPortCfg': 'External Port', 'extDomainPlace': 'External domain shown in the client config', 'extPortPlace': 'Empty = internal port', 'externalAddressToggle': 'External address (optional)', 'commaSep': 'Separate with commas',
     'intPort': 'Main port (the port the server listens on)', 'extPortCfg2': 'External Port (config)', 'portHint': 'Internal port = what Xray listens on. External port = what appears in the config (config address: domain:external_port).',
     'network': 'Network', 'serviceName': 'Service Name', 'createInbound': 'Create Inbound', 'editInbound': 'Edit Inbound',
     'config': 'Config', 'copy': 'Copy', 'close': 'Close', 'copied': 'Config copied', 'noCfg': 'No config available', 'errCopy': 'Copy failed', 'notFound': 'Not found', 'delete': 'Delete', 'edit': 'Edit', 'unlimited': 'Unlimited', 'expired': 'Expired', 'daysUnit': ' days', 'default': 'Default', 'usersCount': 'Users', 'secNetwork': 'Network', 'security': 'Security', 'action': 'Actions', 'expiry': 'Expiry', 'connTh': 'Conn',
@@ -4723,9 +4727,15 @@ function onSecurityChange() {
   // External Domain/Port are Reality-only. TLS must never expose or submit them.
   toggleById('ib-external-address-fields', isReality);
   if (!isReality) {
+    if ($id('ib-ext-enabled')) $id('ib-ext-enabled').checked = false;
+    onExternalAddressChange();
     if ($id('ib-extdomain')) $id('ib-extdomain').value = '';
     if ($id('ib-extport')) $id('ib-extport').value = '';
   }
+}
+
+function onExternalAddressChange() {
+  toggleById('ib-external-address-accordion', !!$id('ib-ext-enabled') && $id('ib-ext-enabled').checked);
 }
 
 async function loadTelegramRailwayInfo(){
@@ -4886,7 +4896,9 @@ function openCreateInbound() {
   $id('ib-security').value = 'tls';
   $id('ib-network').value = 'ws';
   $id('ib-extdomain').value = '';
-  $id('ib-extport').value = '443';
+  $id('ib-extport').value = '';
+  $id('ib-ext-enabled').checked = false;
+  $id('ib-destination').value = '';
   $id('ib-sni').value = '';
   $id('ib-privkey').value = '';
   $id('ib-pubkey').value = '';
@@ -4920,6 +4932,8 @@ async function editInbound(iid) {
   $id('ib-inbound-type').value = isTg ? 'telegram' : 'config';
   $id('ib-sni').value = ib.sni || 'is1-ssl.mzstatic.com';
   var rs = ib.reality_settings || {};
+  var rsDestination = String(rs.dest || '').replace(/:443$/, '');
+  $id('ib-destination').value = ib.destination || (rsDestination !== (ib.sni || 'is1-ssl.mzstatic.com') ? rsDestination : '');
   $id('ib-privkey').value = (rs || {}).private_key || '';
   $id('ib-pubkey').value = (rs || {}).public_key || '';
   $id('ib-shortids').value = (rs || {}).short_id || '';
@@ -4966,10 +4980,12 @@ async function editInbound(iid) {
     $id('ib-port').value = ib.port || '';
     $id('ib-extdomain').value = ib.external_domain || '';
     $id('ib-extport').value = ib.external_port || '';
+    $id('ib-ext-enabled').checked = !!(ib.external_domain || ib.external_port);
     $id('ib-inbound-type').value = 'config';
     $id('ib-submit').textContent = t('updateInbound');
     onInboundTypeChange();
     onSecurityChange();
+    onExternalAddressChange();
     onNetworkChange();
     openModal('mod-inbound');
   } else {
@@ -4978,11 +4994,13 @@ async function editInbound(iid) {
     $id('ib-network').value = ib.network || 'ws';
     $id('ib-port').value = ib.port || '';
     $id('ib-extdomain').value = ib.external_domain || '';
-    $id('ib-extport').value = ib.external_port || 443;
+    $id('ib-extport').value = ib.external_port || '';
+    $id('ib-ext-enabled').checked = !!(ib.external_domain || ib.external_port);
     $id('ib-inbound-type').value = 'config';
     $id('ib-submit').textContent = t('updateInbound');
     onInboundTypeChange();
     onSecurityChange();
+    onExternalAddressChange();
     onNetworkChange();
     openModal('mod-inbound');
   }
@@ -5040,16 +5058,16 @@ async function submitInbound(e) {
     body.security = security;
     body.sni = sni;
     if (security === 'reality') {
-      body.external_port = parseInt($id('ib-extport').value) || null;
-      body.external_domain = $id('ib-extdomain').value || '';
-      // For Reality: SNI is used as destination, server name, and SNI
-      var sniVal = $id('ib-sni').value || 'is1-ssl.mzstatic.com';
+      body.external_port = $id('ib-ext-enabled').checked ? (parseInt($id('ib-extport').value, 10) || '') : '';
+      body.external_domain = $id('ib-ext-enabled').checked ? $id('ib-extdomain').value.trim() : '';
+      body.destination = $id('ib-destination').value.trim();
+      var sniVal = sni;
       body.reality_settings = {
         private_key: $id('ib-privkey').value || '',
         public_key: $id('ib-pubkey').value || '',
         short_id: $id('ib-shortids').value || '',
         spiderx: $id('ib-spiderx').value || '/',
-        dest: sniVal + ':443',
+        dest: (body.destination || sniVal) + ':443',
         server_names: [sniVal],
         sni: sniVal
       };
