@@ -1220,7 +1220,8 @@ button,.btn,[role="button"]{transition-timing-function:cubic-bezier(.22,1,.36,1)
 .spd-acc.node-item-accordion .spd-acc-body{padding-top:6px}
 
 /* No text selection outside form controls */
-body,.panel,.stat,.tbl,.u-card,.sidebar,.topbar,.nav-item,.nav-accordion-head,.btn,.badge,pre{user-select:none;-webkit-user-select:none}
+body,.panel,.stat,.tbl,.u-card,.sidebar,.topbar,.nav-item,.nav-accordion-head,.btn,.badge{user-select:none;-webkit-user-select:none}
+pre,pre *,code,[data-copyable],[data-copyable] *{user-select:text;-webkit-user-select:text}
 input,textarea,select{user-select:text!important;-webkit-user-select:text!important}
 *{accent-color:var(--txt)}
 
@@ -2888,7 +2889,7 @@ IMPLEMENTATION RULES
   <div class="user-qr-hint" data-i18n="qrHint">اسکن کنید تا کانفیگ اضافه شود</div>
   <div class="user-qr-link" id="userQrLink" dir="ltr"><span id="userQrLinkUrl"></span><button type="button" onclick="copyQrSubscription()" aria-label="Copy subscription link">⧉</button></div>
   <div class="modal-btns user-qr-actions">
-    <button type="button" class="btn btn-g" id="qr-sub-button" onclick="openQrSubscription()">Go Sub</button>
+    <button type="button" class="btn btn-g" id="qr-sub-button" onclick="copyQrSubscription()">Copy Sub</button>
     <button type="button" class="btn btn-g" onclick="closeModal('mod-qr')"><span data-i18n="close">بستن</span></button>
   </div>
 </div></div>
@@ -3512,13 +3513,18 @@ document.addEventListener('click', function(event) {
     if((e.ctrlKey||e.metaKey) && ['+','-','=','0'].indexOf(e.key)>=0) e.preventDefault();
     if((e.ctrlKey||e.metaKey) && k==='c') {
       var t=e.target; var formField=t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
-      if(!formField) e.preventDefault();
+      var okArea=t && t.closest && t.closest('pre,code,[data-copyable]');
+      var selOk=false;
+      try { var sn=window.getSelection && window.getSelection().anchorNode; var se=sn && (sn.nodeType===1?sn:sn.parentElement); selOk=!!(se && se.closest && se.closest('pre,code,[data-copyable]')); } catch(_){}
+      if(!formField && !okArea && !selOk) e.preventDefault();
     }
   });
   ['copy','cut','contextmenu','selectstart','dragstart'].forEach(function(evt){
     document.addEventListener(evt, function(e){
       var t=e.target;
+      if(window.__spiderCopying) return;
       if(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      if(t && t.closest && t.closest('pre,code,[data-copyable]') && (evt==='copy'||evt==='selectstart'||evt==='contextmenu')) return;
       if(evt==='copy' && typeof window.getSelection==='function' && !window.getSelection().toString()) return;
       e.preventDefault();
     });
@@ -4274,7 +4280,9 @@ function _userAccHead(u, idx) {
 }
 
 function _copyNodeConfigEncoded(encoded) {
-  try { var cfg=decodeURIComponent(encoded); navigator.clipboard.writeText(cfg).then(function(){toast(t('copied'),'ok');}); } catch(e) { toast('خطا در کپی','err'); }
+  var cfg = '';
+  try { cfg = decodeURIComponent(encoded); } catch(e) { cfg = String(encoded || ''); }
+  copyText(cfg).then(function(){ toast(t('copied'),'ok'); }).catch(function(){ toast(t('errCopy'),'err'); });
 }
 
 function _userAccBody(u) {
@@ -4546,22 +4554,24 @@ async function viewCfg(configUuid) {
 }
 
 function copyCfg() {
-  navigator.clipboard.writeText(curCfg).then(function() { toast(t('copied'), 'ok'); }).catch(function() { toast(t('errCopy'), 'err'); });
+  copyText(curCfg).then(function() { toast(t('copied'), 'ok'); }).catch(function() { toast(t('errCopy'), 'err'); });
 }
 
 async function viewSub(configUuid) {
+  // Copy only (never opens the link). Copy synchronously when the uuid is known
+  // so the browser still treats it as a user gesture.
+  var uuid = configUuid || '';
   try {
-    var d = await api('/api/sub/' + encodeURIComponent(configUuid));
-    var uuid = d.config_uuid || configUuid;
-    var subUrl = window.location.origin + '/link/' + uuid;
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(subUrl);
-      toast('لینک ساب کپی شد', 'ok');
-    } else {
-      window.open(subUrl, '_blank');
+    if (!uuid) {
+      var d = await api('/api/sub/' + encodeURIComponent(configUuid));
+      uuid = d.config_uuid || configUuid;
     }
+    var subUrl = window.location.origin + '/link/' + uuid;
+    await copyText(subUrl);
+    toast('لینک ساب کپی شد', 'ok');
   } catch (e) {
     console.error(e);
+    toast(t('errCopy'), 'err');
   }
 }
 var qrSubscriptionUrl = '';
@@ -4581,12 +4591,12 @@ function viewQR(userId) {
   openModal('mod-qr');
 }
 function openQrSubscription() {
-  if (!qrSubscriptionUrl) return;
-  window.open(qrSubscriptionUrl, '_blank', 'noopener,noreferrer');
+  // Kept for compatibility: now copies the subscription link instead of opening it.
+  copyQrSubscription();
 }
 function copyQrSubscription() {
-  if (!qrSubscriptionUrl || !navigator.clipboard || !navigator.clipboard.writeText) return;
-  navigator.clipboard.writeText(qrSubscriptionUrl).then(function(){ toast(t('copied'), 'ok'); }).catch(function(){ toast(t('errCopy'), 'err'); });
+  if (!qrSubscriptionUrl) return;
+  copyText(qrSubscriptionUrl).then(function(){ toast(t('copied'), 'ok'); }).catch(function(){ toast(t('errCopy'), 'err'); });
 }
 
 // ─── Inbounds ───
@@ -5317,14 +5327,8 @@ async function saveHelpSpoofFields() {
 
 async function copyHelpPrompt() {
   var text = $id('help-template-text').value;
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
-    else {
-      var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
-    }
-    toast(t('helpPromptCopied'), 'ok');
-  } catch(e) { toast(t('helpPromptCopyFailed'), 'err'); }
+  try { await copyText(text); toast(t('helpPromptCopied'), 'ok'); }
+  catch(e) { toast(t('helpPromptCopyFailed'), 'err'); }
 }
 
 // ─── Panel logs box (Advanced tab) ───
@@ -6187,32 +6191,39 @@ async function snPickFastest() {
 }
 
 // ── Clipboard helper ──
-// Uses the async Clipboard API when available and falls back to a temporary
-// textarea for mobile/webview environments where navigator.clipboard is absent.
+// Works on http / webviews / iOS too: first a synchronous textarea + execCommand
+// (keeps the user gesture), then the async Clipboard API, and as a last resort a
+// prompt() so the value can always be copied by hand.
+function _legacyCopy(value) {
+  var ok = false, ta = document.createElement('textarea');
+  ta.value = value;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;padding:0;border:0;opacity:0;font-size:16px;user-select:text;-webkit-user-select:text';
+  var host = document.querySelector('.modal-overlay.open,.modal.open,.modal[style*="flex"],dialog[open]') || document.body;
+  host.appendChild(ta);
+  window.__spiderCopying = true;
+  try {
+    ta.focus({ preventScroll: true });
+    ta.select();
+    ta.setSelectionRange(0, value.length);
+    ok = document.execCommand('copy');
+  } catch (e) { ok = false; }
+  window.__spiderCopying = false;
+  if (ta.parentNode) ta.parentNode.removeChild(ta);
+  return ok;
+}
 function copyText(value) {
   value = String(value == null ? '' : value);
   if (!value) return Promise.reject(new Error('empty clipboard value'));
-  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-    return navigator.clipboard.writeText(value);
+  if (_legacyCopy(value)) return Promise.resolve();
+  function manual() {
+    try { window.prompt('Copy:', value); } catch (e) {}
+    return Promise.resolve();
   }
-  return new Promise(function(resolve, reject) {
-    var ta = document.createElement('textarea');
-    ta.value = value;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.top = '0';
-    ta.style.left = '-9999px';
-    ta.style.opacity = '0';
-    ta.style.pointerEvents = 'none';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    ta.setSelectionRange(0, ta.value.length);
-    var ok = false;
-    try { ok = document.execCommand('copy'); } catch (e) {}
-    document.body.removeChild(ta);
-    if (ok) resolve(); else reject(new Error('clipboard unavailable'));
-  });
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    return navigator.clipboard.writeText(value).catch(manual);
+  }
+  return manual();
 }
 
 // ── TCP tab ──
@@ -6648,16 +6659,8 @@ function selectVercelConfig() {
 async function copyVercelConfig() {
   var output = $id('vd-config-output');
   if (!output || !output.value) { toast(t('vercelDomain.noConfig'), 'err'); return; }
-  try {
-    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(output.value);
-    else {
-      output.focus(); output.select();
-      if (!document.execCommand('copy')) throw new Error('copy failed');
-    }
-    toast(t('copied'), 'ok');
-  } catch (e) {
-    toast(t('errCopy'), 'err');
-  }
+  try { await copyText(output.value); toast(t('copied'), 'ok'); }
+  catch (e) { toast(t('errCopy'), 'err'); }
 }
 
 async function pingVercelDomain() {
@@ -6830,14 +6833,8 @@ function selectWorkerDomainConfig() {
 async function copyWorkerDomainConfig() {
   var output = $id('wd-config-output');
   if (!output || !output.value) { toast(t('workerDomain.noConfig'), 'err'); return; }
-  try {
-    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(output.value);
-    else {
-      output.focus(); output.select();
-      if (!document.execCommand('copy')) throw new Error('copy failed');
-    }
-    toast(t('copied'), 'ok');
-  } catch (e) { toast(t('errCopy'), 'err'); }
+  try { await copyText(output.value); toast(t('copied'), 'ok'); }
+  catch (e) { toast(t('errCopy'), 'err'); }
 }
 
 async function deployWorkerDomain() {
@@ -7728,9 +7725,9 @@ async function loadServerInfo() {
 }
 
 function copyApiKey() {
-  navigator.clipboard.writeText(window._fullApiKey || '').then(function() {
+  copyText(window._fullApiKey || '').then(function() {
     toast('کپی شد', 'ok');
-  });
+  }).catch(function() { toast(t('errCopy'), 'err'); });
 }
 
 async function generateApiKey() {
@@ -9280,10 +9277,8 @@ function tmCopyConfig() {
   var pre = $t('tm-config-preview');
   if (!pre || !pre.textContent) return;
   var txt = pre.textContent;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(txt).then(function () { toast(t('copyOk') || 'Copied', 'ok'); })
-      .catch(function () { toast(t('toast.err'), 'err'); });
-  } else { toast(t('toast.err'), 'err'); }
+  copyText(txt).then(function () { toast(t('copyOk') || 'Copied', 'ok'); })
+    .catch(function () { toast(t('toast.err'), 'err'); });
 }
 
 // ─── Wiring ─────────────────────────────────────────────────────────────────
