@@ -77,7 +77,6 @@ import twp as _twp
 # already defined here. Imported after the `main` alias above so its lazy
 # `sys.modules["main"]` lookups always resolve to THIS module.
 import tm as _tm
-import relays as _relays
 
 _tm_load_state = _tm.load_state
 _tm_dump_state = _tm.dump_state
@@ -1689,11 +1688,6 @@ async def startup():
         await _tm.sync_tm_inbound_nodes()
     except Exception as e:
         logger.warning(f"TM inbound bootstrap failed: {e}")
-    # Built-in Trojan / VMess / Shadowsocks TLS+WS relays (fixed paths, locked).
-    try:
-        await _relays.ensure_relay_inbounds()
-    except Exception as e:
-        logger.warning(f"relay inbounds bootstrap failed: {e}")
     # Ensure the exact default TLS+WS inbound exists. It is the ONLY inbound
     # served by the FastAPI /ws/{uuid} relay.
     retired_http_ws = False
@@ -2036,8 +2030,8 @@ async def startup():
         _sec = (_ib.get("security") or "").lower()
         if _proto == "worker" or _proto == "reality" or _sec == "reality" or _sec != "tls":
             continue
-        if _ib.get("advanced_customized") or _relays.is_relay_inbound(_ib):
-            continue  # relay inbounds keep their fixed public port 443
+        if _ib.get("advanced_customized"):
+            continue
         if int(_ib.get("port") or 0) != _relay_port:
             _ib["port"] = _relay_port
             _changed = True
@@ -2814,8 +2808,6 @@ def _is_panel_relay_inbound(iid: str, ib: dict | None) -> bool:
         return True
     if _tm.is_tm_inbound(ib):
         return True
-    if _relays.is_relay_inbound(ib):
-        return True
     return str(ib.get("protocol") or "").lower() in ("tunnel", "reverse")
 
 def find_default_tls_ws_inbound_id() -> str | None:
@@ -3422,14 +3414,6 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     # marks it as the entry of the active chain, with its own ws/TM(/ws/nextTM)
     # route. The TM inbound is a real inbound: when a user selected it, this is
     # the config they get. The same config UUID flows through every hop.
-    relay_kind = _relays.relay_kind_of(inbound)
-    if relay_kind:
-        relay_host = addr_ip or _default_ws_address(inbound, panel_domain)
-        return _relays.client_config(
-            relay_kind, config_uuid, relay_host, addr_port or "443", panel_domain,
-            quote(f"{rem} {_relays.RELAYS[relay_kind]['label']}".strip()),
-        )
-
     if proto == _tm.TM_PROTOCOL:
         cfg = _tm.tm_client_config(user)
         if cfg:
@@ -5505,23 +5489,6 @@ async def ws_uuid_handler(ws: WebSocket, uuid: str):
     await websocket_tunnel(ws, uuid, expected_relay_inbound_id=find_default_tls_ws_inbound_id())
 
 
-# Built-in Trojan / VMess / Shadowsocks relays (TLS+WS on 443). Fixed paths,
-# not editable: /ws/vmess/{uuid}, /ws/trojan/{uuid}, /ws/shadowsocks/{uuid}.
-@app.websocket("/ws/vmess/{uuid}")
-async def vmess_ws_handler(ws: WebSocket, uuid: str):
-    await _relays.relay_ws_entry(ws, uuid, "vmess")
-
-
-@app.websocket("/ws/trojan/{uuid}")
-async def trojan_ws_handler(ws: WebSocket, uuid: str):
-    await _relays.relay_ws_entry(ws, uuid, "trojan")
-
-
-@app.websocket("/ws/shadowsocks/{uuid}")
-async def shadowsocks_ws_handler(ws: WebSocket, uuid: str):
-    await _relays.relay_ws_entry(ws, uuid, "shadowsocks")
-
-
 # Tunnel Management: /ws/TM/{uuid} — the user enters THIS server as a TM hop.
 # TM is routed BEFORE the plain /ws/{uuid} template handler so the dedicated
 # paths cannot be mistaken for the managed relay.
@@ -6431,11 +6398,6 @@ async def update_inbound_raw(inbound_id: str, request: Request, _=Depends(requir
             raise HTTPException(status_code=400, detail="Node and Telegram inbounds cannot be edited here")
         if new_protocol in ("node", "telegram"):
             raise HTTPException(status_code=400, detail="Node and Telegram inbounds cannot be edited here")
-        if _relays.is_relay_inbound(existing):
-            raise HTTPException(
-                status_code=400,
-                detail="اینباندهای Trojan / VMess / Shadowsocks سیستمی هستند و قابل ویرایش یا حذف نیستند",
-            )
         if is_web_proxy_inbound(existing) or new_protocol == WEB_PROXY_PROTOCOL:
             raise HTTPException(
                 status_code=400,
@@ -6506,11 +6468,6 @@ async def delete_inbound(inbound_id: str, _=Depends(require_auth)):
             raise HTTPException(status_code=404, detail="inbound not found")
         if ib.get("proxy_managed"):
             raise HTTPException(status_code=400, detail="Proxy inbounds are managed from the Proxy tab")
-        if _relays.is_relay_inbound(ib):
-            raise HTTPException(
-                status_code=400,
-                detail="اینباندهای Trojan / VMess / Shadowsocks سیستمی هستند و قابل حذف نیستند",
-            )
         if is_web_proxy_inbound(ib):
             # Built-in inbound: deletable only by disabling it, never removed.
             raise HTTPException(
