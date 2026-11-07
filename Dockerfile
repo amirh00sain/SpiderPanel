@@ -54,7 +54,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Fail early if the main Python modules contain syntax errors.
-RUN python -m py_compile main.py vercel_relay.py
+RUN python -m py_compile main.py vercel_relay.py relays.py
 
 EXPOSE 8080
 EXPOSE 443
